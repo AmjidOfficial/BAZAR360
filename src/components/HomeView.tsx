@@ -34,10 +34,6 @@ export default function HomeView({
     setTab('search');
   };
 
-  const handleServiceClick = (serviceType: string) => {
-    setTab('services');
-    // Scroll or focus on service
-  };
 
   return (
     <div className="space-y-12 pb-16">
@@ -90,61 +86,6 @@ export default function HomeView({
                 {cat}
               </button>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Exclusive Services - Bento Styled Block */}
-      <section className="space-y-6">
-        <div className="flex justify-between items-end border-b border-white/5 pb-2">
-          <div>
-            <span className="text-[10px] font-mono text-[#38BDF8] font-bold tracking-widest uppercase block">Automated Utilities</span>
-            <h2 className="font-sans font-extrabold text-xl md:text-2xl text-white uppercase tracking-tight">EXCLUSIVE SERVICES</h2>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div
-            onClick={() => handleServiceClick('inspection')}
-            className="bg-[#1E293B] border border-white/5 p-6 rounded-3xl flex flex-col items-center justify-center text-center gap-3.5 hover:border-[#38BDF8] transition-all duration-200 cursor-pointer group shadow-xl"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-[#0F172A] flex items-center justify-center text-[#38BDF8] group-hover:scale-110 group-hover:shadow-[0_0_12px_rgba(56,189,248,0.2)] transition-transform shadow duration-200">
-              <ShieldCheck size={22} />
-            </div>
-            <span className="text-xs font-bold font-mono tracking-wider uppercase text-white">Inspection</span>
-            <span className="text-[10px] text-white/50 font-sans hidden md:block">111-Point Certified Mechanics</span>
-          </div>
-
-          <div
-            onClick={() => handleServiceClick('finance')}
-            className="bg-[#1E293B] border border-white/5 p-6 rounded-3xl flex flex-col items-center justify-center text-center gap-3.5 hover:border-[#38BDF8] transition-all duration-200 cursor-pointer group shadow-xl"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-[#0F172A] flex items-center justify-center text-[#F97316] group-hover:scale-110 group-hover:shadow-[0_0_12px_rgba(249,115,22,0.2)] transition-transform shadow duration-200">
-              <span className="font-bold text-sm font-mono tracking-tighter">AED</span>
-            </div>
-            <span className="text-xs font-bold font-mono tracking-wider uppercase text-white">Finance</span>
-            <span className="text-[10px] text-white/50 font-sans hidden md:block">Sleek Installment Calculator</span>
-          </div>
-
-          <div
-            onClick={() => handleServiceClick('insurance')}
-            className="bg-[#1E293B] border border-white/5 p-6 rounded-3xl flex flex-col items-center justify-center text-center gap-3.5 hover:border-[#38BDF8] transition-all duration-200 cursor-pointer group shadow-xl"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-[#0F172A] flex items-center justify-center text-[#38BDF8] group-hover:scale-110 group-hover:shadow-[0_0_12px_rgba(56,189,248,0.2)] transition-transform shadow duration-200">
-              <span className="material-symbols-outlined shrink-0 text-xl">shield</span>
-            </div>
-            <span className="text-xs font-bold font-mono tracking-wider uppercase text-white">Insurance</span>
-            <span className="text-[10px] text-white/50 font-sans hidden md:block">Real-time Premium Quotation</span>
-          </div>
-
-          <div
-            onClick={() => handleServiceClick('transport')}
-            className="bg-[#1E293B] border border-white/5 p-6 rounded-3xl flex flex-col items-center justify-center text-center gap-3.5 hover:border-[#38BDF8] transition-all duration-200 cursor-pointer group shadow-xl"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-[#0F172A] flex items-center justify-center text-[#F97316] group-hover:scale-110 group-hover:shadow-[0_0_12px_rgba(249,115,22,0.2)] transition-transform shadow duration-200">
-              <Milestone size={20} />
-            </div>
-            <span className="text-xs font-bold font-mono tracking-wider uppercase text-white">Transport</span>
-            <span className="text-[10px] text-white/50 font-sans hidden md:block">GCC Delivery Cost Estimates</span>
           </div>
         </div>
       </section>

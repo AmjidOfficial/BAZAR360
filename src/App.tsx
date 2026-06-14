@@ -9,7 +9,6 @@ import HomeView from './components/HomeView';
 import DealerStorefrontView from './components/DealerStorefrontView';
 import SellWithAIView from './components/SellWithAIView';
 import SearchExplorerView from './components/SearchExplorerView';
-import ExclusiveServicesView from './components/ExclusiveServicesView';
 
 export default function App() {
   const [currentTab, setTab] = useState<string>('home');
@@ -206,10 +205,6 @@ export default function App() {
             onAddListing={handleAddListing}
             setTab={setTab}
           />
-        )}
-
-        {currentTab === 'services' && (
-          <ExclusiveServicesView />
         )}
 
       </main>

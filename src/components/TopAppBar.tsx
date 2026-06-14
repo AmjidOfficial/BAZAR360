@@ -52,16 +52,6 @@ export default function TopAppBar({ currentTab, setTab, onPostAdClick }: TopAppB
         >
           DEALERS
         </button>
-        <button
-          onClick={() => setTab('services')}
-          className={`font-bold transition-all duration-150 ${
-            currentTab === 'services'
-              ? 'text-[#38BDF8] border-b-2 border-[#38BDF8] pb-1'
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          SERVICES
-        </button>
       </nav>
 
       <div className="flex items-center gap-4">

@@ -50,16 +50,6 @@ export default function BottomNavBar({ currentTab, setTab }: BottomNavBarProps) 
         <Store size={18} />
         <span className="text-[10px] font-medium mt-1">Dealers</span>
       </button>
-
-      <button
-        onClick={() => setTab('services')}
-        className={`flex flex-col items-center justify-center transition-colors duration-150 ${
-          currentTab === 'services' ? 'text-[#38BDF8]' : 'text-gray-400 hover:text-white'
-        }`}
-      >
-        <ShieldCheck size={18} />
-        <span className="text-[10px] font-medium mt-1">Services</span>
-      </button>
     </nav>
   );
 }
