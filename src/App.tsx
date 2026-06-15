@@ -85,26 +85,44 @@ export default function App() {
   useEffect(() => {
     async function initDatabase() {
       setDbLoading(true);
+      
+      // Fast connection race-timer to guarantee instant rendering even if connection is firewalled or slow
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Firebase connection timeout - loading high speed local layout')), 1800)
+      );
+
       try {
-        await seedDatabaseIfEmpty();
-        
-        const fetchedDealers = await dbFetchDealers();
-        const fetchedListings = await dbFetchListings();
-        
-        setDealers(fetchedDealers);
-        setListings(fetchedListings);
-        
-        // Load reviews in record
-        const revsRecord: Record<string, Review[]> = {};
-        for (const dl of fetchedDealers) {
-          revsRecord[dl.id] = await dbFetchReviews(dl.id);
-        }
-        setReviewsMap(revsRecord);
+        await Promise.race([
+          (async () => {
+            await seedDatabaseIfEmpty();
+            
+            const fetchedDealers = await dbFetchDealers();
+            const fetchedListings = await dbFetchListings();
+            
+            setDealers(fetchedDealers);
+            setListings(fetchedListings);
+            
+            // Load reviews in record
+            const revsRecord: Record<string, Review[]> = {};
+            for (const dl of fetchedDealers) {
+              revsRecord[dl.id] = await dbFetchReviews(dl.id);
+            }
+            setReviewsMap(revsRecord);
+          })(),
+          timeoutPromise
+        ]);
       } catch (err) {
-        console.warn('Sandbox local sync bypass:', err);
+        console.warn('Sandbox local sync fallback activated due to:', err);
+        // Load highly responsive mock data instantly so the layout works flawlessly in offline / slow connection modes
         setDealers(INITIAL_DEALERS);
         setListings(INITIAL_LISTINGS);
-        setReviewsMap(INITIAL_REVIEWS);
+        
+        // Build reviews record from local backups
+        const revsRecord: Record<string, Review[]> = {};
+        for (const dl of INITIAL_DEALERS) {
+          revsRecord[dl.id] = INITIAL_REVIEWS[dl.id] || [];
+        }
+        setReviewsMap(revsRecord);
       } finally {
         setDbLoading(false);
       }

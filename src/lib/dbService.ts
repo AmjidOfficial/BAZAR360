@@ -47,9 +47,16 @@ const USERS_COLLECTION = 'users';
 
 // Seed Database helper
 export async function seedDatabaseIfEmpty() {
+  if (typeof window !== 'undefined' && localStorage.getItem('bazar360_db_seeded') === 'true') {
+    console.log('Bazar360 database already seeded on this client. Skipping check.');
+    return;
+  }
+
   try {
-    console.log('Synchronizing initial dealers to Firestore...');
-    for (const d of INITIAL_DEALERS) {
+    console.log('Synchronizing initial dealers & listings to Firestore in parallel...');
+    
+    // Concurrently verify and write dealers
+    const dealerPromises = INITIAL_DEALERS.map(async (d) => {
       const docRef = doc(db, DEALERS_COLLECTION, d.id);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
@@ -72,10 +79,10 @@ export async function seedDatabaseIfEmpty() {
           updatedAt: new Date().toISOString()
         });
       }
-    }
+    });
 
-    console.log('Synchronizing initial listings to Firestore...');
-    for (const l of INITIAL_LISTINGS) {
+    // Concurrently verify and write listings
+    const listingPromises = INITIAL_LISTINGS.map(async (l) => {
       const docRef = doc(db, LISTINGS_COLLECTION, l.id);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
@@ -86,28 +93,39 @@ export async function seedDatabaseIfEmpty() {
           updatedAt: new Date().toISOString()
         });
       }
-    }
+    });
 
-    // Seed reviews
+    // Concurrently verify and write reviews
+    const reviewPromises: Promise<void>[] = [];
     for (const dId of Object.keys(INITIAL_REVIEWS)) {
       const revs = INITIAL_REVIEWS[dId];
       for (const r of revs) {
-        const docRef = doc(db, `${DEALERS_COLLECTION}/${dId}/reviews`, r.id);
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-          await setDoc(docRef, {
-            id: r.id,
-            author: r.author,
-            rating: r.rating,
-            comment: r.comment,
-            createdAt: new Date().toISOString()
-          });
-        }
+        reviewPromises.push((async () => {
+          const docRef = doc(db, `${DEALERS_COLLECTION}/${dId}/reviews`, r.id);
+          const docSnap = await getDoc(docRef);
+          if (!docSnap.exists()) {
+            await setDoc(docRef, {
+              id: r.id,
+              author: r.author,
+              rating: r.rating,
+              comment: r.comment,
+              createdAt: new Date().toISOString()
+            });
+          }
+        })());
       }
+    }
+
+    // Run ALL checks and writes concurrently
+    await Promise.all([...dealerPromises, ...listingPromises, ...reviewPromises]);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('bazar360_db_seeded', 'true');
     }
     console.log('Bazar360 Seeding completed/verified.');
   } catch (err) {
     console.warn('Silent seeding warning:', err);
+    throw err; // rethrow so calling routine knows synchronization was bypassed/timed out
   }
 }
 
