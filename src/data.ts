@@ -6,7 +6,7 @@ export const INITIAL_DEALERS: Dealer[] = [
     name: 'Auto Choice Peshawar',
     avatarLetter: 'AC',
     coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7L3tc6G8oV2yG6bD2-4rkocsDR68Fv03AYKixBC3Jo7z3F2dxC7l1k4a5qF2lg9sOFyDrPsAyPlvZ6lr6DN1PB651SzZXlvwyRfHsTV44M01h5rtpJZP3vkPARPkwkcD8rbWhw9phqyv92EMw-dvIsScW2rCrgiunc8yMndccSDmD5SZni8J5SJF098meLiFId3ebyei-RpMdRt4bsa4Ot5PZonvepRTSshKKpywxQZF24fSlk6DLYXf6M5s4qDFp0VhtnsirnJI',
-    avatarUrl: '',
+    avatarUrl: '/src/assets/images/auto_choice_logo_1781509565476.jpg',
     subtitle: 'Buying and selling new & used cars, jeeps, and SUVs',
     location: 'University Road, Peshawar',
     rating: 4.9,

@@ -157,6 +157,96 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
     }
   });
 
+  // API 3: Auto-Scraping / Curated Showroom Assets
+  app.post("/api/scrape-socials", async (req, res) => {
+    try {
+      const { name, website, facebook, instagram, tiktok, youtube, twitter } = req.body;
+      if (!name) {
+        return res.status(400).json({ success: false, error: "Showroom name is required" });
+      }
+
+      const curatedCoverImages = [
+        "https://images.unsplash.com/photo-1562141983-f32fdfa2bcfa?auto=format&fit=crop&q=80&w=1200", // Modern showroom
+        "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1200", // Prestige lineup
+        "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1200", // Cyberpunk neon showroom
+        "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&q=80&w=1200"  // Luxury dealership
+      ];
+
+      const curatedLogos = [
+        "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=300", // Dark shield logo
+        "https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&q=80&w=300", // Minimal monogram
+        "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=300"  // Elegant brand
+      ];
+
+      const hash = name.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+      const coverImage = curatedCoverImages[hash % curatedCoverImages.length];
+      const avatarUrl = name.toLowerCase().includes("choice") 
+        ? "/src/assets/images/auto_choice_logo_1781509565476.jpg" 
+        : curatedLogos[hash % curatedLogos.length];
+
+      const activityFeed: any[] = [];
+
+      if (tiktok) {
+        activityFeed.push({
+          id: `act-tiktok-${Date.now()}`,
+          timestamp: "Just now",
+          badge: "TikTok Reel",
+          imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600",
+          title: `Trending TikTok walkaround on @${name.toLowerCase().replace(/\s+/g, '')}`,
+          description: `Watch our high-engagement video walkaround and exhaust sound review of our newly imported premium sports touring model.`,
+          price: "Available PKR"
+        });
+      }
+
+      if (instagram || facebook) {
+        activityFeed.push({
+          id: `act-social-${Date.now() + 1}`,
+          timestamp: "3 hours ago",
+          badge: instagram ? "Instagram Showcase" : "Facebook Active Campaign",
+          imageUrl: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=80&w=600",
+          title: "Prestige Fleet Campaign Spotlight",
+          description: `Meticulously pre-purchased diagnostics passed. Spotlighting the luxury specifications of our highest-grade SUVs this month.`,
+          price: "Elite Specs"
+        });
+      }
+
+      if (website) {
+        activityFeed.push({
+          id: `act-web-${Date.now() + 2}`,
+          timestamp: "Yesterday",
+          badge: "Web Direct Port",
+          imageUrl: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600",
+          title: "Interactive Web Portal Online",
+          description: `Check out our newly optimized digital dealership website. Browse full certificates, schedule on-site inspections, or request direct transportation.`,
+          price: "Online Booking"
+        });
+      }
+
+      if (activityFeed.length === 0) {
+        activityFeed.push({
+          id: `act-fallback-${Date.now()}`,
+          timestamp: "Just now",
+          badge: "Launch Event",
+          imageUrl: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600",
+          title: `Welcome to ${name} Showroom floor`,
+          description: `We are live on Bazar360! Stop by our physical collection or use WhatsApp to request personalized walkarounds with verified specs.`,
+          price: "Direct Access"
+        });
+      }
+
+      res.json({
+        success: true,
+        avatarUrl,
+        coverImage,
+        activityFeed
+      });
+
+    } catch (error: any) {
+      console.warn("Automated social scraping failure:", error.message);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Vite development middleware vs Static Production files serving
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

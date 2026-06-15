@@ -1,4 +1,4 @@
-import { Bell, PlusCircle, User, ShieldAlert } from 'lucide-react';
+import { Bell, PlusCircle, User, ShieldAlert, LogOut } from 'lucide-react';
 import { UserProfile } from '../lib/dbService';
 
 interface TopAppBarProps {
@@ -6,13 +6,15 @@ interface TopAppBarProps {
   setTab: (tab: string) => void;
   onPostAdClick: () => void;
   currentUser: UserProfile | null;
+  onLogout: () => void;
 }
 
 export default function TopAppBar({ 
   currentTab, 
   setTab, 
   onPostAdClick, 
-  currentUser 
+  currentUser,
+  onLogout
 }: TopAppBarProps) {
   return (
     <header className="flex justify-between items-center w-full px-5 md:px-16 h-16 fixed top-0 z-50 bg-[#0B1121] border-b border-white/5 shadow-lg">
@@ -73,19 +75,37 @@ export default function TopAppBar({
       </nav>
 
       <div className="flex items-center gap-4">
-        {/* Active Session Role Pill */}
-        {currentUser && (
-          <div 
+        {/* Sign In / Register Button for Guest Customers */}
+        {!currentUser ? (
+          <button
             onClick={() => setTab('portal')}
-            className="hidden lg:flex items-center gap-2 bg-[#121c32]/80 border border-white/10 rounded-full py-1 pl-1.5 pr-3 cursor-pointer text-[10px] select-none hover:border-[#38BDF8]/40 transition-colors"
+            className="text-[11px] font-sans font-extrabold text-[#38BDF8] hover:text-white border border-[#38BDF8]/30 hover:border-[#38BDF8] bg-[#38BDF8]/5 px-3.5 py-1.5 rounded-xl cursor-pointer duration-100 uppercase tracking-wider"
           >
-            <div className="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center font-extrabold text-[9px] uppercase font-mono">
-              {currentUser.displayName.substring(0, 1).toUpperCase()}
+            Sign In / Register
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <div 
+              onClick={() => setTab('portal')}
+              className="hidden lg:flex items-center gap-2 bg-[#121c32]/80 border border-white/10 rounded-full py-1 pl-1.5 pr-3 cursor-pointer text-[10px] select-none hover:border-[#38BDF8]/40 transition-colors"
+              title="Manage profile & showroom roles"
+            >
+              <div className="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center font-extrabold text-[9px] uppercase font-mono">
+                {currentUser.displayName.substring(0, 1).toUpperCase()}
+              </div>
+              <span className="text-gray-300 font-bold max-w-[80px] truncate">{currentUser.displayName.split(' ')[0]}</span>
+              <span className="bg-amber-500/10 text-amber-400 font-bold px-1.5 py-0.5 rounded text-[8px] border border-amber-500/20 uppercase tracking-wider scale-90">
+                {currentUser.role}
+              </span>
             </div>
-            <span className="text-gray-300 font-bold max-w-[80px] truncate">{currentUser.displayName.split(' ')[0]}</span>
-            <span className="bg-amber-500/10 text-amber-400 font-bold px-1.5 py-0.5 rounded text-[8px] border border-amber-500/20 uppercase tracking-wider scale-90">
-              {currentUser.role}
-            </span>
+            
+            <button
+              onClick={onLogout}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors cursor-pointer"
+              title="Sign Out of session"
+            >
+              <LogOut size={15} />
+            </button>
           </div>
         )}
 

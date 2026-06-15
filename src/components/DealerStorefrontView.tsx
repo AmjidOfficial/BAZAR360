@@ -630,46 +630,55 @@ export default function DealerStorefrontView({
 
           {activeTab === 'reviews' && (
             <div className="space-y-6">
-              <div className="bg-[#1E293B] border border-white/5 p-6 rounded-3xl space-y-4 shadow-xl select-none">
-                <h3 className="text-white font-bold text-xs uppercase tracking-wider block border-b border-white/5 pb-3">Write a Customer Review</h3>
-                <form onSubmit={submitComment} className="space-y-4 font-sans text-xs">
-                  <div className="flex gap-4 items-center">
-                    <label className="text-xs text-white/55 font-mono uppercase font-semibold">Score:</label>
-                    <div className="flex gap-1.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setStarRating(s)}
-                          className="focus:outline-none cursor-pointer"
-                        >
-                          <Star
-                            size={18}
-                            className={s <= starRating ? 'fill-[#F97316] text-[#F97316]' : 'text-slate-600'}
-                          />
-                        </button>
-                      ))}
+              {!currentUser ? (
+                <div className="bg-[#121c32]/40 border border-[#38BDF8]/20 p-6 rounded-3xl text-center space-y-2 max-w-lg mx-auto">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-tight">Verified Review Pipeline</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Please Sign In or Register under the top portal menu to leave buyer scorecards or inspect dealer responses directly.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-[#1E293B] border border-white/5 p-6 rounded-3xl space-y-4 shadow-xl select-none">
+                  <h3 className="text-white font-bold text-xs uppercase tracking-wider block border-b border-white/5 pb-3">Write a Customer Review</h3>
+                  <form onSubmit={submitComment} className="space-y-4 font-sans text-xs">
+                    <div className="flex gap-4 items-center">
+                      <label className="text-xs text-white/55 font-mono uppercase font-semibold">Score:</label>
+                      <div className="flex gap-1.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setStarRating(s)}
+                            className="focus:outline-none cursor-pointer"
+                          >
+                            <Star
+                              size={18}
+                              className={s <= starRating ? 'fill-[#F97316] text-[#F97316]' : 'text-slate-600'}
+                            />
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <textarea
-                      rows={3}
-                      className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-3.5 text-white focus:outline-none focus:border-[#38BDF8] text-xs placeholder-white/30 font-sans"
-                      placeholder={`Share your experience buying from ${dealer.name}...`}
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                    ></textarea>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      className="bg-[#F97316] text-white px-5 py-2.5 rounded-xl font-mono text-[10px] uppercase font-bold tracking-wider hover:bg-orange-600 active:scale-95 duration-75 shadow-lg shadow-orange-950/20 cursor-pointer"
-                    >
-                      Post Store Review
-                    </button>
-                  </div>
-                </form>
-              </div>
+                    <div>
+                      <textarea
+                        rows={3}
+                        className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-3.5 text-white focus:outline-none focus:border-[#38BDF8] text-xs placeholder-white/30 font-sans"
+                        placeholder={`Share your experience buying from ${dealer.name}...`}
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                      ></textarea>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="bg-[#F97316] text-white px-5 py-2.5 rounded-xl font-mono text-[10px] uppercase font-bold tracking-wider hover:bg-orange-600 active:scale-95 duration-75 shadow-lg shadow-orange-950/20 cursor-pointer"
+                      >
+                        Post Store Review
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
 
               <div className="space-y-4">
                 {reviews.length === 0 ? (

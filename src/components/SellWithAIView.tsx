@@ -5,6 +5,7 @@ import { CarListing, GeneratedSEOListing } from '../types';
 interface SellWithAIViewProps {
   onAddListing: (listing: CarListing) => void;
   setTab: (tab: string) => void;
+  currentUser: any;
 }
 
 const CAR_STOCK_IMAGE_CHOICES = [
@@ -26,7 +27,31 @@ const CAR_STOCK_IMAGE_CHOICES = [
   }
 ];
 
-export default function SellWithAIView({ onAddListing, setTab }: SellWithAIViewProps) {
+export default function SellWithAIView({ onAddListing, setTab, currentUser }: SellWithAIViewProps) {
+  if (!currentUser) {
+    return (
+      <div className="max-w-xl mx-auto py-16 px-4 text-center space-y-6">
+        <div className="w-16 h-16 rounded-full bg-[#121c32] border border-[#38BDF8]/20 flex items-center justify-center mx-auto shadow-lg text-[#38BDF8]">
+          <Car size={32} />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl md:text-2xl font-sans font-extrabold text-white tracking-tight uppercase">
+            Sign In to Publish Ad
+          </h2>
+          <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
+            In order to list vehicles on Pakistan's #1 Car Bazar and prevent duplicate or unverified classifieds, CarBazar-360 requires a secure, validated login session.
+          </p>
+        </div>
+        <button
+          onClick={() => setTab('portal')}
+          className="inline-flex bg-[#F97316] hover:bg-orange-600 border border-white/5 text-white font-bold py-3 pr-6 pl-6 rounded-xl text-xs uppercase font-mono tracking-wider active:scale-97 change-all duration-75 shadow-lg shadow-orange-950/20 cursor-pointer"
+        >
+          AUTHENTICATE NOW &rarr;
+        </button>
+      </div>
+    );
+  }
+
   // AI Stage states
   const [shorthandInput, setShorthandInput] = useState('civic 22 white neat condition 18k km price 85 lac');
   const [sellingTone, setSellingTone] = useState<'Premium' | 'Aggressive' | 'Friendly' | 'SEO'>('Premium');

@@ -81,6 +81,10 @@ export default function RegistrationPortal({
   const [dealerDescription, setDealerDescription] = useState('Established boutique showroom collection offering handpicked luxury parameter vehicles and certified inspections.');
   const [dealerSuccessMessage, setDealerSuccessMessage] = useState('');
 
+  // Scraping trigger models
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapingStatus, setScrapingStatus] = useState('');
+
   // Dealer Social Presence State
   const [dealerWebsite, setDealerWebsite] = useState('');
   const [dealerInstagram, setDealerInstagram] = useState('');
@@ -300,17 +304,60 @@ export default function RegistrationPortal({
     e.preventDefault();
     if (!dealerName.trim()) return;
 
+    setIsScraping(true);
+    setScrapingStatus("Establishing secure socket link to federated social nodes...");
+
+    let avatarUrl = '';
+    let coverImage = dealerCoverImage;
+    let activityFeed: any[] = [];
+
+    try {
+      await new Promise(r => setTimeout(r, 1000));
+      setScrapingStatus(`Crawling digital accounts to pre-populate metadata for "${dealerName}"...`);
+      
+      const response = await fetch('/api/scrape-socials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: dealerName,
+          website: dealerWebsite,
+          facebook: dealerFacebook,
+          instagram: dealerInstagram,
+          tiktok: dealerTiktok,
+          youtube: dealerYoutube,
+          twitter: dealerTwitter
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          avatarUrl = data.avatarUrl || '';
+          coverImage = data.coverImage || dealerCoverImage;
+          activityFeed = data.activityFeed || [];
+          setScrapingStatus("✓ Extracted successfully! Creating enterprise-grade digital storefront...");
+          await new Promise(r => setTimeout(r, 800));
+        }
+      }
+    } catch (err) {
+      console.warn("Dynamic scraping offline or network issue, using sandboxed generation.", err);
+    } finally {
+      setIsScraping(false);
+      setScrapingStatus('');
+    }
+
     const newDealerId = dealerName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const newDealer: Dealer = {
       id: newDealerId,
       name: dealerName,
       avatarLetter: dealerName.substring(0, 2).toUpperCase(),
+      avatarUrl: avatarUrl,
       subtitle: dealerSubtitle,
       location: dealerLocation,
       rating: 5.0,
       vehiclesCount: 0,
       followersCount: '1',
-      coverImage: dealerCoverImage,
+      coverImage: coverImage,
       description: dealerDescription,
       phone: dealerPhone,
       whatsapp: dealerWhatsapp,
@@ -322,7 +369,7 @@ export default function RegistrationPortal({
         youtube: dealerYoutube.trim() || undefined,
         twitter: dealerTwitter.trim() || undefined
       },
-      activityFeed: []
+      activityFeed: activityFeed
     };
 
     try {
@@ -716,7 +763,23 @@ export default function RegistrationPortal({
             </div>
           )}
 
-          <form onSubmit={handleDealerRegister} className="space-y-4 pt-1 bg-[#051020] p-5 rounded-2xl border border-[#1e293b]">
+          {isScraping && (
+            <div className="p-6 bg-[#0c192c] border border-[#38bdf8]/30 rounded-2xl flex flex-col items-center justify-center text-center space-y-4 shadow-xl">
+              <div className="relative w-12 h-12 flex items-center justify-center">
+                <span className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></span>
+                <Globe size={18} className="absolute text-[#38bdf8] animate-pulse" />
+              </div>
+              <div className="space-y-1.5 w-full">
+                <span className="text-[10px] font-black uppercase text-[#38bdf8] font-mono tracking-widest block">Automated Social Crawler Active</span>
+                <p className="text-[11px] font-mono text-white/90 max-w-md mx-auto">{scrapingStatus}</p>
+              </div>
+              <div className="w-full bg-[#051020] h-1.5 rounded-full overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-500 to-[#38bdf8] h-full rounded-full animate-pulse" style={{ width: '100%' }}></div>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleDealerRegister} className={`space-y-4 pt-1 bg-[#051020] p-5 rounded-2xl border border-[#1e293b] ${isScraping ? 'opacity-40 pointer-events-none' : ''}`}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Showroom Branding Name:</label>

@@ -191,6 +191,23 @@ export async function dbFetchListings(): Promise<CarListing[]> {
 
 // 3. Register user profile
 export async function dbSaveUserProfile(profile: UserProfile): Promise<void> {
+  // Safe-guarding Firestore standard writes
+  if (!profile || !profile.uid || profile.uid.startsWith('usr-default')) {
+    console.log('Skipping active Firestore save for standard default offline/sandbox user profiles:', profile?.uid);
+    return;
+  }
+
+  // Double check authorization mismatch to satisfy strict security rules
+  if (!auth.currentUser) {
+    console.log('No active authenticated session inside Firebase SDK. Postponing profile update for:', profile.uid);
+    return;
+  }
+
+  if (auth.currentUser.uid !== profile.uid) {
+    console.log(`Preventing writing profile payload of UID (${profile.uid}) under authenticated user session of (${auth.currentUser.uid})`);
+    return;
+  }
+
   try {
     const userDocRef = doc(db, USERS_COLLECTION, profile.uid);
     await setDoc(userDocRef, {

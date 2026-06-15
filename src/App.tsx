@@ -12,9 +12,12 @@ import {
   dbAddReview, 
   dbFetchReviews,
   dbSaveUserProfile,
+  dbFetchUserProfile,
   UserProfile,
   seedDatabaseIfEmpty
 } from './lib/dbService';
+import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 import TopAppBar from './components/TopAppBar';
 import BottomNavBar from './components/BottomNavBar';
@@ -41,31 +44,22 @@ export default function App() {
     const saved = localStorage.getItem('bazar360_user');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          // Migration: Auto-inject standard metadata fields required by the latest rules
+          return {
+            status: 'Active',
+            lastLogin: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            ...parsed
+          };
+        }
       } catch (e) {
         // Fallback
       }
     }
-    // Default logged in user - Private Seller, so they can post ads like FB Marketplace right away!
-    return {
-      uid: 'usr-default-777',
-      email: 'amjid.bisconni@gmail.com',
-      displayName: 'Amjid B. (Direct Seller)',
-      phoneNumber: '+92 314 3600000',
-      phoneVerified: true,
-      city: 'Lahore',
-      state: 'Punjab',
-      role: 'Private Seller',
-      status: 'Active',
-      socials: {
-        facebook: 'https://facebook.com/amjid.bazar360',
-        instagram: 'https://instagram.com/amjid_b360'
-      },
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      region: 'Lahore'
-    };
+    // Default config: Allow visitors to experience the web catalog purely as guests/visitors.
+    return null;
   });
 
   // Filter trackers
@@ -82,6 +76,8 @@ export default function App() {
       localStorage.setItem('bazar360_user', JSON.stringify(currentUser));
       // Save profile to database
       dbSaveUserProfile(currentUser).catch(err => console.warn('Bypass profile save:', err));
+    } else {
+      localStorage.removeItem('bazar360_user');
     }
   }, [currentUser]);
 
@@ -115,6 +111,85 @@ export default function App() {
     }
     initDatabase();
   }, []);
+
+  // Listen for Firebase Auth state changes to sync active user profile details
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        console.log("Firebase Auth active session detected for UID:", firebaseUser.uid);
+        try {
+          const fetchedProfile = await dbFetchUserProfile(firebaseUser.uid);
+          if (fetchedProfile) {
+            setCurrentUser(fetchedProfile);
+          } else {
+            // First-time signup fallback: create a robust, rules-compliant profile
+            const fallbackProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || 'amjid.bisconni@gmail.com',
+              displayName: firebaseUser.displayName || 'Amjid B.',
+              phoneNumber: firebaseUser.phoneNumber || '+92 314 3600000',
+              phoneVerified: !!firebaseUser.phoneNumber,
+              city: 'Lahore',
+              state: 'Punjab',
+              role: firebaseUser.email === 'amjid.bisconni@gmail.com' ? 'Admin' : 'Buyer',
+              status: 'Active',
+              socials: {
+                facebook: 'https://facebook.com/amjid.bazar360',
+                instagram: 'https://instagram.com/amjid_b360'
+              },
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              region: 'Lahore'
+            };
+            setCurrentUser(fallbackProfile);
+            await dbSaveUserProfile(fallbackProfile).catch(err => console.warn("Fallback profile save skip:", err));
+          }
+        } catch (err) {
+          console.error("Auth state loading error:", err);
+        }
+      } else {
+        console.log("No active Firebase Auth session. App running in offline guest mode.");
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const { signOut } = await import('firebase/auth');
+      await signOut(auth);
+    } catch (err) {
+      console.warn("Silent auth signout warning:", err);
+    }
+    setCurrentUser(null);
+    localStorage.removeItem('bazar360_user');
+    setTab('home');
+  };
+
+  const handleRoleSwap = (role: 'Admin' | 'Showroom Owner' | 'Private Seller') => {
+    if (!currentUser) return;
+    
+    let displayName = 'Amjid B.';
+    let salesPodId: string | undefined = undefined;
+    if (role === 'Admin') {
+      displayName = 'Amjid B. (Super Admin)';
+    } else if (role === 'Showroom Owner') {
+      displayName = 'Amjid B. (Showroom Owner / Dealer)';
+      salesPodId = 'auto-choice-peshawar'; // Hard link to Auto Choice Peshawar for live sandbox tests!
+    } else if (role === 'Private Seller') {
+      displayName = 'Amjid B. (Ad Poster / Private Seller)';
+    }
+    
+    const updatedUser: UserProfile = {
+      ...currentUser,
+      role,
+      displayName,
+      salesPodId
+    };
+    
+    setCurrentUser(updatedUser);
+  };
 
   const onSelectDealer = (id: string) => {
     setSelectedDealerId(id);
@@ -278,7 +353,59 @@ export default function App() {
         setTab={setTab}
         onPostAdClick={() => setTab('sell')}
         currentUser={currentUser}
+        onLogout={handleLogout}
       />
+
+      {/* Super-Admin Multi-Role Gateway (Exclusive email interception) */}
+      {currentUser?.email === 'amjid.bisconni@gmail.com' && (
+        <div className="bg-[#050b16] border-b-2 border-orange-500/80 px-5 py-3 sticky top-14 z-40 shadow-xl shadow-black/40">
+          <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+              </span>
+              <div>
+                <span className="text-[10px] text-[#38BDF8] font-bold uppercase tracking-wider font-mono block">Multi-Role Gateway Intercept</span>
+                <span className="text-xs text-white/90">Switch active session for owner <span className="font-black text-orange-400">amjid.bisconni@gmail.com</span>:</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => handleRoleSwap('Admin')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider font-mono border transition-all cursor-pointer select-none ${
+                  currentUser.role === 'Admin'
+                    ? 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-500/20'
+                    : 'bg-[#121a2a] text-gray-400 border-white/5 hover:border-orange-500/35 hover:text-white'
+                }`}
+              >
+                🛠 Super Admin
+              </button>
+              <button
+                onClick={() => handleRoleSwap('Showroom Owner')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider font-mono border transition-all cursor-pointer select-none ${
+                  currentUser.role === 'Showroom Owner'
+                    ? 'bg-[#38BDF8] text-black border-[#38BDF8] shadow-md shadow-[#38BDF8]/20'
+                    : 'bg-[#121a2a] text-gray-400 border-white/5 hover:border-[#38BDF8]/35 hover:text-white'
+                }`}
+              >
+                🏬 Dealer (Auto Choice)
+              </button>
+              <button
+                onClick={() => handleRoleSwap('Private Seller')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider font-mono border transition-all cursor-pointer select-none ${
+                  currentUser.role === 'Private Seller'
+                    ? 'bg-emerald-500 text-black border-emerald-500 shadow-md shadow-emerald-500/20'
+                    : 'bg-[#121a2a] text-gray-400 border-white/5 hover:border-emerald-500/35 hover:text-white'
+                }`}
+              >
+                📣 Ad Poster
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Container Core Shell */}
       <main className="flex-grow max-w-[1440px] mx-auto w-full pt-20 px-5 md:px-16">
@@ -403,6 +530,7 @@ export default function App() {
               <SellWithAIView
                 onAddListing={handleAddListing}
                 setTab={setTab}
+                currentUser={currentUser}
               />
             )}
 
