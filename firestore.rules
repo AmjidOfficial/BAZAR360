@@ -32,12 +32,15 @@ service cloud.firestore {
     // 3. ENTITY VALIDATION BLUEPRINTS
     // ==========================================
     function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'email', 'role', 'createdAt', 'updatedAt'])
+      return data.keys().hasAll(['uid', 'email', 'role', 'status', 'createdAt', 'lastLogin', 'updatedAt'])
         && data.uid is string 
         && data.email is string
-        && data.role in ['Admin', 'Manager', 'SalesRep', 'PrivateSeller', 'Buyer']
+        && data.role in ['Admin', 'Showroom Owner', 'Sales Rep', 'Private Seller', 'Buyer']
+        && data.status in ['Active', 'Pending Approval', 'Suspended']
         && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 100))
-        && (data.region == null || (data.region is string && data.region.size() <= 100))
+        && (data.phoneNumber == null || (data.phoneNumber is string && data.phoneNumber.size() <= 50))
+        && (data.city == null || (data.city is string && data.city.size() <= 100))
+        && (data.state == null || (data.state is string && data.state.size() <= 100))
         && (data.salesPodId == null || (data.salesPodId is string && data.salesPodId.size() <= 128));
     }
 

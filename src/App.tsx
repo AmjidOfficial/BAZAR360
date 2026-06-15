@@ -51,10 +51,20 @@ export default function App() {
       uid: 'usr-default-777',
       email: 'amjid.bisconni@gmail.com',
       displayName: 'Amjid B. (Direct Seller)',
-      role: 'PrivateSeller',
-      region: 'Lahore',
+      phoneNumber: '+92 314 3600000',
+      phoneVerified: true,
+      city: 'Lahore',
+      state: 'Punjab',
+      role: 'Private Seller',
+      status: 'Active',
+      socials: {
+        facebook: 'https://facebook.com/amjid.bazar360',
+        instagram: 'https://instagram.com/amjid_b360'
+      },
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      lastLogin: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      region: 'Lahore'
     };
   });
 
@@ -114,14 +124,14 @@ export default function App() {
 
   const handleAddListing = async (newListing: CarListing) => {
     // 1. Determine permission default values
-    const isApprovedByDefault = currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.role === 'PrivateSeller';
+    const isApprovedByDefault = currentUser?.role === 'Admin' || currentUser?.role === 'Showroom Owner' || currentUser?.role === 'Private Seller';
     
     const finalListing: CarListing = {
       ...newListing,
       approved: isApprovedByDefault,
       assignedSalesRepId: currentUser?.uid || 'guest-seller',
-      // If of Manager role, assign to their showroom
-      dealerId: currentUser?.role === 'Manager' && currentUser?.salesPodId ? currentUser.salesPodId : 'private',
+      // If of Showroom Owner role, assign to their showroom
+      dealerId: currentUser?.role === 'Showroom Owner' && currentUser?.salesPodId ? currentUser.salesPodId : 'private',
       createdAt: new Date().toISOString()
     };
 
@@ -203,6 +213,33 @@ export default function App() {
     );
   };
 
+  const handlePublishActivity = async (dealerId: string, post: any) => {
+    setDealers((prevDealers) =>
+      prevDealers.map((d) =>
+        d.id === dealerId
+          ? { ...d, activityFeed: [post, ...(d.activityFeed || [])] }
+          : d
+      )
+    );
+
+    try {
+      const { doc, getDoc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('./firebase');
+      const dealerRef = doc(db, 'dealers', dealerId);
+      const dSnap = await getDoc(dealerRef);
+      if (dSnap.exists()) {
+        const dData = dSnap.data();
+        const currentFeed = dData.activityFeed || [];
+        await updateDoc(dealerRef, {
+          activityFeed: [post, ...currentFeed],
+          updatedAt: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.warn('Silent activity feed persistence warning:', err);
+    }
+  };
+
   const currentDealer = dealers.find((d) => d.id === selectedDealerId) || dealers[0];
 
   const handleOfferSubmit = (e: React.FormEvent) => {
@@ -226,8 +263,8 @@ export default function App() {
   // RBAC query view filtering based on permissions
   const visibleListings = listings.filter((l) => {
     if (l.approved !== false) return true; // Show all approved listings
-    // Non-approved listings only visible to Admins, Showroom Managers, or the listing author
-    const isModerator = currentUser?.role === 'Admin' || currentUser?.role === 'Manager';
+    // Non-approved listings only visible to Admins, Showroom Owners, or the listing author
+    const isModerator = currentUser?.role === 'Admin' || currentUser?.role === 'Showroom Owner';
     const isOwner = currentUser && l.assignedSalesRepId === currentUser.uid;
     return isModerator || isOwner;
   });
@@ -257,8 +294,8 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* Show Moderation Dashboard to Admins or Managers on home page */}
-            {currentTab === 'home' && (currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
+            {/* Show Moderation Dashboard to Admins or Showroom Owners on home page */}
+            {currentTab === 'home' && (currentUser?.role === 'Admin' || currentUser?.role === 'Showroom Owner') && (
               <div className="mb-8">
                 <AdminModerationDeck
                   listings={listings}
@@ -356,6 +393,9 @@ export default function App() {
                 reviews={reviewsMap[selectedDealerId] || []}
                 onAddReview={handleAddReview}
                 onSelectListing={setSelectedListing}
+                onPublishActivity={handlePublishActivity}
+                currentUser={currentUser}
+                onAddListing={handleAddListing}
               />
             )}
 

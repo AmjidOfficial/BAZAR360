@@ -21,11 +21,24 @@ export interface UserProfile {
   uid: string;
   email: string;
   displayName: string;
-  role: 'Admin' | 'Manager' | 'SalesRep' | 'PrivateSeller' | 'Buyer';
-  region?: string;
-  salesPodId?: string;
+  phoneNumber?: string;
+  phoneVerified?: boolean;
+  city?: string;
+  state?: string;
+  role: 'Admin' | 'Showroom Owner' | 'Sales Rep' | 'Private Seller' | 'Buyer';
+  status: 'Active' | 'Pending Approval' | 'Suspended';
+  socials?: {
+    website?: string;
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+    twitter?: string;
+  };
   createdAt: string;
+  lastLogin: string;
   updatedAt: string;
+  region?: string;    // Compatibility with existing subviews
+  salesPodId?: string; // Compatibility with showroom manager bindings
 }
 
 const DEALERS_COLLECTION = 'dealers';
@@ -35,11 +48,12 @@ const USERS_COLLECTION = 'users';
 // Seed Database helper
 export async function seedDatabaseIfEmpty() {
   try {
-    const dealersSnap = await getDocs(collection(db, DEALERS_COLLECTION));
-    if (dealersSnap.empty) {
-      console.log('Seeding initial dealers to Firestore...');
-      for (const d of INITIAL_DEALERS) {
-        await setDoc(doc(db, DEALERS_COLLECTION, d.id), {
+    console.log('Synchronizing initial dealers to Firestore...');
+    for (const d of INITIAL_DEALERS) {
+      const docRef = doc(db, DEALERS_COLLECTION, d.id);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        await setDoc(docRef, {
           id: d.id,
           name: d.name,
           avatarLetter: d.avatarLetter,
@@ -60,11 +74,12 @@ export async function seedDatabaseIfEmpty() {
       }
     }
 
-    const listingsSnap = await getDocs(collection(db, LISTINGS_COLLECTION));
-    if (listingsSnap.empty) {
-      console.log('Seeding initial listings to Firestore...');
-      for (const l of INITIAL_LISTINGS) {
-        await setDoc(doc(db, LISTINGS_COLLECTION, l.id), {
+    console.log('Synchronizing initial listings to Firestore...');
+    for (const l of INITIAL_LISTINGS) {
+      const docRef = doc(db, LISTINGS_COLLECTION, l.id);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        await setDoc(docRef, {
           ...l,
           approved: true, // Default list seeds approved
           createdAt: new Date().toISOString(),
@@ -75,11 +90,12 @@ export async function seedDatabaseIfEmpty() {
 
     // Seed reviews
     for (const dId of Object.keys(INITIAL_REVIEWS)) {
-      const reviewsSnap = await getDocs(collection(db, `${DEALERS_COLLECTION}/${dId}/reviews`));
-      if (reviewsSnap.empty) {
-        const revs = INITIAL_REVIEWS[dId];
-        for (const r of revs) {
-          await setDoc(doc(db, `${DEALERS_COLLECTION}/${dId}/reviews`, r.id), {
+      const revs = INITIAL_REVIEWS[dId];
+      for (const r of revs) {
+        const docRef = doc(db, `${DEALERS_COLLECTION}/${dId}/reviews`, r.id);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          await setDoc(docRef, {
             id: r.id,
             author: r.author,
             rating: r.rating,
@@ -89,7 +105,7 @@ export async function seedDatabaseIfEmpty() {
         }
       }
     }
-    console.log('Bazar360 Seeding completed.');
+    console.log('Bazar360 Seeding completed/verified.');
   } catch (err) {
     console.warn('Silent seeding warning:', err);
   }
@@ -120,7 +136,7 @@ export async function dbFetchDealers(): Promise<Dealer[]> {
         phone: data.phone || '',
         whatsapp: data.whatsapp || '',
         socials: data.socials || {},
-        activityFeed: []
+        activityFeed: Array.isArray(data.activityFeed) ? data.activityFeed : (INITIAL_DEALERS.find((d) => d.id === doc.id)?.activityFeed || [])
       });
     });
     return list;

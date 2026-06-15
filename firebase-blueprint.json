@@ -2,19 +2,22 @@
   "entities": {
     "User": {
       "title": "User Profile",
-      "description": "User profile with role-based access control configurations",
+      "description": "User profile with role-based access control and verification attributes for the long term",
       "type": "object",
       "properties": {
-        "uid": { "type": "string", "description": "The unique user authentication ID" },
+        "uid": { "type": "string", "description": "The unique user authentication ID matching Firebase Auth" },
         "email": { "type": "string", "description": "User's verified email address" },
         "displayName": { "type": "string", "description": "User display pre-formatted moniker" },
-        "role": { "type": "string", "enum": ["Admin", "Manager", "SalesRep", "PrivateSeller", "Buyer"], "description": "RBAC privilege tier" },
-        "region": { "type": "string", "description": "Geographical operations region, e.g., Dubai, Abu Dhabi" },
-        "salesPodId": { "type": "string", "description": "Showroom sales pod indicator for managers" },
+        "phoneNumber": { "type": "string", "description": "User verified contact number" },
+        "city": { "type": "string", "description": "Geographical city address" },
+        "state": { "type": "string", "description": "Geographical state address" },
+        "role": { "type": "string", "enum": ["Admin", "Showroom Owner", "Sales Rep", "Private Seller", "Buyer"], "description": "RBAC privilege tier" },
+        "status": { "type": "string", "enum": ["Active", "Pending Approval", "Suspended"], "description": "Operational user status" },
+        "socials": { "type": "object", "description": "Social media links for showrooms and sellers" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "lastLogin": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "email", "role", "createdAt", "updatedAt"]
+      "required": ["uid", "email", "role", "status", "createdAt", "lastLogin"]
     },
     "Dealer": {
       "title": "Verified Dealer",

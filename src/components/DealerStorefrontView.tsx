@@ -15,9 +15,28 @@ import {
   Twitter,
   Youtube,
   Video,
-  MessageCircle
+  MessageCircle,
+  PlusCircle,
+  Sparkles
 } from 'lucide-react';
 import { Dealer, CarListing, Review, ChatMessage } from '../types';
+import ShowroomHQHub from './ShowroomHQHub';
+
+const FEED_STOCK_IMAGES = [
+  { name: 'Porsche Track Weapon', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBZtBmgc7whl0zLeKAWRQtQFFaqpX0BeFFFhv-7s4eS0XJv8a1i88YYMhBhIwgqiGj0A7rd6ANHhOigA9qyoVbvYOAnweQXtNq7ErLbCyQjxwaBqRacvP9ywt_OdSJTgjIghQ1HJJryxlmkvysweO35ZG8mIQ-GXkXc9eRcG8W6mfooetlurMVEfJwBT5kA3gsemMgkdQQ1x8uV6kvo-7Fd2TWs0eo0DbfHCrGCCkwIOepT-cmfMIReSrrjlnJsv7mXR0lNxmLRanQ' },
+  { name: 'Mercedes AMG Obsidian', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJqJ3MkFiS7DRa6OqXFSkJcsI3cZ9685e7vJevGiglSWNC2IfxmZhySZymL0jE7nrtUXMK6mf7aHDMHqlrZWKmkCE0srhAhIAspnSs8zwfdjDTe-dg6nn_Aga0qdRS4HRXFWY3F_q8ZawA6LnWHg_skTG6XUMyQyjW-p2_o3ang_YT0dQhOTTRaDaYBO7_Qu4gbU9bE6JvdTXnmdtv7C205mCo97G1dOgK0FxT0Ydptt8zcbWU1l6sXYT9tEUyNWIkdrgiPIn9esI' },
+  { name: 'BMW Competition White', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBkRyZgqdwVho1YG4awPp4toJiKUSqH05IGmlCDeY-esoL_rsDYbAkp7FPKlnXbFzCmNSSrCuHqwrXO_non2l8_jM8QfzbMxg4aYyOMfOsMhs3rpT2R8j1Gx1Mf3knoB5B5hIqUiVq3mIkhn8Bc_376AboW7iBngDAdVbQRCj0uupxH2V2RrluMiTA106UgPdQQb-5gB_A5arpTkTHIfrGwAj737v9D8LD8iIwl-xWDtVKgoKbuQ9XpeQ3NVP4I-N1tqLxV1YsPjWs' },
+  { name: 'Porsche Carrera Chalk', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBHs7Za22_aYMs1VGHEYckNGnFgDZzkirSxzLiCJBbCB2xad7rRbbQo7M1xi7RyGNq8fvUUeGKfFFf93rh8AmKvNpWDRSLWCByW_bP0wK9XhH89wGXq5pXT2Px4I9jvkv5MBaJz82g9lonJQn3tomdmnq1xkOb7_VYzNv57n_oDsol7EzCfdb7PAysiZ_xKKaKLUSX2asp4D15fPMkZ87Rak4ev3Dn7scIHsYk-rDEk0lhfaS18RDIBh_FH8gp3SYVfy_24Oiv87Uw' }
+];
+
+const FEED_BADGE_OPTIONS = [
+  'Just Arrived',
+  'Vlog Update',
+  'Delivery Alert',
+  'Promo Desk',
+  'Premium Ad',
+  'VIP Spec'
+];
 
 interface DealerStorefrontViewProps {
   dealer: Dealer;
@@ -25,6 +44,9 @@ interface DealerStorefrontViewProps {
   reviews: Review[];
   onAddReview: (comment: string, rating: number) => void;
   onSelectListing: (listing: CarListing) => void;
+  onPublishActivity?: (dealerId: string, post: any) => void;
+  currentUser?: any;
+  onAddListing: (listing: CarListing) => void;
 }
 
 export default function DealerStorefrontView({
@@ -33,10 +55,52 @@ export default function DealerStorefrontView({
   reviews,
   onAddReview,
   onSelectListing,
+  onPublishActivity,
+  currentUser,
+  onAddListing,
 }: DealerStorefrontViewProps) {
-  const [activeTab, setActiveTab] = useState<'feed' | 'inventory' | 'reviews' | 'about'>('feed');
+  const [activeTab, setActiveTab] = useState<string>('feed');
   const [isFollowing, setIsFollowing] = useState(false);
   const [followers, setFollowers] = useState(dealer.followersCount);
+
+  // Showroom publisher states
+  const [pubTitle, setPubTitle] = useState('');
+  const [pubBadge, setPubBadge] = useState('Just Arrived');
+  const [pubDescription, setPubDescription] = useState('');
+  const [pubPrice, setPubPrice] = useState('');
+  const [pubImageIndex, setPubImageIndex] = useState(0);
+  const [pubSuccess, setPubSuccess] = useState(false);
+  
+  const hasOfficialRights = currentUser?.role === 'Admin' || (currentUser?.role === 'Showroom Owner' && currentUser?.salesPodId === dealer.id);
+  const [sandboxBypass, setSandboxBypass] = useState(false);
+  const showPublisher = hasOfficialRights || sandboxBypass;
+
+  const handlePublishSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pubTitle.trim() || !pubDescription.trim()) return;
+
+    const newPost = {
+      id: `act-${Date.now()}`,
+      timestamp: 'Just now',
+      badge: pubBadge,
+      imageUrl: FEED_STOCK_IMAGES[pubImageIndex].url,
+      title: pubTitle,
+      description: pubDescription,
+      price: pubPrice.trim() ? (pubPrice.startsWith('Rs.') ? pubPrice : `Rs. ${pubPrice}`) : '',
+    };
+
+    if (onPublishActivity) {
+      onPublishActivity(dealer.id, newPost);
+    }
+
+    setPubTitle('');
+    setPubDescription('');
+    setPubPrice('');
+    setPubSuccess(true);
+    setTimeout(() => {
+      setPubSuccess(false);
+    }, 4000);
+  };
 
   // Reviews states
   const [commentText, setCommentText] = useState('');
@@ -333,16 +397,161 @@ export default function DealerStorefrontView({
         >
           Showroom Specs
         </button>
+        {hasOfficialRights && (
+          <button
+            onClick={() => setActiveTab('hq')}
+            className={`font-semibold pb-2 whitespace-nowrap transition-all duration-150 cursor-pointer select-none flex items-center gap-1 text-[#38BDF8] ${
+              activeTab === 'hq' ? 'border-b-2 border-[#38BDF8] font-bold text-[#38BDF8]' : 'text-[#38BDF8]/65 hover:text-[#38BDF8]'
+            }`}
+          >
+            ★ CEO HQ Control Deck
+          </button>
+        )}
       </nav>
 
-      {/* Dynamic columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {activeTab === 'hq' ? (
+        <ShowroomHQHub 
+          dealer={dealer}
+          listings={listings}
+          onAddListing={onAddListing}
+          currentUser={currentUser}
+        />
+      ) : (
+        /* Dynamic columns */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* TAB CONTENTS: LEFT COLUMN (Lg spans 2) */}
         <div className="lg:col-span-2 space-y-6">
           
           {activeTab === 'feed' && (
             <div className="space-y-6">
+              {/* Showroom Manager / Sandbox Publisher Form */}
+              <div className="bg-[#1E293B] border border-white/5 p-6 rounded-3xl space-y-4 shadow-xl select-none">
+                <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                  <div>
+                    <h3 className="text-white font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-[#F97316]" /> Showroom Activity Publisher
+                    </h3>
+                    <p className="text-[10px] text-white/55 mt-0.5">Publish advertisements, vlogs, delivery updates, and status logs to your custom feed.</p>
+                  </div>
+                  <div>
+                    {hasOfficialRights ? (
+                      <span className="text-[8px] bg-emerald-500/10 text-emerald-400 font-mono font-bold tracking-widest uppercase px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                        Official Representative
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setSandboxBypass(!sandboxBypass)}
+                        className={`text-[8px] font-mono font-bold tracking-widest uppercase px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+                          sandboxBypass 
+                            ? 'bg-[#F97316]/10 text-[#F97316] border-[#F97316]/20' 
+                            : 'bg-white/5 text-white/40 border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        {sandboxBypass ? 'Sandbox Bypass Active' : 'Enable Sandbox Publisher'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {showPublisher ? (
+                  <form onSubmit={handlePublishSubmit} className="space-y-4 font-sans text-xs">
+                    {pubSuccess && (
+                      <div className="bg-emerald-950/40 text-emerald-400 p-3 rounded-xl border border-emerald-900/40 font-mono text-[10px] uppercase">
+                        ✓ Showcase Update Published Successfully in Showroom Feed!
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-white/60 block font-semibold">Post Title / Heading:</label>
+                        <input
+                          type="text"
+                          className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#38BDF8]"
+                          placeholder="e.g., Unveiling Japanese Import Hilux"
+                          value={pubTitle}
+                          onChange={(e) => setPubTitle(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-white/60 block font-semibold">Activity Tag / Badge:</label>
+                        <select
+                          className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#38BDF8]"
+                          value={pubBadge}
+                          onChange={(e) => setPubBadge(e.target.value)}
+                        >
+                          {FEED_BADGE_OPTIONS.map((b) => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-white/60 block font-semibold">Pricing Tag (Optional):</label>
+                        <input
+                          type="text"
+                          className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-2.5 text-white focus:outline-none focus:border-[#38BDF8]"
+                          placeholder="e.g., Rs. 8,500,000"
+                          value={pubPrice}
+                          onChange={(e) => setPubPrice(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-white/60 block font-semibold">Update Description / Activity Copy:</label>
+                      <textarea
+                        rows={2}
+                        className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-3 text-white focus:outline-none focus:border-[#38BDF8] resize-none"
+                        placeholder="Write down details, specs, vlog summary, or home delivery status updates..."
+                        value={pubDescription}
+                        onChange={(e) => setPubDescription(e.target.value)}
+                        required
+                      ></textarea>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-white/60 block font-semibold">Cover Media Visual:</label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {FEED_STOCK_IMAGES.map((img, i) => (
+                          <div
+                            key={img.name}
+                            onClick={() => setPubImageIndex(i)}
+                            className={`border rounded-xl spill-hidden cursor-pointer relative overflow-hidden transition-all ${
+                              pubImageIndex === i ? 'border-[#38BDF8] ring-2 ring-[#38BDF8]/20' : 'border-white/5 hover:border-white/20'
+                            }`}
+                          >
+                            <img src={img.url} className="h-10 w-full object-cover" alt="" referrerPolicy="no-referrer" />
+                            <span className="text-[7px] text-[#38BDF8] truncate block text-center font-mono font-bold leading-none py-1 bg-[#0F172A]">
+                              {img.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2 border-t border-white/5">
+                      <button
+                        type="submit"
+                        className="bg-[#F97316] text-white py-2.5 px-6 rounded-xl font-mono text-[9px] uppercase font-bold tracking-wider hover:bg-orange-600 active:scale-95 duration-75 shadow-lg flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <PlusCircle size={12} /> Post Showroom Update
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="bg-[#0F172A] p-4 py-5 rounded-2xl text-center border border-white/5 text-xs text-white/40 space-y-2 font-mono uppercase">
+                    <p>🔒 Publisher restricted to Showroom personnel.</p>
+                    <button
+                      onClick={() => setSandboxBypass(true)}
+                      className="bg-[#F97316]/10 text-[#F97316] border border-[#F97316]/15 hover:bg-[#F97316]/20 px-4 py-2 rounded-xl text-[9px] uppercase font-bold duration-150 cursor-pointer"
+                    >
+                      Bypass & Publish Sandbox Post
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {dealer.activityFeed.map((post) => (
                 <article key={post.id} className="bg-[#1E293B] border border-white/5 rounded-3xl overflow-hidden flex flex-col shadow-xl select-none">
                   <div className="p-4 px-5 flex items-center justify-between border-b border-white/5 font-mono">
@@ -708,6 +917,7 @@ export default function DealerStorefrontView({
         </div>
 
       </div>
+      )}
 
       {/* Sticky Bottom Action Bar for Contact (Desktop & Mobile) */}
       <div className="fixed bottom-16 md:bottom-0 left-0 w-full bg-[#1E293B]/95 border-t border-white/15 p-4 flex justify-center gap-4 z-40 backdrop-blur-md shadow-2xl font-mono text-xs uppercase">

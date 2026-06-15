@@ -2,6 +2,38 @@ import { Dealer, CarListing, Review } from './types';
 
 export const INITIAL_DEALERS: Dealer[] = [
   {
+    id: 'auto-choice-peshawar',
+    name: 'Auto Choice Peshawar',
+    avatarLetter: 'AC',
+    coverImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7L3tc6G8oV2yG6bD2-4rkocsDR68Fv03AYKixBC3Jo7z3F2dxC7l1k4a5qF2lg9sOFyDrPsAyPlvZ6lr6DN1PB651SzZXlvwyRfHsTV44M01h5rtpJZP3vkPARPkwkcD8rbWhw9phqyv92EMw-dvIsScW2rCrgiunc8yMndccSDmD5SZni8J5SJF098meLiFId3ebyei-RpMdRt4bsa4Ot5PZonvepRTSshKKpywxQZF24fSlk6DLYXf6M5s4qDFp0VhtnsirnJI',
+    avatarUrl: '',
+    subtitle: 'Buying and selling new & used cars, jeeps, and SUVs',
+    location: 'University Road, Peshawar',
+    rating: 4.9,
+    vehiclesCount: 12,
+    followersCount: '5.6k',
+    description: 'Auto Choice Peshawar is a premier automotive marketplace specialized in buying and selling immaculate new and used cars, robust jeeps, and luxury premium SUVs. Committed to absolute transparency, nationwide delivery, and personalized customer service in KPK and all over Pakistan.',
+    phone: '03159085086',
+    whatsapp: '923159085086',
+    socials: {
+      tiktok: 'https://www.tiktok.com/@grandautochoice',
+      instagram: 'https://instagram.com/autochoicepeshawar',
+      website: 'https://autochoicepeshawar.com.pk'
+    },
+    activityFeed: [
+      {
+        id: 'act-ac-1',
+        timestamp: '1 hour ago',
+        badge: 'SUV Special',
+        imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJqJ3MkFiS7DRa6OqXFSkJcsI3cZ9685e7vJevGiglSWNC2IfxmZhySZymL0jE7nrtUXMK6mf7aHDMHqlrZWKmkCE0srhAhIAspnSs8zwfdjDTe-dg6nn_Aga0qdRS4HRXFWY3F_q8ZawA6LnWHg_skTG6XUMyQyjW-p2_o3ang_YT0dQhOTTRaDaYBO7_Qu4gbU9bE6JvdTXnmdtv7C205mCo97G1dOgK0FxT0Ydptt8zcbWU1l6sXYT9tEUyNWIkdrgiPIn9esI',
+        title: 'Toyota Fortuner Legender 2023',
+        description: 'Immaculate white Fortuner Legender. Standard high performance and luxury KPK registered. Call Malak Mazhar for direct offers.',
+        price: 'Rs. 18,500,000',
+        carId: 'car-fortuner-legender',
+      }
+    ]
+  },
+  {
     id: 'almas-car-valley',
     name: 'Almas Car Valley',
     avatarLetter: 'AV',
@@ -232,10 +264,50 @@ export const INITIAL_LISTINGS: CarListing[] = [
       horspower: '443 hp',
       regionalSpecs: 'Imported Spec'
     }
+  },
+  {
+    id: 'car-fortuner-legender',
+    title: '2023 Toyota Fortuner Legender',
+    make: 'Toyota',
+    model: 'Fortuner Legender',
+    year: 2023,
+    price: 18500000,
+    mileage: 12000,
+    fuelType: 'Diesel',
+    transmission: 'Automatic',
+    imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDJqJ3MkFiS7DRa6OqXFSkJcsI3cZ9685e7vJevGiglSWNC2IfxmZhySZymL0jE7nrtUXMK6mf7aHDMHqlrZWKmkCE0srhAhIAspnSs8zwfdjDTe-dg6nn_Aga0qdRS4HRXFWY3F_q8ZawA6LnWHg_skTG6XUMyQyjW-p2_o3ang_YT0dQhOTTRaDaYBO7_Qu4gbU9bE6JvdTXnmdtv7C205mCo97G1dOgK0FxT0Ydptt8zcbWU1l6sXYT9tEUyNWIkdrgiPIn9esI',
+    verified: true,
+    featured: true,
+    dealerId: 'auto-choice-peshawar',
+    description: 'Toyota Fortuner Legender in absolute top pristine condition. Underwritten with detailed pre-inspection, registered in Peshawar. Active contacts: Malak Mazhar (03159085086), 03469085032, 03459085086.',
+    createdAt: '2026-06-14T08:00:00Z',
+    tags: ['SUV', 'Luxury'],
+    specs: {
+      color: 'Super White',
+      engineSize: '2.8L Diesel',
+      horspower: '201 hp',
+      regionalSpecs: 'Pak/Japanese Specs'
+    }
   }
 ];
 
 export const INITIAL_REVIEWS: Record<string, Review[]> = {
+  'auto-choice-peshawar': [
+    {
+      id: 'rev-ac-1',
+      author: 'Shahid Khan',
+      rating: 5,
+      date: 'June 14, 2026',
+      comment: 'Excellent deal on a Land Cruiser. Malak Mazhar and the team are absolute professionals. The car is exactly as described!'
+    },
+    {
+      id: 'rev-ac-2',
+      author: 'Inam-ur-Rehman',
+      rating: 5,
+      date: 'June 11, 2026',
+      comment: 'Very straightforward buying process. Bought a clean Hilux Revo and got it delivered nationwide to Islamabad within 24 hours. Highly trustable.'
+    }
+  ],
   'almas-car-valley': [
     {
       id: 'rev-1',
