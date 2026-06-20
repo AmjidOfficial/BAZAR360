@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==========================================
+    // 1. GLOBAL SAFETY NET & catch-all
+    // ==========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ==========================================
+    // 2. REUSABLE PRIMITIVES & AUTH HELPERS
+    // ==========================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ==========================================
+    // 3. ENTITY VALIDATION BLUEPRINTS
+    // ==========================================
+    function isValidUser(data) {
+      return data.uid is string 
+        && data.uid == request.auth.uid
+        && data.email is string
+        && data.role in ['Admin', 'Showroom Owner', 'Sales Rep', 'Private Seller', 'Buyer']
+        && data.status in ['Active', 'Pending Approval', 'Suspended']
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 50))
+        && (!('city' in data) || (data.city is string && data.city.size() <= 100))
+        && (!('state' in data) || (data.state is string && data.state.size() <= 100))
+        && (!('salesPodId' in data) || (data.salesPodId is string && data.salesPodId.size() <= 128));
+    }
+
+    function isValidCarListing(data) {
+      return data.keys().hasAll(['id', 'title', 'make', 'model', 'year', 'price', 'dealerId', 'createdAt', 'updatedAt'])
+        && data.id is string 
+        && data.title is string && data.title.size() <= 120
+        && data.make is string && data.make.size() <= 50
+        && data.model is string && data.model.size() <= 50
+        && data.year is int && data.year >= 1900 && data.year <= 2030
+        && data.price is int && data.price >= 0
+        && (data.get('mileage', null) == null || data.get('mileage', null) is int)
+        && (data.get('fuelType', null) == null || data.get('fuelType', null) in ['Petrol', 'Diesel', 'Hybrid', 'Electric'])
+        && (data.get('transmission', null) == null || data.get('transmission', null) in ['Automatic', 'Manual'])
+        && data.dealerId is string
+        && (data.get('approved', null) == null || data.get('approved', null) is bool)
+        && (data.get('assignedSalesRepId', null) == null || data.get('assignedSalesRepId', null) is string)
+        && (data.get('region', null) == null || data.get('region', null) is string);
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['id', 'author', 'rating', 'comment', 'createdAt'])
+        && data.id is string
+        && data.author is string && data.author.size() <= 100
+        && data.rating is int && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() <= 1000;
+    }
+
+    function isValidOffer(data) {
+      return data.keys().hasAll(['id', 'listingId', 'buyerId', 'price', 'status', 'createdAt', 'updatedAt'])
+        && data.id is string
+        && data.listingId is string
+        && data.buyerId is string
+        && data.price is int && data.price > 0
+        && data.status in ['pending', 'accepted', 'rejected'];
+    }
+
+    // ==========================================
+    // 4. COLLECTION ACCESS RULES & MATCH BLOCKS
+    // ==========================================
+
+    // Users Collection Access Paths
+    match /users/{userId} {
+      allow read: if true; 
+      allow create, update: if request.auth != null && request.auth.uid == userId && isValidUser(incoming());
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Showrooms Collection
+    match /dealers/{dealerId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if true;
+
+      // Nested Showroom Reviews Match
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isValidReview(incoming()) && isValidId(reviewId);
+        allow update, delete: if true;
+      }
+    }
+
+    // Vehicle Listings Collection
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create, update: if isValidCarListing(incoming());
+      allow delete: if true;
+
+      // Embedded Bids / Offers Match Path
+      match /offers/{offerId} {
+        allow read: if true;
+        allow create, update: if isValidOffer(incoming()) && isValidId(offerId);
+        allow delete: if true;
+      }
+    }
+  }
+}

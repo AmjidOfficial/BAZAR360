@@ -1,0 +1,6 @@
+{
+  "name": "BAZAR360",
+  "description": "BAZAR360 is an elite multi-tenant digital marketplace. The active flagship automotive vertical module is 'Auto Choice'—built with a luxurious Imperial Midnight theme.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
