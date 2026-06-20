@@ -5,7 +5,8 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: process.env.GH_PAGES === 'true' ? '/BAZAR360.V2.0/' : '/',
+    // Custom domains point directly to the root domain, so the base path is just '/'
+    base: '/', 
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
@@ -13,10 +14,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };

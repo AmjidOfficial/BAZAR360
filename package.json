@@ -3,11 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://amjidofficial.github.io/BAZAR360.V2.0/",
+  "homepage": "https://bazar360.online/",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "build:gh-pages": "GH_PAGES=true vite build",
+    "build:gh-pages": "cross-env GH_PAGES=true vite build",
     "predeploy": "npm run build:gh-pages",
     "deploy": "gh-pages -d dist",
     "start": "node dist/server.cjs",
