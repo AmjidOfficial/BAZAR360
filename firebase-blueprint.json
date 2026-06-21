@@ -35,6 +35,7 @@
         "description": { "type": "string" },
         "phone": { "type": "string" },
         "whatsapp": { "type": "string" },
+        "theme_choice": { "type": "string", "enum": ["Cosmic", "Bone", "Emerald", "Gold"], "description": "Custom showroom theme" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -81,6 +82,18 @@
       },
       "required": ["id", "author", "rating", "comment", "createdAt"]
     },
+    "Suggestion": {
+      "title": "Community Suggestion",
+      "description": "Marketplace suggestions submitted by the user community to gauge demand",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "suggestion_text": { "type": "string" },
+        "submitted_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "suggestion_text", "submitted_at"]
+    },
     "Offer": {
       "title": "Dynamic Offer",
       "description": "Non-binding customer bid or pricing proposal across the pipeline",
@@ -118,6 +131,10 @@
     "/listings/{listingId}/offers/{offerId}": {
       "schema": "Offer",
       "description": "Proposals on specific cars"
+    },
+    "/suggestions/{suggestionId}": {
+      "schema": "Suggestion",
+      "description": "Community suggestions on future sectors of Bazar360"
     }
   }
 }

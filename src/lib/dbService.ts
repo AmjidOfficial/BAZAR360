@@ -481,3 +481,23 @@ export async function dbFetchAllUsers(): Promise<UserProfile[]> {
     return [];
   }
 }
+
+export interface Suggestion {
+  id: string;
+  user_id: string | null;
+  suggestion_text: string;
+  submitted_at: string;
+}
+
+export async function dbSaveSuggestion(suggestion: Suggestion): Promise<void> {
+  try {
+    await setDoc(doc(db, 'suggestions', suggestion.id), {
+      ...suggestion,
+      submitted_at: suggestion.submitted_at || new Date().toISOString()
+    });
+    console.log('Suggestion saved to Firestore:', suggestion.id);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, `suggestions/${suggestion.id}`);
+  }
+}
+

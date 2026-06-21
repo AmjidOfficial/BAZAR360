@@ -109,7 +109,7 @@ const FIRESTORE_SCHEMA_BLUEPRINT = {
 };
 
 interface ThemeConfig {
-  id: 'midnight' | 'onyx' | 'emerald';
+  id: 'Cosmic' | 'Bone' | 'Emerald' | 'Gold';
   name: string;
   bgGradient: string;
   bgCard: string;
@@ -124,47 +124,61 @@ interface ThemeConfig {
 }
 
 const THEMES: Record<string, ThemeConfig> = {
-  midnight: {
-    id: 'midnight',
-    name: 'Imperial Midnight',
-    bgGradient: 'from-[#121A2A] to-[#1E293B]',
-    bgCard: 'bg-[#1E293B]',
-    bgBaseDark: 'bg-[#0f172a]',
+  Cosmic: {
+    id: 'Cosmic',
+    name: 'Cosmic Nebula',
+    bgGradient: 'from-[#0A0D1A] to-[#121A3A]',
+    bgCard: 'bg-[#121A3A]',
+    bgBaseDark: 'bg-[#060812]',
     accentText: 'text-[#38BDF8]',
     accentBg: 'bg-[#38BDF8]/10 text-[#38BDF8]',
-    ctaBg: 'bg-[#F97316]',
-    ctaHoverBg: 'hover:bg-orange-650 hover:bg-orange-600',
-    ctaText: 'text-[#F97316]',
+    ctaBg: 'bg-[#38BDF8]',
+    ctaHoverBg: 'hover:bg-[#0ea5e9]',
+    ctaText: 'text-[#38BDF8]',
     badgeBorder: 'border-[#38BDF8]/25',
-    indicatorRing: 'ring-2 ring-orange-500/50',
+    indicatorRing: 'ring-2 ring-[#38BDF8]/50',
   },
-  onyx: {
-    id: 'onyx',
-    name: 'Carbon Onyx',
-    bgGradient: 'from-[#1c1c1e] to-[#2c2c2e]',
-    bgCard: 'bg-[#212123]',
-    bgBaseDark: 'bg-[#141414]',
-    accentText: 'text-slate-400',
-    accentBg: 'bg-white/10 text-slate-300',
-    ctaBg: 'bg-[#EF4444]',
-    ctaHoverBg: 'hover:bg-red-500 hover:bg-red-650',
-    ctaText: 'text-red-500',
-    badgeBorder: 'border-white/10',
-    indicatorRing: 'ring-2 ring-red-500/50',
+  Bone: {
+    id: 'Bone',
+    name: 'Bone Ivory',
+    bgGradient: 'from-[#F5F5F4] to-[#E7E5E4]',
+    bgCard: 'bg-[#F2F1ED]',
+    bgBaseDark: 'bg-[#E5E4DF]',
+    accentText: 'text-slate-900',
+    accentBg: 'bg-slate-900/15 text-slate-800',
+    ctaBg: 'bg-slate-900',
+    ctaHoverBg: 'hover:bg-slate-800',
+    ctaText: 'text-slate-900',
+    badgeBorder: 'border-slate-400',
+    indicatorRing: 'ring-2 ring-slate-900',
   },
-  emerald: {
-    id: 'emerald',
-    name: 'Monaco Emerald',
-    bgGradient: 'from-[#05251d] to-[#0e3b31]',
-    bgCard: 'bg-[#0d3b31]',
-    bgBaseDark: 'bg-[#041a15]',
-    accentText: 'text-[#6EE7B7]',
-    accentBg: 'bg-[#059669]/20 text-[#6EE7B7]',
-    ctaBg: 'bg-[#C5A880]',
-    ctaHoverBg: 'hover:bg-[#B3936B]',
-    ctaText: 'text-[#C5A880]',
+  Emerald: {
+    id: 'Emerald',
+    name: 'Royal Monaco Emerald',
+    bgGradient: 'from-[#04241B] to-[#0A3D30]',
+    bgCard: 'bg-[#0A3D30]',
+    bgBaseDark: 'bg-[#031A12]',
+    accentText: 'text-[#10B981]',
+    accentBg: 'bg-[#10B981]/15 text-[#10B981]',
+    ctaBg: 'bg-[#059669]',
+    ctaHoverBg: 'hover:bg-[#047857]',
+    ctaText: 'text-[#10B981]',
     badgeBorder: 'border-[#10B981]/25',
-    indicatorRing: 'ring-2 ring-[#C5A880]/50',
+    indicatorRing: 'ring-2 ring-[#059669]/50',
+  },
+  Gold: {
+    id: 'Gold',
+    name: 'Regal Gold',
+    bgGradient: 'from-[#1E1B18] to-[#2B241A]',
+    bgCard: 'bg-[#2B241A]',
+    bgBaseDark: 'bg-[#120F0D]',
+    accentText: 'text-[#F59E0B]',
+    accentBg: 'bg-[#F59E0B]/15 text-[#F59E0B]',
+    ctaBg: 'bg-[#F59E0B]',
+    ctaHoverBg: 'hover:bg-[#D97706]',
+    ctaText: 'text-[#F59E0B]',
+    badgeBorder: 'border-[#F59E0B]/25',
+    indicatorRing: 'ring-2 ring-[#F59E0B]/50',
   }
 };
 
@@ -194,7 +208,16 @@ export default function DealerStorefrontView({
   const [activeActivityComments, setActiveActivityComments] = useState<Record<string, { author: string; text: string }[]>>({});
   const [newCommentInputs, setNewCommentInputs] = useState<Record<string, string>>({});
   const [showDeveloperSchema, setShowDeveloperSchema] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState<'midnight' | 'onyx' | 'emerald'>('midnight');
+  const [currentTheme, setCurrentTheme] = useState<'Cosmic' | 'Bone' | 'Emerald' | 'Gold'>(
+    (dealer.theme_choice as any) || 'Cosmic'
+  );
+
+  useEffect(() => {
+    if (dealer.theme_choice) {
+      setCurrentTheme(dealer.theme_choice as any);
+    }
+  }, [dealer.theme_choice]);
+
   const [selectedCompareList, setSelectedCompareList] = useState<CarListing[]>([]);
   const [isComparing, setIsComparing] = useState(false);
 
@@ -259,22 +282,22 @@ export default function DealerStorefrontView({
 
   // Social sharing handlers
   const handleShareProfile = async () => {
-    const shareUrl = `https://bazar360.pk/dealers/${dealer.id}`;
+    const shareUrl = `https://bazar360.online/dealers/${dealer.id}`;
     const shareTitle = `${dealer.name} - Certified Mini-Storefront`;
-    const shareText = `Check out spectacular premium vehicles and certified sports packages on ${dealer.name} on BAZAR360!`;
+    // Strictest compliance with requested marketing template format:
+    const shareText = `Check out spectacular premium vehicles and certified sports packages on ${dealer.name} on BAZAR360! https://bazar360.online/dealers/${dealer.id}`;
 
     if (navigator.share) {
       try {
         await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        showToast("✓ Showroom link shared successfully!");
       } catch (err) {
         // Ignored
       }
     } else {
       try {
-        await navigator.clipboard.writeText(shareUrl);
-        const encodedText = encodeURIComponent(`${shareText}\n\nShowroom: ${shareUrl}`);
-        window.open(`https://web.whatsapp.com/send?text=${encodedText}`, '_blank');
-        showToast("✓ Copied & opened WhatsApp Web deep-link for desktop sharing!");
+        await navigator.clipboard.writeText(shareText);
+        showToast("✓ Link Copied! Check out spectacular premium vehicles on BAZAR360!");
       } catch (err) {
         showToast("Clipboard copy failed");
       }
@@ -282,22 +305,21 @@ export default function DealerStorefrontView({
   };
 
   const handleSharePlatform = async () => {
-    const shareUrl = `https://bazar360.pk`;
-    const shareTitle = `BAZAR360 - Pakistan's Ultimate Automotive Hub`;
-    const shareText = `Explore certified vehicle listings, dynamic AI seller desks, and nationwide deliveries!`;
+    const shareUrl = `https://bazar360.online`;
+    const shareTitle = `BAZAR360 - Ultimate Automotive Hub`;
+    const shareText = `Explore certified vehicle listings, dynamic AI seller desks, and nationwide deliveries! ${shareUrl}`;
 
     if (navigator.share) {
       try {
         await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        showToast("✓ Platform link shared successfully!");
       } catch (err) {
         // Ignored
       }
     } else {
       try {
-        await navigator.clipboard.writeText(shareUrl);
-        const encodedText = encodeURIComponent(`${shareText}\n\nExplore: ${shareUrl}`);
-        window.open(`https://web.whatsapp.com/send?text=${encodedText}`, '_blank');
-        showToast("✓ Copied & opened WhatsApp Web deep-link for desktop sharing!");
+        await navigator.clipboard.writeText(shareText);
+        showToast("✓ Link Copied! Explore BAZAR360 portal.");
       } catch (err) {
         showToast("Clipboard copy failed");
       }
@@ -305,22 +327,21 @@ export default function DealerStorefrontView({
   };
 
   const handleShareContent = async (itemType: 'listing' | 'activity' | 'blog', itemId: string, itemTitle: string) => {
-    const shareUrl = `https://bazar360.pk/dealers/${dealer.id}/${itemType}s/${itemId}`;
+    const shareUrl = `https://bazar360.online/dealers/${dealer.id}/${itemType}s/${itemId}`;
     const shareTitle = `${itemTitle} • ${dealer.name}`;
-    const shareText = `Take a look at this ${itemType} update on ${dealer.name}!`;
+    const shareText = `Take a look at this ${itemType} update on ${dealer.name}! ${shareUrl}`;
 
     if (navigator.share) {
       try {
         await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        showToast(`✓ Dynamic ${itemType} shared successfully!`);
       } catch (err) {
         // Ignored
       }
     } else {
       try {
-        await navigator.clipboard.writeText(shareUrl);
-        const encodedText = encodeURIComponent(`${shareText}\n\nView details: ${shareUrl}`);
-        window.open(`https://web.whatsapp.com/send?text=${encodedText}`, '_blank');
-        showToast(`✓ Copied & opened WhatsApp Web deep-link for ${itemType}!`);
+        await navigator.clipboard.writeText(shareText);
+        showToast("✓ Link Copied!");
       } catch (err) {
         showToast("Clipboard copy failed");
       }
@@ -671,51 +692,13 @@ export default function DealerStorefrontView({
             </div>
 
             {/* Showroom Theme Engine Console inside mini-websites */}
-            <div className="flex flex-col items-center md:items-end gap-1.5 pt-2.5 border-t border-white/5 mt-1">
-              <span className="text-[7.5px] uppercase font-mono font-black tracking-widest text-[#38BDF8]">
-                BAZAR360 Custom Theme Engine
+            <div className="flex flex-col items-center md:items-end gap-1 px-1 pt-2.5 border-t border-white/5 mt-1">
+              <span className="text-[7.5px] uppercase font-mono font-black tracking-widest text-slate-400">
+                ACTIVE VISUAL PRESCRIPT Theme
               </span>
-              <div className="bg-slate-950/65 border border-white/10 p-1 rounded-2xl flex items-center gap-1 select-none">
-                <button
-                  onClick={() => {
-                    setCurrentTheme('midnight');
-                    showToast("Switched Showroom to Imperial Midnight Premium mode!");
-                  }}
-                  className={`px-2.5 py-1 rounded-xl text-[8px] font-mono font-black uppercase tracking-widest transition-all duration-150 cursor-pointer ${
-                    currentTheme === 'midnight'
-                      ? 'bg-[#F97316] text-white shadow-md'
-                      : 'text-white/40 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Midnight
-                </button>
-                <button
-                  onClick={() => {
-                    setCurrentTheme('onyx');
-                    showToast("Switched Showroom to Carbon Onyx Performance mode!");
-                  }}
-                  className={`px-2.5 py-1 rounded-xl text-[8px] font-mono font-black uppercase tracking-widest transition-all duration-150 cursor-pointer ${
-                    currentTheme === 'onyx'
-                      ? 'bg-[#EF4444] text-white shadow-md'
-                      : 'text-white/40 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Onyx
-                </button>
-                <button
-                  onClick={() => {
-                    setCurrentTheme('emerald');
-                    showToast("Switched Showroom to Monaco Emerald Prestige mode!");
-                  }}
-                  className={`px-2.5 py-1 rounded-xl text-[8px] font-mono font-black uppercase tracking-widest transition-all duration-150 cursor-pointer ${
-                    currentTheme === 'emerald'
-                      ? 'bg-[#C5A880] text-slate-950 font-extrabold shadow-md'
-                      : 'text-white/40 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  Emerald
-                </button>
-              </div>
+              <span className={`text-[9px] font-mono font-black uppercase tracking-widest bg-white/5 px-2.5 py-1 rounded-lg border ${theme.badgeBorder} ${theme.accentText}`}>
+                🌌 {theme.name} Mode active
+              </span>
             </div>
           </div>
 
@@ -1973,7 +1956,7 @@ export default function DealerStorefrontView({
               <div className="flex items-center gap-2">
                 <button
                   onClick={async () => {
-                    const compareUrl = `https://bazar360.pk/dealers/${dealer.id}/compare?ids=${selectedCompareList.map(item => item.id).join(',')}`;
+                    const compareUrl = `https://bazar360.online/dealers/${dealer.id}/compare?ids=${selectedCompareList.map(item => item.id).join(',')}`;
                     if (navigator.share) {
                       try {
                         await navigator.share({

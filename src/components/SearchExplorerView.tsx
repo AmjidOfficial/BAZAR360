@@ -166,6 +166,16 @@ export default function SearchExplorerView({
   const [onlyVerified, setOnlyVerified] = useState<boolean>(false);
   const [cityFilter, setCityFilter] = useState<string>('All');
   
+  // High-conversion Double-sided Vehicle Matrix parameters
+  const [selectedMake, setSelectedMake] = useState<string>('All');
+  const [selectedCondition, setSelectedCondition] = useState<string>('All');
+  const [selectedTransmission, setSelectedTransmission] = useState<string>('All');
+  const [selectedFuelType, setSelectedFuelType] = useState<string>('All');
+  const [maxMileage, setMaxMileage] = useState<number>(500000);
+  const [selectedAssemblyType, setSelectedAssemblyType] = useState<string>('All');
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string>('All');
+  const [selectedTokenTaxStatus, setSelectedTokenTaxStatus] = useState<string>('All');
+  
   // Detailed Modal state for non-automobile B2C products
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [productBidAmount, setProductBidAmount] = useState<string>('');
@@ -206,9 +216,52 @@ export default function SearchExplorerView({
       // Verification Guard
       if (onlyVerified && !car.verified) return false;
 
+      // Make Filter
+      if (selectedMake !== 'All' && car.make.toLowerCase() !== selectedMake.toLowerCase()) {
+        return false;
+      }
+
+      // Condition Filter
+      if (selectedCondition !== 'All') {
+        if (selectedCondition.toLowerCase() !== car.condition.toLowerCase()) return false;
+      }
+
+      // Transmission Filter
+      if (selectedTransmission !== 'All' && car.transmission.toLowerCase() !== selectedTransmission.toLowerCase()) {
+        return false;
+      }
+
+      // Fuel Type Filter
+      if (selectedFuelType !== 'All' && car.fuelType.toLowerCase() !== selectedFuelType.toLowerCase()) {
+        return false;
+      }
+
+      // Mileage Filter
+      if (car.mileage > maxMileage) return false;
+
+      // Assembly Type Filter
+      if (selectedAssemblyType !== 'All') {
+        const carAssembly = car.assemblyType || 'Imported';
+        if (selectedAssemblyType === 'Locally Assembled' && carAssembly !== 'Local') return false;
+        if (selectedAssemblyType === 'Imported' && carAssembly !== 'Imported') return false;
+      }
+
+      // Document Type Filter
+      if (selectedDocumentType !== 'All') {
+        const carDoc = car.documentType || 'Smart Card';
+        if (selectedDocumentType === 'Original Book' && carDoc !== 'Original Book') return false;
+        if (selectedDocumentType === 'Smart Card' && carDoc !== 'Smart Card') return false;
+      }
+
+      // Token Tax status
+      if (selectedTokenTaxStatus !== 'All') {
+        const carTax = car.tokenTaxStatus || (car.tokenTaxPaid ? 'Paid' : 'Outstanding');
+        if (carTax.toLowerCase() !== selectedTokenTaxStatus.toLowerCase()) return false;
+      }
+
       return true;
     });
-  }, [listings, searchQuery, selectedCategory, minPrice, maxPrice, onlyVerified, cityFilter]);
+  }, [listings, searchQuery, selectedCategory, minPrice, maxPrice, onlyVerified, cityFilter, selectedMake, selectedCondition, selectedTransmission, selectedFuelType, maxMileage, selectedAssemblyType, selectedDocumentType, selectedTokenTaxStatus]);
 
   // 2. Products Filter algorithm
   const filteredProducts = useMemo(() => {
@@ -273,6 +326,14 @@ export default function SearchExplorerView({
     setMaxPrice(350000000);
     setOnlyVerified(false);
     setCityFilter('All');
+    setSelectedMake('All');
+    setSelectedCondition('All');
+    setSelectedTransmission('All');
+    setSelectedFuelType('All');
+    setMaxMileage(500000);
+    setSelectedAssemblyType('All');
+    setSelectedDocumentType('All');
+    setSelectedTokenTaxStatus('All');
   };
 
   // Handle Dynamic Product Order and Bargain submissions in Firestore
@@ -332,21 +393,20 @@ export default function SearchExplorerView({
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div className="space-y-1">
             <h2 className="text-sm font-mono tracking-widest text-orange-400 font-extrabold flex items-center gap-1.5 uppercase">
-              <ShoppingBag size={12} className="animate-bounce" /> Bazar360 Online Shopping Ecosystem
+              <Car size={12} className="animate-bounce" /> Auto Choice Automotive Portal
             </h2>
             <p className="text-[10px] text-gray-400 leading-relaxed font-sans">
-              Buy and Sell on the Digital Marketplace of Pakistan. Discover Wholesale storefronts, premium vehicles, electronics, mobile phones, and local classifieds instantly.
+              Discover Pakistan's premier verified car showrooms, inspect high-resolution auto inventories, and streamline direct vehicle acquisitions instantly.
             </p>
           </div>
           <div className="flex gap-2">
-            <span className="text-[8px] font-mono font-bold bg-[#38BDF8]/10 text-[#38BDF8] border border-[#38BDF8]/20 px-2 py-1 rounded">PTA Approved Mobiles</span>
             <span className="text-[8px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-1 rounded">Verified Showrooms</span>
           </div>
         </div>
       </header>
 
       {/* Main Sector Navigation - Tabs optimized for mobile hit targets (44px min-height) */}
-      <div className={`grid ${currentCategory === 'auto' ? 'grid-cols-2' : 'grid-cols-3'} bg-[#121C32]/80 border border-white/5 rounded-2xl p-1 gap-1`} style={{ minHeight: '48px' }} id="marketplace-sector-tabs">
+      <div className="grid grid-cols-2 bg-[#121C32]/80 border border-white/5 rounded-2xl p-1 gap-1" style={{ minHeight: '48px' }} id="marketplace-sector-tabs">
         <button
           onClick={() => { setMarketTab('Vehicles'); clearFilters(); }}
           className={`flex items-center justify-center gap-1.5 rounded-xl font-mono text-[10px] font-black uppercase transition-all duration-150 cursor-pointer ${
@@ -359,21 +419,6 @@ export default function SearchExplorerView({
           <Car size={13} />
           <span>Vehicles</span>
         </button>
-
-        {currentCategory !== 'auto' && (
-          <button
-            onClick={() => { setMarketTab('Products'); clearFilters(); }}
-            className={`flex items-center justify-center gap-1.5 rounded-xl font-mono text-[10px] font-black uppercase transition-all duration-150 cursor-pointer ${
-              marketTab === 'Products'
-                ? 'bg-orange-500 text-slate-950 font-black shadow-md'
-                : 'text-gray-400 hover:text-white'
-            }`}
-            style={{ minHeight: '42px' }}
-          >
-            <ShoppingBag size={13} />
-            <span>All Products</span>
-          </button>
-        )}
 
         <button
           onClick={() => { setMarketTab('Businesses'); clearFilters(); }}
@@ -402,7 +447,7 @@ export default function SearchExplorerView({
               className="w-full bg-transparent border-none text-white focus:outline-none text-[11px] font-mono placeholder-gray-600 block"
               placeholder={
                 marketTab === 'Vehicles' ? "Search Toyota Fortuner, Mercedes G63, specs, manual/auto..." :
-                marketTab === 'Products' ? "Search PTA approved iPhone 15, electronics, traditional menswear, home appliances..." :
+                marketTab === 'Products' ? "Search electronics, traditional menswear, home appliances..." :
                 "Search Peshawar car villages, Hafeez Plaza hubs, authorized showrooms, retailers..."
               }
               type="text"
@@ -572,6 +617,143 @@ export default function SearchExplorerView({
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* Auto Choice Advanced Matrix Filters (Only for Vehicles) */}
+        {marketTab === 'Vehicles' && (
+          <div className="bg-[#121c32]/50 border border-white/5 p-4 rounded-2xl mt-4 space-y-4 text-[11px] font-sans">
+            <div className="flex items-center gap-1.5 border-b border-white/5 pb-2">
+              <span className="text-[#38BDF8]">🛠️</span>
+              <span className="text-white font-mono uppercase font-black text-[10px] tracking-wider">Advanced Inventory Filters</span>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Make Filter Dropdown */}
+              <div className="space-y-1">
+                <label className="text-gray-400 block font-bold text-[9px] uppercase font-mono">Make / Brand:</label>
+                <select
+                  className="w-full bg-[#070c12] border border-white/5 text-[10px] text-white p-2.5 rounded-xl focus:outline-none focus:border-[#38BDF8]"
+                  value={selectedMake}
+                  onChange={(e) => setSelectedMake(e.target.value)}
+                >
+                  <option value="All">All Brands</option>
+                  <option value="Toyota">Toyota</option>
+                  <option value="Honda">Honda</option>
+                  <option value="Porsche">Porsche</option>
+                  <option value="BMW">BMW</option>
+                  <option value="Mercedes-Benz">Mercedes-Benz</option>
+                  <option value="Suzuki">Suzuki</option>
+                  <option value="Hyundai">Hyundai</option>
+                  <option value="Kia">Kia</option>
+                </select>
+              </div>
+
+              {/* Condition Filter */}
+              <div className="space-y-1">
+                <label className="text-gray-400 block font-bold text-[9px] uppercase font-mono">Condition:</label>
+                <select
+                  className="w-full bg-[#070c12] border border-white/5 text-[10px] text-white p-2.5 rounded-xl focus:outline-none focus:border-[#38BDF8]"
+                  value={selectedCondition}
+                  onChange={(e) => setSelectedCondition(e.target.value)}
+                >
+                  <option value="All">All Conditions</option>
+                  <option value="New">New</option>
+                  <option value="Used">Used</option>
+                </select>
+              </div>
+
+              {/* Transmission */}
+              <div className="space-y-1">
+                <label className="text-gray-400 block font-bold text-[9px] uppercase font-mono">Transmission:</label>
+                <select
+                  className="w-full bg-[#070c12] border border-white/5 text-[10px] text-white p-2.5 rounded-xl focus:outline-none focus:border-[#38BDF8]"
+                  value={selectedTransmission}
+                  onChange={(e) => setSelectedTransmission(e.target.value)}
+                >
+                  <option value="All">All Transmissions</option>
+                  <option value="Automatic">Automatic</option>
+                  <option value="Manual">Manual</option>
+                </select>
+              </div>
+
+              {/* Fuel Type */}
+              <div className="space-y-1">
+                <label className="text-gray-400 block font-bold text-[9px] uppercase font-mono">Fuel Type:</label>
+                <select
+                  className="w-full bg-[#070c12] border border-white/5 text-[10px] text-white p-2.5 rounded-xl focus:outline-none focus:border-[#38BDF8]"
+                  value={selectedFuelType}
+                  onChange={(e) => setSelectedFuelType(e.target.value)}
+                >
+                  <option value="All">All Fuel Strategies</option>
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Electric">Electric</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Assembly Type */}
+              <div className="space-y-1">
+                <label className="text-gray-400 block font-bold text-[9px] uppercase font-mono">Assembly / Made Type:</label>
+                <select
+                  className="w-full bg-[#070c12] border border-white/5 text-[10px] text-white p-2.5 rounded-xl focus:outline-none focus:border-[#38BDF8]"
+                  value={selectedAssemblyType}
+                  onChange={(e) => setSelectedAssemblyType(e.target.value)}
+                >
+                  <option value="All">All Assemblies</option>
+                  <option value="Locally Assembled">Locally Assembled</option>
+                  <option value="Imported">Imported</option>
+                </select>
+              </div>
+
+              {/* Document Type */}
+              <div className="space-y-1">
+                <label className="text-gray-400 block font-bold text-[9px] uppercase font-mono">Document Type:</label>
+                <select
+                  className="w-full bg-[#070c12] border border-white/5 text-[10px] text-white p-2.5 rounded-xl focus:outline-none focus:border-[#38BDF8]"
+                  value={selectedDocumentType}
+                  onChange={(e) => setSelectedDocumentType(e.target.value)}
+                >
+                  <option value="All">All Document Types</option>
+                  <option value="Original Book">Original Register Book</option>
+                  <option value="Smart Card">Smart Card available</option>
+                </select>
+              </div>
+
+              {/* Token Tax */}
+              <div className="space-y-1">
+                <label className="text-gray-400 block font-bold text-[9px] uppercase font-mono">Token Tax Status:</label>
+                <select
+                  className="w-full bg-[#070c12] border border-white/5 text-[10px] text-white p-2.5 rounded-xl focus:outline-none focus:border-[#38BDF8]"
+                  value={selectedTokenTaxStatus}
+                  onChange={(e) => setSelectedTokenTaxStatus(e.target.value)}
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Paid">Paid up-to-date</option>
+                  <option value="Outstanding">Outstanding</option>
+                </select>
+              </div>
+
+              {/* Max Mileage Slider */}
+              <div className="space-y-1 flex flex-col justify-end">
+                <div className="flex justify-between items-center text-gray-400 font-mono text-[9px] uppercase font-bold">
+                  <span>Max Mileage:</span>
+                  <span className="text-[#38BDF8]">{maxMileage.toLocaleString()} KM</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="500000"
+                  step="5000"
+                  className="w-full accent-[#38BDF8] h-1.5 bg-[#070c12] rounded-lg cursor-pointer my-2"
+                  value={maxMileage}
+                  onChange={(e) => setMaxMileage(parseInt(e.target.value))}
+                />
+              </div>
+            </div>
           </div>
         )}
 

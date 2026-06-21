@@ -34,7 +34,7 @@ export default function TopAppBar({
   const { currencyMode, changeCurrencyMode } = useCurrencyMode();
 
   return (
-    <header className={`flex justify-between items-center w-full px-4 md:px-12 h-16 fixed ${isWithTicker ? 'top-8' : 'top-0'} z-50 bg-[#070c18] border-b border-white/5 shadow-2xl transition-all`}>
+    <header className={`flex justify-between items-center w-full px-4 md:px-12 h-16 fixed top-0 z-50 bg-[#070c18] border-b border-white/5 shadow-2xl transition-all`}>
       <div className="flex items-center gap-4">
         {/* Dedicated Back to Gateway page button */}
         <button
@@ -61,50 +61,6 @@ export default function TopAppBar({
               <span className="text-[8px] font-bold text-sky-450 tracking-[0.22em] uppercase pl-0.5">Ecosystem</span>
             </div>
           </div>
-        </div>
-
-        {/* Premium Sector Switcher Tabs */}
-        <div className="hidden lg:flex items-center bg-[#0d1424] border border-white/5 rounded-2xl p-1 gap-1" id="desktop-sector-tabs">
-          <button
-            onClick={() => onCategoryChange?.('gateway')}
-            className={`px-3 py-1.5 text-[9.5px] font-black rounded-xl uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
-              currentCategory === 'gateway'
-                ? 'bg-orange-500 text-[#070c18] font-black'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <span>🌐</span> Gateway
-          </button>
-          <button
-            onClick={() => onCategoryChange?.('auto')}
-            className={`px-3 py-1.5 text-[9.5px] font-black rounded-xl uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
-              currentCategory === 'auto'
-                ? 'bg-orange-500 text-[#070c18] font-black'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <span>🚗</span> Auto Choice
-          </button>
-          <button
-            onClick={() => onCategoryChange?.('footwear')}
-            className={`px-3 py-1.5 text-[9.5px] font-black rounded-xl uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
-              currentCategory === 'footwear'
-                ? 'bg-orange-500 text-[#070c18] font-black'
-                : 'text-gray-450 hover:text-white'
-            }`}
-          >
-            <span>🥾</span> Footwear
-          </button>
-          <button
-            onClick={() => onCategoryChange?.('food')}
-            className={`px-3 py-1.5 text-[9.5px] font-black rounded-xl uppercase tracking-wider transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
-              currentCategory === 'food'
-                ? 'bg-orange-500 text-[#070c18] font-black'
-                : 'text-gray-450 hover:text-white'
-            }`}
-          >
-            <span>🍕</span> Food Court
-          </button>
         </div>
       </div>
 

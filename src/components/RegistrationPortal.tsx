@@ -235,7 +235,7 @@ export default function RegistrationPortal({
     setTimeout(async () => {
       const simulatedUser: UserProfile = {
         uid: `usr-${provider.toLowerCase()}-${Date.now().toString().slice(-4)}`,
-        email: `social.partner@bazar360.com.pk`,
+        email: `social.partner@bazar360.online`,
         displayName: `Zayed Khan (${provider} Login)`,
         phoneNumber: '+92 321 3600011',
         phoneVerified: true,
@@ -416,7 +416,7 @@ export default function RegistrationPortal({
     const freshUid = currentUser?.uid || `usr-tester-${Date.now().toString().slice(-4)}`;
     const updated: UserProfile = {
       uid: freshUid,
-      email: currentUser?.email || 'admin@bazar360.com.pk',
+      email: currentUser?.email || 'admin@bazar360.online',
       displayName: currentUser?.displayName || 'Architect Sandbox Controller',
       phoneNumber: currentUser?.phoneNumber || '+92 314 3600000',
       phoneVerified: true,
@@ -619,7 +619,7 @@ export default function RegistrationPortal({
                   <Mail size={13} className="text-[#38bdf8]" />
                   <input
                     type="email"
-                    placeholder="e.g. malak@bazar360.pk"
+                    placeholder="e.g. malak@bazar360.online"
                     value={userEmail}
                     onChange={(e) => {
                       setUserEmail(e.target.value);
@@ -831,7 +831,7 @@ export default function RegistrationPortal({
                   const prov = selectedCityGrid === 'Karachi' ? 'Sindh' : selectedCityGrid === 'Peshawar' ? 'KPK' : selectedCityGrid === 'Islamabad' ? 'Federal' : 'Punjab';
                   const newProfile: UserProfile = {
                     uid: generatedUid,
-                    email: userEmail.trim() || `${userDisplayName.toLowerCase().replace(/\s+/g, '')}@bazar360.pk`,
+                    email: userEmail.trim() || `${userDisplayName.toLowerCase().replace(/\s+/g, '')}@bazar360.online`,
                     displayName: userDisplayName.trim(),
                     phoneNumber: userPhoneNumber.trim() || '+92 300 0000000',
                     phoneVerified: true,
@@ -1056,7 +1056,7 @@ export default function RegistrationPortal({
             {/* Digital Presence & Social Media Accounts */}
             <div className="border-t border-[#1e293b]/55 pt-4 mt-2 space-y-3">
               <span className="text-[9px] text-orange-400 uppercase font-mono font-bold tracking-wider block">
-                🌐 Storefront Digital Media Account Setup
+                Storefront Digital Media Account Setup
               </span>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

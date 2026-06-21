@@ -1288,7 +1288,7 @@ export default function HomeView({
               >
                 {uniqueMakes.map((mk) => (
                   <option key={mk} value={mk}>
-                    {mk === 'All' ? '🌐 All Brands / Makers' : mk.toUpperCase()}
+                    {mk === 'All' ? 'All Brands / Makers' : mk.toUpperCase()}
                   </option>
                 ))}
               </select>

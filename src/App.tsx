@@ -14,7 +14,8 @@ import {
   dbSaveUserProfile,
   dbFetchUserProfile,
   UserProfile,
-  seedDatabaseIfEmpty
+  seedDatabaseIfEmpty,
+  dbSaveSuggestion
 } from './lib/dbService';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -61,7 +62,7 @@ export default function App() {
   const [compareList, setCompareList] = useState<CarListing[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState<boolean>(false);
   const [activeIndustry, setActiveIndustry] = useState<'Automotive' | 'Footwear' | 'Apparel' | 'Electronics'>('Automotive');
-  const [currentCategory, setCurrentCategory] = useState<'gateway' | 'auto' | 'footwear' | 'food'>('gateway');
+  const [currentCategory, setCurrentCategory] = useState<'gateway' | 'auto' | 'footwear' | 'food'>('auto');
   const [comingSoonSector, setComingSoonSector] = useState<{ title: string; tagline: string; desc: string; icon: string; spec: string } | null>(null);
 
   // Ecosystem Gateway gamified voting & notification registers
@@ -152,6 +153,34 @@ export default function App() {
     sub: "We are expanding from elite cars to everything you need. A complete mega marketplace is just around the corner."
   });
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
+
+  // Suggestion Engine States
+  const [suggestionText, setSuggestionText] = useState<string>('');
+  const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState<boolean>(false);
+  const [suggestionMessage, setSuggestionMessage] = useState<{ text: string, isError: boolean } | null>(null);
+
+  const handleOnSubmitSuggestion = async () => {
+    if (!suggestionText.trim()) return;
+    setIsSubmittingSuggestion(true);
+    setSuggestionMessage(null);
+    try {
+      const suggestionId = 'sug-' + Math.random().toString(36).substring(2, 11);
+      const userId = auth.currentUser?.uid || null;
+      await dbSaveSuggestion({
+        id: suggestionId,
+        user_id: userId,
+        suggestion_text: suggestionText.trim(),
+        submitted_at: new Date().toISOString()
+      });
+      setSuggestionText('');
+      setSuggestionMessage({ text: 'Thank you! Your marketplace suggestion has been logged.', isError: false });
+    } catch (e: any) {
+      console.error(e);
+      setSuggestionMessage({ text: 'Failed to submit suggestion. Please try again.', isError: true });
+    } finally {
+      setIsSubmittingSuggestion(false);
+    }
+  };
 
   useEffect(() => {
     const variants = [
@@ -826,19 +855,34 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* Categories Mock List to look responsive and informational */}
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  {[
-                    { name: "🥾 Footwear Vault", votes: "2,410 interest" },
-                    { name: "🍕 Food Court Mesh", votes: "1,894 interest" },
-                    { name: "📱 PTA Mobile Club", votes: "3,115 interest" },
-                    { name: "🏢 Next-Gen Spaces", votes: "945 interest" }
-                  ].map((cat, idx) => (
-                    <div key={idx} className="bg-[#030712]/60 border border-white/5 rounded-xl p-3 flex flex-col justify-between hover:border-[#38BDF8]/20 transition-colors">
-                      <span className="text-[10px] font-bold text-white uppercase">{cat.name}</span>
-                      <span className="text-[8px] text-gray-400 font-mono mt-1 font-bold">{cat.votes}</span>
-                    </div>
-                  ))}
+                {/* SUGGESTION ENGINE BOX */}
+                <div className="pt-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text"
+                      id="community-suggestion-input"
+                      value={suggestionText}
+                      onChange={(e) => setSuggestionText(e.target.value)}
+                      placeholder="Enter your suggestion for our next marketplace sector..."
+                      className="flex-1 bg-slate-900/90 border border-[#38BDF8]/30 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#38BDF8] transition-colors"
+                    />
+                    <button
+                      id="submit-suggestion-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOnSubmitSuggestion();
+                      }}
+                      disabled={isSubmittingSuggestion || !suggestionText.trim()}
+                      className="px-5 py-3 bg-[#38BDF8] hover:bg-[#0ea5e9] disabled:bg-gray-700 disabled:text-gray-400 text-slate-950 font-sans font-black text-xs rounded-xl uppercase tracking-widest transition-all duration-200 cursor-pointer select-none active:scale-[0.98] shrink-0"
+                    >
+                      {isSubmittingSuggestion ? "Submitting..." : "Submit Suggestion"}
+                    </button>
+                  </div>
+                  {suggestionMessage && (
+                    <p className={`text-[11px] font-medium font-sans ${suggestionMessage.isError ? 'text-red-400' : 'text-emerald-400 animate-pulse'}`}>
+                      {suggestionMessage.text}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1068,7 +1112,7 @@ export default function App() {
       
       {/* 🚀 FAST LIVE ENGINE TICKER MARQUEE */}
       {currentCategory === 'auto' && (
-        <div className="fixed top-0 left-0 w-full h-8 bg-[#040812] border-b border-orange-500/10 z-50 flex items-center overflow-hidden select-none">
+        <div className="fixed top-16 left-0 w-full h-8 bg-[#040812] border-b border-orange-500/10 z-40 flex items-center overflow-hidden select-none">
           <div className="absolute left-0 top-0 h-full bg-[#121c32] px-3.5 flex items-center gap-1.5 border-r border-[#38BDF8]/20 z-15 shadow-[10px_0_15px_rgba(0,0,0,0.8)]">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
@@ -1545,7 +1589,7 @@ export default function App() {
                       onClick={async () => {
                         const d = dealers.find((dl) => dl.id === selectedListing.dealerId);
                         const locationText = d?.location || "Alamas Car Village, Ring Road, Peshawar";
-                        const shareUrl = `https://bazar360.pk/dealers/${selectedListing.dealerId}/listings/${selectedListing.id}`;
+                        const shareUrl = `https://bazar360.online/dealers/${selectedListing.dealerId}/listings/${selectedListing.id}`;
                         const shareTitle = selectedListing.title;
                         const sharePrice = `Rs. ${selectedListing.price.toLocaleString()}`;
                         const textPayload = `🏎️ Premium Sport Entry: *${shareTitle}*\n💰 Demand Price: *${sharePrice}*\n📌 Location Coordinates: *${locationText}*\n\nExplore complete high-resolution specifications and place custom bids directly on the digital showroom gateway here:\n🔗 ${shareUrl}`;
@@ -1876,7 +1920,7 @@ export default function App() {
                 onClick={() => { handleSetCategory('gateway'); setIsMobileDrawerOpen(false); }}
                 className="font-black py-3 text-left text-orange-500 hover:text-orange-400 border-t border-white/5 pt-4 flex items-center gap-1.5 uppercase tracking-widest mt-2"
               >
-                <span>🌐</span> Return to Gateway
+                Return to Gateway
               </button>
             </nav>
           </div>

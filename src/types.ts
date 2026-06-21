@@ -70,6 +70,7 @@ export interface Dealer {
     website?: string;
   };
   activityFeed: ActivityPost[];
+  theme_choice?: 'Cosmic' | 'Bone' | 'Emerald' | 'Gold';
 }
 
 export interface ActivityPost {
