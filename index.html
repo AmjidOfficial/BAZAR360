@@ -1,31 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BAZAR360 | Auto Choice Premium Division</title>
-    
-    <!-- SPA Deep Link Extraction Engine -->
+
+    <!-- SPA Deep Link Extraction & Redirect Engine -->
     <script type="text/javascript">
-      (function(l) {
-        if (l.search[1] === 'p') {
-          var pairs = l.search.slice(1).split('&');
+      (function (l) {
+        // 1. Catch direct URL hits or standard server rewrites
+        var currentPath = l.pathname.replace(/^\/+|\/+$/g, ""); // Strips leading/trailing slashes
+        if (currentPath === "dealers/auto-choice-peshawar") {
+          window.history.replaceState(
+            null,
+            null,
+            l.protocol +
+              "//" +
+              l.hostname +
+              (l.port ? ":" + l.port : "") +
+              "/media" +
+              l.hash,
+          );
+          return;
+        }
+
+        // 2. Catch incoming 404 redirection (?p=/dealers/auto-choice-peshawar)
+        if (l.search[1] === "p") {
+          var pairs = l.search.slice(1).split("&");
           var query = {};
-          pairs.forEach(function(pair) {
-            var parts = pair.split('=');
-            query[parts[0]] = parts.slice(1).join('=').replace(/~and~/g, '&');
+          pairs.forEach(function (pair) {
+            var parts = pair.split("=");
+            query[parts[0]] = parts.slice(1).join("=").replace(/~and~/g, "&");
           });
+
           if (query.p !== undefined) {
-            window.history.replaceState(null, null,
-              l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-              '/' + query.p +
-              (query.q ? ('?' + query.q) : '') +
-              l.hash
+            // Clean the parameter path to avoid mismatching trailing slashes
+            var cleanParamPath = query.p.replace(/^\/+|\/+$/g, "");
+
+            // If the incoming query parameter points to the Peshawar showroom, rewrite it to media
+            if (cleanParamPath === "dealers/auto-choice-peshawar") {
+              query.p = "media";
+            }
+
+            window.history.replaceState(
+              null,
+              null,
+              l.protocol +
+                "//" +
+                l.hostname +
+                (l.port ? ":" + l.port : "") +
+                "/" +
+                query.p +
+                (query.q ? "?" + query.q : "") +
+                l.hash,
             );
           }
         }
-      }(window.location));
+      })(window.location);
     </script>
   </head>
   <body class="bg-[#070c18]">
