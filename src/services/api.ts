@@ -58,7 +58,7 @@ export interface ScrapeSocialsResponse {
 }
 
 // Environment Detection Helper
-const isGitHubPages = window.location.hostname.includes('github.io');
+const isGitHubPages = window.location.hostname.includes('github.io') || window.location.hostname.includes('bazar360.online');
 const isProduction = process.env.NODE_ENV === 'production' || isGitHubPages;
 
 /**

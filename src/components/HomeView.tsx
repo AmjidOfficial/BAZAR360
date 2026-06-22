@@ -23,12 +23,14 @@ import {
   UserCheck,
   X,
   Lock,
-  ChevronDown
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Dealer, CarListing } from '../types';
 import { useCurrencyMode } from '../lib/currency';
 import { PAKISTAN_CITIES_MATRIX, ALL_PAKISTAN_CITIES } from '../lib/cities';
 import { UserProfile, dbSaveLead } from '../lib/dbService';
+import AutoChoiceEngine from './AutoChoiceEngine';
 
 export const VEHICLE_DICTIONARY: Record<string, Array<{ make: string; model: string; price: number; description: string }>> = {
   SUV: [
@@ -69,6 +71,13 @@ interface HomeViewProps {
   currentUser?: UserProfile | null;
 }
 
+const ELITE_WHEEL_LIST = [
+  { id: 'wheel-1', name: 'Porsche 911 GT3 RS', year: 2024, mileage: 'Total Genuine (1,200 km)', price: 'Rs. 7.6 Crore', img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600' },
+  { id: 'wheel-2', name: 'Mercedes-Benz AMG G63', year: 2023, mileage: 'Total Genuine (4,800 km)', price: 'Rs. 9.2 Crore', img: 'https://images.unsplash.com/photo-1520050206274-a1ae446cb3cc?auto=format&fit=crop&q=80&w=600' },
+  { id: 'wheel-3', name: 'BMW M4 Competition', year: 2024, mileage: 'Brand New (0 km)', price: 'Rs. 4.8 Crore', img: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600' },
+  { id: 'wheel-4', name: 'Toyota Land Cruiser ZX', year: 2024, mileage: 'Total Genuine (150 km)', price: 'Rs. 11.5 Crore', img: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=600' },
+];
+
 export default function HomeView({
   dealers,
   listings,
@@ -87,6 +96,22 @@ export default function HomeView({
   const [dictType, setDictType] = useState<string>('All');
   const [dictModel, setDictModel] = useState<string>('All');
   const [selectedFutureSector, setSelectedFutureSector] = useState<{ title: string; tagline: string; desc: string; icon: string; spec: string } | null>(null);
+  const [engineView, setEngineView] = useState<'dashboard' | 'drilldown'>('dashboard');
+
+  // VERTICAL DYNAMIC CAROUSEL CORE
+  const [wheelActiveIndex, setWheelActiveIndex] = useState(0);
+
+  const rotateWheelDown = () => {
+    setWheelActiveIndex((prev) => (prev + 1) % ELITE_WHEEL_LIST.length);
+  };
+
+  const rotateWheelUp = () => {
+    setWheelActiveIndex((prev) => (prev - 1 + ELITE_WHEEL_LIST.length) % ELITE_WHEEL_LIST.length);
+  };
+
+  const getFlankingIndex = (offset: number) => {
+    return (wheelActiveIndex + offset + ELITE_WHEEL_LIST.length) % ELITE_WHEEL_LIST.length;
+  };
   
   // Real-time search filters
   const [filterSearch, setFilterSearch] = useState('');
@@ -359,39 +384,21 @@ export default function HomeView({
   return (
     <div id="bazar360-home-viewport" className="flex flex-col space-y-8 pb-16 animate-fade-in text-white font-sans">
 
-      {/* Hero Welcome banner */}
-      <section className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-br from-[#121c30] via-[#080d19] to-[#121c30] p-6 md:p-8 border border-white/5 shadow-2xl order-1">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-[#38BDF8] opacity-5 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="relative z-10 max-w-4xl space-y-3">
-          <span className="inline-flex items-center gap-1.5 text-[8.5px] font-mono font-black tracking-widest text-[#38BDF8] uppercase bg-[#1e293b]/50 px-3 py-1 rounded-full border border-white/10">
-            {currentCategory === 'auto' ? 'AUTO CHOICE FLAGSHIP • BAZAR360 PARTNER' : 'BAZAR360 FLAGSHIP BARGAIN ENGINE'}
-          </span>
-          {currentCategory === 'auto' ? (
-            <div className="space-y-2">
-              <h2 className="text-2xl md:text-4xl font-sans font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-orange-400 to-[#38BDF8] tracking-tight leading-none">
-                AUTO CHOICE
-              </h2>
-              <h3 className="text-[11px] md:text-xs font-mono font-bold text-sky-400 uppercase tracking-wider block">
-                Precision Engineered. Future Driven. Discover elite automotive options verified by intelligence.
-              </h3>
-              <p className="text-white/80 text-[11px] md:text-xs max-w-3xl font-sans leading-relaxed pt-2 border-l-2 border-orange-500 pl-3">
-                Welcome to the Auto Choice division of BAZAR360—a premium ecosystem connecting high-performance local physical showrooms with elite buyers through real-time market verified analytics.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <h2 className="text-xl md:text-3xl font-sans font-black uppercase text-white tracking-tight leading-none">
-                Welcome to the <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] to-orange-400">BAZAR360 Premium Portal</span>
-              </h2>
-              <p className="text-white/60 text-xs max-w-2xl font-sans leading-relaxed">
-                Locate incredible automotive options. Transact instantly with verified elite physical showrooms. Switch on comparative modals for high performance metrics evaluations.
-              </p>
-            </div>
-          )}
-        </div>
+      {/* CUSTOM INTEGRATED STUDIO-GRADE CAR DETAIL ARCHITECTURE & INTERACTIVE CANVAS ENGINE */}
+      <section className="order-1">
+        <AutoChoiceEngine 
+          allListings={listings} 
+          onViewChange={setEngineView}
+          onSelectExternalListing={(listingId) => {
+            const found = listings.find(l => l.id === listingId);
+            if (found) onSelectListing(found);
+          }} 
+        />
       </section>
 
-      {/* 1. HIGHLY VISUAL CATEGORY/BRAND ICON GRID SPLIT */}
+      {engineView === 'dashboard' && (
+        <>
+          {/* 1. HIGHLY VISUAL CATEGORY/BRAND ICON GRID SPLIT */}
       <section className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 space-y-4 shadow-xl order-1">
         <div className="flex justify-between items-center border-b border-white/5 pb-2">
           <span className="text-[10px] font-mono font-black text-[#38BDF8] uppercase tracking-wider">
@@ -1440,6 +1447,9 @@ export default function HomeView({
         </div>
 
       </div>
+
+      </>
+      )}
 
       {/* MOBILE BOTTOM SHEET FOR GLASS PARAMETERS SELECTION */}
       {isBottomSheetOpen && activeSheetField && (

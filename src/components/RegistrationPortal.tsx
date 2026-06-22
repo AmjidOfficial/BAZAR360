@@ -548,44 +548,6 @@ export default function RegistrationPortal({
             </div>
           </div>
 
-          {/* Social verification row */}
-          <div className="p-4 bg-[#051020] rounded-2xl border border-[#1e293b] space-y-3">
-            <span className="text-[9px] text-[#38bdf8] uppercase font-mono font-extrabold tracking-wider block">
-              ⚡ Secure Instant Social Verification
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={authLoading}
-                className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-150 uppercase tracking-wider text-[10px] shadow shadow-orange-950/40 select-none cursor-pointer"
-              >
-                <Globe size={13} className="animate-pulse" />
-                Auth via Google
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSimulateSocialLogin('Facebook')}
-                disabled={authLoading}
-                className="bg-[#1877F2]/10 hover:bg-[#1877F2]/20 border border-[#1877F2]/30 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 uppercase tracking-wider text-[10px] select-none cursor-pointer"
-              >
-                <Facebook size={12} className="text-[#1877F2]" />
-                Bypass Facebook
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleSimulateSocialLogin('LinkedIn')}
-                disabled={authLoading}
-                className="bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/30 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-all duration-150 uppercase tracking-wider text-[10px] select-none cursor-pointer"
-              >
-                <Linkedin size={12} className="text-[#0A66C2]" />
-                Connect LinkedIn
-              </button>
-            </div>
-          </div>
-
           {userSuccessMessage && (
             <div className="p-3 bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 rounded-xl flex items-center gap-2 font-semibold">
               <CheckCircle size={15} />
@@ -631,11 +593,11 @@ export default function RegistrationPortal({
               </div>
             </div>
 
-            {/* Pakistan Phone OTP Flow */}
-            <div className="p-4 bg-[#0a1424] rounded-2xl border border-white/5 space-y-4">
-              <div className="flex justify-between items-center">
-                <label className="text-[#38bdf8] font-bold uppercase tracking-wider text-[9px] block">
-                  🛡️ SMS Phone OTP Verification Core
+            {/* Streamlined Phone-First Authentication Core */}
+            <div className="p-5 bg-gradient-to-br from-[#0c1424] to-[#040811] rounded-2xl border border-orange-500/20 space-y-4 shadow-xl">
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <label className="text-orange-400 font-mono font-black uppercase tracking-wider text-[9.5px] flex items-center gap-1.5">
+                  <Smartphone size={13} className="text-orange-500" /> Streamlined Phone-First authentication
                 </label>
                 {otpVerified ? (
                   <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[8px] font-mono uppercase font-black">
@@ -648,35 +610,44 @@ export default function RegistrationPortal({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3.5">
                 <div className="space-y-1.5">
-                  <span className="text-[8px] text-gray-500 uppercase block">Phone Contact Number</span>
-                  <div className="flex gap-2">
-                    <div className="bg-[#0b121f] border border-[#1e293b] rounded-xl px-3 py-2.5 flex items-center gap-2 flex-grow focus-within:border-[#38bdf8]">
-                      <Smartphone size={13} className="text-orange-500" />
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. +92 315 9085086"
-                        value={userPhoneNumber}
-                        onChange={(e) => setUserPhoneNumber(e.target.value)}
-                        className="bg-transparent border-none text-white focus:outline-none w-full placeholder:text-gray-600 block text-xs font-mono font-semibold"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => triggerOtpDispatch(userPhoneNumber)}
-                      className="px-4 py-2 bg-[#122238] border border-white/5 text-gray-300 hover:text-white rounded-xl text-[10px] font-mono uppercase font-black whitespace-nowrap cursor-pointer transition-all hover:bg-[#1b304c]"
-                    >
-                      {otpSent ? "Resend OTP" : "Get OTP"}
-                    </button>
+                  <span className="text-[9px] text-gray-400 font-mono uppercase block font-bold">Primary User ID (Contact Number)</span>
+                  <div className="bg-[#0b121f] border border-[#1e293b] rounded-xl px-4 py-3 flex items-center gap-2.5 focus-within:border-[#38bdf8] transition-all">
+                    <span className="text-gray-500 font-mono text-xs font-bold bg-[#111929] px-2.5 py-1 rounded border border-white/5">+92</span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="315 9085086"
+                      value={userPhoneNumber.startsWith('+92') ? userPhoneNumber.replace(/^\+92\s?/, '') : userPhoneNumber}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val.startsWith('+92')) {
+                          setUserPhoneNumber(val);
+                        } else {
+                          setUserPhoneNumber(`+92 ${val}`);
+                        }
+                      }}
+                      className="bg-transparent border-none text-white focus:outline-none w-full placeholder:text-gray-600 block text-xs font-mono font-semibold"
+                    />
                   </div>
                   {phoneError && <p className="text-red-500 text-[10px] font-semibold animate-pulse">{phoneError}</p>}
                 </div>
 
-                {otpSent && (
-                  <div className="space-y-1.5 animate-fade-in">
-                    <span className="text-[8px] text-gray-500 uppercase block">Enter 4-Digit Verification Token (Try 1234)</span>
+                {!otpVerified && (
+                  <button
+                    type="button"
+                    onClick={() => triggerOtpDispatch(userPhoneNumber)}
+                    className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-white font-mono font-black uppercase text-[10.5px] tracking-widest rounded-xl transition-all shadow-lg shadow-orange-950/20 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Smartphone size={15} />
+                    Continue with Mobile Number
+                  </button>
+                )}
+
+                {otpSent && !otpVerified && (
+                  <div className="p-4 bg-[#050c18] rounded-xl border border-white/5 space-y-2.5 animate-fade-in">
+                    <span className="text-[9px] text-gray-400 font-mono uppercase block font-bold">Enter 4-Digit Verification Token (Try 1234)</span>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -684,18 +655,56 @@ export default function RegistrationPortal({
                         placeholder="e.g. 1234"
                         value={otpCode}
                         onChange={(e) => setOtpCode(e.target.value)}
-                        className="bg-[#0b121f] border border-[#1e293b] rounded-xl px-4 py-2 text-center text-white focus:outline-none text-xs font-mono font-bold tracking-widest w-28"
+                        className="bg-[#0b121f] border border-[#1e293b] rounded-xl px-4 py-2.5 text-center text-white focus:outline-none text-sm font-mono font-bold tracking-widest w-32"
                       />
                       <button
                         type="button"
                         onClick={confirmOtpToken}
-                        className="px-4 py-2 bg-orange-500 text-white rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer hover:bg-orange-600 transition-colors"
+                        className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-mono font-black text-[10px] uppercase tracking-wider rounded-xl cursor-pointer duration-100"
                       >
-                        Verify OTP
+                        Verify OTP Code
                       </button>
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Complementary Multi-Channel Social OAuth Blocks */}
+            <div className="p-4 bg-[#060c18] rounded-2xl border border-white/5 space-y-3">
+              <span className="text-[8.5px] text-gray-500 uppercase font-mono font-bold tracking-wider text-center block">
+                — Or partner instantly using social networks —
+              </span>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={authLoading}
+                  className="bg-[#0c1424] hover:bg-[#131d33] border border-white/5 text-white font-mono font-bold py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 transition-all duration-150 uppercase tracking-wider text-[9px] select-none cursor-pointer"
+                >
+                  <Globe size={11} className="text-orange-500" />
+                  Google Auth
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSimulateSocialLogin('Facebook')}
+                  disabled={authLoading}
+                  className="bg-[#0c1424] hover:bg-[#131d33] border border-white/5 text-white font-mono font-bold py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all duration-150 uppercase tracking-wider text-[9px] select-none cursor-pointer"
+                >
+                  <Facebook size={11} className="text-sky-500" />
+                  Facebook
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSimulateSocialLogin('LinkedIn')}
+                  disabled={authLoading}
+                  className="bg-[#0c1424] hover:bg-[#131d33] border border-white/5 text-white font-mono font-bold py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all duration-150 uppercase tracking-wider text-[9px] select-none cursor-pointer"
+                >
+                  <Linkedin size={11} className="text-indigo-400" />
+                  LinkedIn
+                </button>
               </div>
             </div>
 
@@ -913,7 +922,7 @@ export default function RegistrationPortal({
             {/* Showroom branding */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Showroom Branding Title:</label>
+                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Registered Business Name:</label>
                 <div className="bg-[#0b121f] border border-[#1e293b] rounded-xl px-3 py-2.5 flex items-center gap-2">
                   <Building size={14} className="text-orange-400" />
                   <input
@@ -928,7 +937,7 @@ export default function RegistrationPortal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Showroom Tagline Slogan:</label>
+                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Showroom Tagline Slogan (Metadata):</label>
                 <input
                   type="text"
                   required
@@ -958,7 +967,7 @@ export default function RegistrationPortal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">WhatsApp Secure Contact:</label>
+                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">WhatsApp Hotline Integration:</label>
                 <div className="bg-[#0b121f] border border-[#1e293b] rounded-xl px-3 py-2.5 flex items-center gap-2">
                   <Smartphone size={14} className="text-orange-400" />
                   <input
@@ -981,7 +990,7 @@ export default function RegistrationPortal({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <span className="text-[8px] text-gray-500 uppercase block">Showroom Physical Address</span>
+                  <span className="text-[8px] text-gray-400 uppercase block font-bold">Commercial Address</span>
                   <div className="bg-[#0b121f] border border-[#1e293b] rounded-xl px-3 py-2.5 flex items-center gap-2">
                     <MapPin size={13} className="text-[#38bdf8]" />
                     <input
@@ -1013,31 +1022,47 @@ export default function RegistrationPortal({
               </div>
             </div>
 
-            {/* Business Logo Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <div className="space-y-1.5 md:col-span-2">
-                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Business Storefront Logo URL:</label>
-                <input
-                  type="text"
-                  placeholder="Insert image logo web url link"
-                  value={businessLogo}
-                  onChange={(e) => setBusinessLogo(e.target.value)}
-                  className="w-full bg-[#0b121f] border border-[#1e293b] rounded-xl p-2.5 text-white font-mono text-xs focus:outline-none placeholder:text-gray-700"
-                />
+            {/* Business Logo & Banner Media Assets */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5 bg-[#0a1424] p-4 rounded-2xl border border-white/5">
+                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Storefront Logo Media Asset:</label>
+                <div className="flex gap-2.5 items-center">
+                  <input
+                    type="text"
+                    placeholder="Insert image logo web url link"
+                    value={businessLogo}
+                    onChange={(e) => setBusinessLogo(e.target.value)}
+                    className="w-full bg-[#0b121f] border border-[#1e293b] rounded-xl p-2.5 text-white font-mono text-xs focus:outline-none placeholder:text-gray-700"
+                  />
+                  <img
+                    src={businessLogo}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7L3tc6G8oV2yG6bD2-4rkocsDR68Fv03AYKixBC3Jo7z3F2dxC7l1k4a5qF2lg9sOFyDrPsAyPlvZ6lr6DN1PB651SzZXlvwyRfHsTV44M01h5rtpJZP3vkPARPkwkcD8rbWhw9phqyv92EMw-dvIsScW2rCrgiunc8yMndccSDmD5SZni8J5SJF098meLiFId3ebyei-RpMdRt4bsa4Ot5PZonvepRTSshKKpywxQZF24fSlk6DLYXf6M5s4qDFp0VhtnsirnJI';
+                    }}
+                    className="w-10 h-10 rounded-lg object-cover border border-[#1e293b] shrink-0"
+                    alt="Logo"
+                  />
+                </div>
               </div>
 
-              <div className="flex items-center gap-3 bg-[#0b121f] p-2.5 rounded-xl border border-[#1e293b] h-16 w-full overflow-hidden font-sans">
-                <img
-                  src={businessLogo}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7L3tc6G8oV2yG6bD2-4rkocsDR68Fv03AYKixBC3Jo7z3F2dxC7l1k4a5qF2lg9sOFyDrPsAyPlvZ6lr6DN1PB651SzZXlvwyRfHsTV44M01h5rtpJZP3vkPARPkwkcD8rbWhw9phqyv92EMw-dvIsScW2rCrgiunc8yMndccSDmD5SZni8J5SJF098meLiFId3ebyei-RpMdRt4bsa4Ot5PZonvepRTSshKKpywxQZF24fSlk6DLYXf6M5s4qDFp0VhtnsirnJI';
-                  }}
-                  className="w-10 h-10 rounded-lg object-cover border border-[#1e293b]"
-                  alt="Business Logo"
-                />
-                <div className="space-y-0.5 leading-none">
-                  <span className="text-[10px] text-white font-black block font-mono">Storefront Logo</span>
-                  <span className="text-[8px] text-gray-400 block pb-1">Visual Badge Preview</span>
+              <div className="space-y-1.5 bg-[#0a1424] p-4 rounded-2xl border border-white/5">
+                <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Storefront Banner Media Asset:</label>
+                <div className="flex gap-2.5 items-center">
+                  <input
+                    type="text"
+                    placeholder="Insert image banner web url link"
+                    value={dealerCoverImage}
+                    onChange={(e) => setDealerCoverImage(e.target.value)}
+                    className="w-full bg-[#0b121f] border border-[#1e293b] rounded-xl p-2.5 text-white font-mono text-xs focus:outline-none placeholder:text-gray-700"
+                  />
+                  <img
+                    src={dealerCoverImage}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7L3tc6G8oV2yG6bD2-4rkocsDR68Fv03AYKixBC3Jo7z3F2dxC7l1k4a5qF2lg9sOFyDrPsAyPlvZ6lr6DN1PB651SzZXlvwyRfHsTV44M01h5rtpJZP3vkPARPkwkcD8rbWhw9phqyv92EMw-dvIsScW2rCrgiunc8yMndccSDmD5SZni8J5SJF098meLiFId3ebyei-RpMdRt4bsa4Ot5PZonvepRTSshKKpywxQZF24fSlk6DLYXf6M5s4qDFp0VhtnsirnJI';
+                    }}
+                    className="w-10 h-10 rounded-lg object-cover border border-[#1e293b] shrink-0"
+                    alt="Banner"
+                  />
                 </div>
               </div>
             </div>
@@ -1055,14 +1080,14 @@ export default function RegistrationPortal({
 
             {/* Digital Presence & Social Media Accounts */}
             <div className="border-t border-[#1e293b]/55 pt-4 mt-2 space-y-3">
-              <span className="text-[9px] text-orange-400 uppercase font-mono font-bold tracking-wider block">
-                Storefront Digital Media Account Setup
+              <span className="text-[9px] text-[#38bdf8] uppercase font-mono font-bold tracking-wider block">
+                Active Social Media Handles (Facebook, Instagram) & Digital Sites
               </span>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] flex items-center gap-1">
-                    <Globe size={11} className="text-[#38bdf8]" /> Website Account Link:
+                    <Globe size={11} className="text-[#38bdf8]" /> Website URL:
                   </label>
                   <input
                     type="url"

@@ -33,6 +33,35 @@ import MediaFeedView from './components/MediaFeedView';
 import MarketInsightsView from './components/MarketInsightsView';
 import ConciergeView from './components/ConciergeView';
 
+const METRIC_TABS_DATA = {
+  Design: [
+    { label: "Aerodynamic Drag Coefficient", value: "0.24 Cd" },
+    { label: "Chassis Composition", value: "High-Tensile Carbon-Infused Steel Ring" },
+    { label: "Ground Physics", value: "Underbody Ground-Effect Venturi Tunnels" }
+  ],
+  Safety: [
+    { label: "ADAS Autonomous Level", value: "Level 2+ Lidar lane-keep" },
+    { label: "Structural anchors", value: "Isofix rigid alloy bindings" },
+    { label: "Collision Mitigation", value: "Dynamic automated front & rear braking" }
+  ],
+  Luxury: [
+    { label: "Acoustic Insulation", value: "Triple-pane laminated quiet-glass" },
+    { label: "Climate Diffuser", value: "Ionized active forest breezer module" },
+    { label: "Showroom Audio Setup", value: "Burmester 3D Surround sound structure" }
+  ],
+  Performance: [
+    { label: "0-100 Speed Sprint", value: "3.8 seconds" },
+    { label: "Torque Vectoring", value: "Dual-motor active traction differential" },
+    { label: "Gearbox Synchro Ratio", value: "8-speed twin-clutch direct-shift" }
+  ]
+};
+
+const HOTSPOTS_LIST = [
+  { id: 'engine', name: 'Piston block & Engine layout', text: 'Dual overhead cam 24-valve configuration optimized for PKR fuel gradients.', x: '25%', y: '45%' },
+  { id: 'suspension', name: 'Suspension compression ratio', text: 'Adaptive pneumatic damping ring with dynamic rebound control on broken roads.', x: '65%', y: '55%' },
+  { id: 'exhaust', name: 'Exhaust airflow channel', text: 'Quad low-back-pressure active exhaust ports with carbon acoustic resonators.', x: '88%', y: '65%' },
+];
+
 export default function App() {
   const { renderPrice } = useCurrencyMode();
 
@@ -59,6 +88,8 @@ export default function App() {
   const [currentTab, setTab] = useState<string>('home');
   const [selectedDealerId, setSelectedDealerId] = useState<string>('auto-choice-peshawar');
   const [selectedListing, setSelectedListing] = useState<CarListing | null>(null);
+  const [activeDetailTab, setActiveDetailTab] = useState<'Design' | 'Safety' | 'Luxury' | 'Performance'>('Design');
+  const [activeHotspotId, setActiveHotspotId] = useState<string | null>(null);
   const [compareList, setCompareList] = useState<CarListing[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState<boolean>(false);
   const [activeIndustry, setActiveIndustry] = useState<'Automotive' | 'Footwear' | 'Apparel' | 'Electronics'>('Automotive');
@@ -228,6 +259,72 @@ export default function App() {
   const [dealers, setDealers] = useState<Dealer[]>([]);
   const [reviewsMap, setReviewsMap] = useState<Record<string, Review[]>>({});
   const [dbLoading, setDbLoading] = useState<boolean>(true);
+
+  // Bidirectional SPA Routing and browser history synchronization engine
+  useEffect(() => {
+    // 1. Compute target pathname based on current state variables
+    let targetPath = '/';
+    if (selectedListing) {
+      targetPath = `/dealers/${selectedListing.dealerId || 'private'}/listings/${selectedListing.id}`;
+    } else if (currentTab === 'dealer-storefront' && selectedDealerId) {
+      targetPath = `/dealers/${selectedDealerId}`;
+    } else if (currentTab !== 'home') {
+      targetPath = `/${currentTab}`;
+    }
+
+    // 2. Reflect state changes in browser URL bar if needed
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
+  }, [currentTab, selectedDealerId, selectedListing]);
+
+  useEffect(() => {
+    // 3. Handle back/forward buttons (popstate event) or direct links and match state to URL
+    const parseUrl = () => {
+      const path = window.location.pathname;
+      const activeListings = listings.length > 0 ? listings : INITIAL_LISTINGS;
+      
+      if (path === '/' || path === '') {
+        setTab('home');
+        setSelectedListing(null);
+      } else if (path.startsWith('/dealers/')) {
+        const segments = path.split('/').filter(Boolean);
+        const dId = segments[1];
+        if (dId) {
+          if (segments[2] === 'listings' && segments[3]) {
+            const lId = segments[3];
+            const found = activeListings.find(l => l.id === lId);
+            if (found) {
+              setSelectedListing(found);
+              setSelectedDealerId(dId);
+            } else {
+              setSelectedDealerId(dId);
+              setTab('dealer-storefront');
+              setSelectedListing(null);
+            }
+          } else {
+            setSelectedDealerId(dId);
+            setTab('dealer-storefront');
+            setSelectedListing(null);
+          }
+        }
+      } else {
+        const tName = path.slice(1);
+        const validTabs = ['inventory', 'media', 'insights', 'concierge', 'dealers', 'sell', 'portal', 'search'];
+        if (validTabs.includes(tName)) {
+          setTab(tName);
+          setSelectedListing(null);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', parseUrl);
+    
+    // Parse on initial load or transition when database listings/dealers populate
+    parseUrl();
+
+    return () => window.removeEventListener('popstate', parseUrl);
+  }, [listings, dealers]);
 
   // Active Session User Profile
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
@@ -863,7 +960,7 @@ export default function App() {
                       id="community-suggestion-input"
                       value={suggestionText}
                       onChange={(e) => setSuggestionText(e.target.value)}
-                      placeholder="Enter your suggestion for our next marketplace sector..."
+                      placeholder="Enter your suggestion (e.g., smart appraisal tracking)..."
                       className="flex-1 bg-slate-900/90 border border-[#38BDF8]/30 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#38BDF8] transition-colors"
                     />
                     <button
@@ -878,6 +975,25 @@ export default function App() {
                       {isSubmittingSuggestion ? "Submitting..." : "Submit Suggestion"}
                     </button>
                   </div>
+                  
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    <span className="text-[8.5px] text-gray-500 font-mono font-bold uppercase">Propose features:</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setSuggestionText("Smart appraisal tracking"); }}
+                      className="px-2.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8.5px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
+                    >
+                      + Smart Appraisal Tracking
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setSuggestionText("Automated escrow security"); }}
+                      className="px-2.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8.5px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
+                    >
+                      + Automated Escrow
+                    </button>
+                  </div>
+
                   {suggestionMessage && (
                     <p className={`text-[11px] font-medium font-sans ${suggestionMessage.isError ? 'text-red-400' : 'text-emerald-400 animate-pulse'}`}>
                       {suggestionMessage.text}
@@ -1473,116 +1589,327 @@ export default function App() {
 
       {/* DYNAMIC LISTING DETAILS POPUP MODAL */}
       {selectedListing && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-6 overflow-y-auto animate-fade-in">
-          <div className="bg-[#0b121f] border border-[#1e293b] rounded-2xl max-w-3xl w-full text-xs font-sans shadow-2xl overflow-hidden relative max-h-[90vh] flex flex-col animate-scale-fade">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 md:p-6 overflow-y-auto animate-fade-in">
+          <div className="bg-[#070b13] border border-white/10 rounded-2xl max-w-5xl w-full text-xs font-sans shadow-2xl overflow-hidden relative max-h-[90vh] flex flex-col animate-scale-fade">
             
             {/* Header banner */}
-            <div className="bg-[#121a2a] p-4 border-b border-[#1e293b] flex justify-between items-center shrink-0">
+            <div className="bg-[#0c1425] p-4 border-b border-white/5 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-[#001c33] text-[#00a3ff] font-bold text-[9px] uppercase tracking-wider border border-[#00345c] flex items-center gap-1">
-                  <ShieldCheck size={10} /> Certified Spec
+                <span className="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 font-mono font-bold text-[9px] uppercase tracking-wider border border-sky-500/20 flex items-center gap-1">
+                  <ShieldCheck size={10} /> Certified Spec Sheet
                 </span>
-                <span className="text-[10px] text-gray-400 font-sans">Ref ID: {selectedListing.id}</span>
+                <span className="text-[10px] text-gray-400 font-mono">ID: {selectedListing.id}</span>
               </div>
               <button
                 onClick={() => {
                   setSelectedListing(null);
                   setOfferSuccessMessage('');
                 }}
-                className="text-gray-400 hover:text-white bg-[#1e293b] hover:bg-gray-800 p-1.5 rounded-lg transition-colors"
+                className="text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
               >
                 <X size={16} />
               </button>
             </div>
 
-            {/* Scrolling Core Content */}
-            <div className="flex-grow overflow-y-auto no-scrollbar pb-6 space-y-6">
-              
-              {/* Product Cover image */}
-              <div className="h-64 md:h-80 bg-[#051020] relative shrink-0">
-                <img
-                  src={selectedListing.imageUrl}
-                  alt={selectedListing.title}
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+            {/* Scrolling Core Content with Asymmetrical Columns */}
+            <div className="flex-grow overflow-y-auto no-scrollbar pb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 items-start">
+                
+                {/* LEFT COLUMN: Visual Media Showcase (7/12) */}
+                <div className="lg:col-span-7 space-y-6">
+                  
+                  {/* Brand Watermark editorial backdrop around the vehicle profile */}
+                  <div className="relative bg-gradient-to-b from-[#0c1425] to-[#040810] rounded-2xl border border-white/5 p-4 overflow-hidden h-80 md:h-[390px] flex items-center justify-center shadow-inner">
+                    
+                    {/* Massive Model Heading Overlay */}
+                    <div className="absolute top-4 left-6 select-none pointer-events-none text-left z-0">
+                      <h1 className="text-4xl md:text-5xl font-sans font-black tracking-tighter text-white/[0.03] uppercase leading-none select-none">
+                        {selectedListing.title}
+                      </h1>
+                    </div>
 
-              {/* Title, details block */}
-              <div className="px-6 space-y-4">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
-                  <div>
-                    <h2 className="text-xl md:text-2xl font-extrabold text-white leading-tight">
-                      {selectedListing.title}
-                    </h2>
-                    <p className="text-[#00a3ff] text-xs font-bold font-sans mt-1.5 flex items-center gap-1">
-                      <MapPin size={12} /> Nationwide Delivery in Pakistan from {dealers.find((d) => d.id === selectedListing.dealerId)?.name || 'Merchant'}
-                    </p>
-                  </div>
-                  <div className="bg-[#001729] border border-[#003964] px-4 py-3 rounded-xl flex flex-col items-center justify-center text-center">
-                    <span className="text-[9px] uppercase tracking-wider text-gray-500 font-bold block">Certified Valuation</span>
-                    <span className="text-xl font-extrabold text-[#ff6b00]">
-                      {renderPrice(selectedListing.price)}
-                    </span>
-                  </div>
-                </div>
+                    {/* Faded Editorial Manufacturer Vector Watermark Backdrop */}
+                    <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none opacity-[0.03] z-0">
+                      <svg className="w-64 h-64 md:w-80 md:h-80 animate-[spin_120s_linear_infinite]" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+                        <circle cx="50" cy="50" r="45" strokeWidth="1" strokeDasharray="3 3" className="text-sky-400" />
+                        <circle cx="50" cy="50" r="37" strokeWidth="0.5" className="text-white" />
+                        <circle cx="50" cy="50" r="25" strokeWidth="1" strokeDasharray="5 5" className="text-sky-400" />
+                        <path d="M 50 10 L 50 90 M 10 50 L 90 50" strokeWidth="0.5" className="text-white/40" />
+                        <text x="50" y="44" textAnchor="middle" fontSize="4.5" fontWeight="900" fill="currentColor" letterSpacing="1.5" className="text-sky-400 font-mono">AUTO</text>
+                        <text x="50" y="61" textAnchor="middle" fontSize="4.5" fontWeight="900" fill="currentColor" letterSpacing="1.5" className="text-sky-400 font-mono">CHOICE</text>
+                      </svg>
+                    </div>
 
-                {/* Grid Spec Indicators */}
-                <div className="grid grid-cols-4 gap-2 text-center pt-2 font-sans text-xs">
-                  <div className="bg-[#121a2a] border border-[#1e293b] p-2.5 rounded-xl">
-                    <Gauge className="text-[#00a3ff] mx-auto mb-1" size={16} />
-                    <span className="text-[9px] text-gray-500 block uppercase font-bold">Mileage</span>
-                    <span className="font-bold text-white block mt-0.5">{selectedListing.mileage.toLocaleString()} km</span>
-                  </div>
-                  <div className="bg-[#121a2a] border border-[#1e293b] p-2.5 rounded-xl">
-                    <Fuel className="text-[#00a3ff] mx-auto mb-1" size={16} />
-                    <span className="text-[9px] text-gray-500 block uppercase font-bold">Fuel Type</span>
-                    <span className="font-bold text-white block mt-0.5">{selectedListing.fuelType}</span>
-                  </div>
-                  <div className="bg-[#121a2a] border border-[#1e293b] p-2.5 rounded-xl">
-                    <span className="material-symbols-outlined shrink-0 text-base text-[#00a3ff] block mb-1">manufacturing</span>
-                    <span className="text-[9px] text-gray-500 block uppercase font-bold">Transmission</span>
-                    <span className="font-bold text-white block mt-0.5">{selectedListing.transmission}</span>
-                  </div>
-                  <div className="bg-[#121a2a] border border-[#1e293b] p-2.5 rounded-xl">
-                    <Milestone className="text-[#00a3ff] mx-auto mb-1" size={16} />
-                    <span className="text-[9px] text-gray-500 block uppercase font-bold text-ellipsis overflow-hidden whitespace-nowrap">Specifications</span>
-                    <span className="font-bold text-white block mt-0.5 font-ellipsis overflow-hidden whitespace-nowrap text-[11px]">{selectedListing.specs.regionalSpecs.split(' ')[0]}</span>
-                  </div>
-                </div>
+                    {/* Left-Aligned Vertical Feature Pill Stack on the stage margin */}
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20">
+                      <span className="text-[7px] text-gray-400 font-mono uppercase tracking-widest text-center select-none block pb-1 border-b border-white/5">Aspects</span>
+                      {(['Design', 'Safety', 'Luxury', 'Performance'] as const).map((tab) => (
+                        <button
+                          type="button"
+                          key={tab}
+                          onClick={() => setActiveDetailTab(tab)}
+                          onMouseEnter={() => setActiveDetailTab(tab)}
+                          className={`w-20 py-1.5 px-2 rounded-lg text-left text-[8px] font-mono uppercase tracking-wide transition-all duration-150 cursor-pointer border flex items-center gap-1 shrink-0 ${
+                            activeDetailTab === tab
+                              ? 'bg-[#38bdf8] text-slate-950 font-black border-[#38bdf8] shadow-md shadow-[#38bdf8]/20'
+                              : 'bg-black/60 text-gray-400 border-white/5 hover:text-white hover:border-white/20'
+                          }`}
+                        >
+                          <span className="w-1 h-1 rounded-full bg-current"></span>
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
 
-                {/* Technical data sheets */}
-                <div className="bg-[#121a2a] border border-[#1e293b] rounded-xl p-4.5 space-y-2 font-sans text-xs">
-                  <h4 className="text-[#00a3ff] font-bold text-xs uppercase tracking-wider border-b border-[#1e293b] pb-1.5 mb-2 flex items-center gap-1">
-                    <Award size={14} /> Full Technical Specification Details
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <p className="flex justify-between border-b border-[#1e293b]/50 pb-1">
-                      <span className="text-gray-500">Outer Paint Body:</span> <span className="font-bold text-white">{selectedListing.specs.color}</span>
-                    </p>
-                    <p className="flex justify-between border-b border-[#1e293b]/50 pb-1">
-                      <span className="text-gray-500">Engine block Displacement:</span> <span className="font-bold text-white">{selectedListing.specs.engineSize}</span>
-                    </p>
-                    <p className="flex justify-between border-b border-[#1e293b]/50 pb-1">
-                      <span className="text-gray-500">Horsepower capacity:</span> <span className="font-bold text-white">{selectedListing.specs.horspower}</span>
-                    </p>
-                    <p className="flex justify-between border-b border-[#1e293b]/50 pb-1">
-                      <span className="text-gray-500">Regional Specifications:</span> <span className="font-bold text-[#00a3ff]">{selectedListing.specs.regionalSpecs}</span>
-                    </p>
-                  </div>
-                </div>
+                    {/* Contextual dynamic highlights notes panel */}
+                    <div className="absolute right-3 top-3 max-w-[150px] p-2 rounded-xl bg-black/75 border border-cyan-500/20 text-left z-20 pointer-events-none animate-fade-in">
+                      <p className="text-[7px] text-sky-400 font-mono font-bold tracking-widest uppercase">Aspect Focus</p>
+                      <p className="text-[9px] text-white font-sans font-black uppercase mt-0.5">{activeDetailTab}</p>
+                      <p className="text-[8px] text-gray-400 mt-0.5 font-sans leading-tight">
+                        {activeDetailTab === 'Design' && "Active aerodynamics optimized to reduce drag coeff."}
+                        {activeDetailTab === 'Safety' && "Autonomous Level 2+ lidar radar safety protocols."}
+                        {activeDetailTab === 'Luxury' && "Premium Burmester audio paired with acoustic quiet-glass."}
+                        {activeDetailTab === 'Performance' && "Optimized gear twin-clutch ratios with active differential."}
+                      </p>
+                    </div>
 
-                {/* Sales copywriting */}
-                <div className="space-y-4">
+                    {/* Thin Perspective Ring / Soft Radial Floor Reflection to ground vehicle */}
+                    <div className="absolute bottom-10 w-[75%] h-[15%] rounded-full bg-cyan-500/5 border border-cyan-400/20 blur-sm transform scale-x-110 -skew-x-12 z-0"></div>
+                    <div className="absolute bottom-8 w-[60%] h-[10%] rounded-full bg-black/70 blur-[4px] z-0"></div>
+
+                    {/* Profile image with canvas hotspots */}
+                    <div className="relative z-10 w-full h-full flex items-center justify-center">
+                      <img
+                        src={selectedListing.imageUrl}
+                        className="max-w-[75%] max-h-[75%] object-contain rounded-xl drop-shadow-[0_16px_30px_rgba(0,0,0,0.85)]"
+                        alt={selectedListing.title}
+                        referrerPolicy="no-referrer"
+                      />
+
+                      {/* Interactive 360 Hotspots overlays */}
+                      {HOTSPOTS_LIST.map((h) => (
+                        <div
+                          key={h.id}
+                          className="absolute"
+                          style={{ left: h.x, top: h.y }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setActiveHotspotId(activeHotspotId === h.id ? null : h.id)}
+                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-mono font-black border uppercase shadow-lg transition-all duration-200 cursor-pointer ${
+                              activeHotspotId === h.id 
+                                ? 'bg-orange-500 text-white border-orange-400 rotate-45 scale-110 shadow-orange-500/30' 
+                                : 'bg-black/80 text-[#38bdf8] hover:text-white border-cyan-500/40 hover:border-cyan-400 scale-100 hover:scale-105'
+                            }`}
+                            title={h.name}
+                          >
+                            ⊙
+                          </button>
+
+                          {/* Callout box overlay */}
+                          {activeHotspotId === h.id && (
+                            <div className="absolute bottom-7 left-1/2 -translate-x-1/2 w-48 p-2.5 rounded-xl bg-slate-950/95 border border-orange-500 text-left text-[9px] z-30 font-sans shadow-xl leading-relaxed animate-fade-in text-white shrink-0">
+                              <p className="font-mono font-black text-orange-400 uppercase tracking-wider text-[8px] border-b border-white/5 pb-1 mb-1">{h.name}</p>
+                              <p className="text-gray-300">{h.text}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Overlapping Call To Action Loop on lower right flank of stage */}
+                    <div className="absolute bottom-4 right-4 z-20">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const d = dealers.find((dl) => dl.id === selectedListing.dealerId);
+                          if (d) {
+                            setSelectedDealerId(d.id);
+                            setSelectedListing(null);
+                          }
+                        }}
+                        className="bg-orange-500 hover:bg-orange-600 text-white font-sans font-black uppercase text-[9px] tracking-wider py-2 px-3.5 rounded-xl shadow-[0_4px_12px_rgba(249,115,22,0.35)] flex items-center gap-1.5 transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer hover:shadow-[0_6px_18px_rgba(249,115,22,0.5)] border border-orange-400"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">store</span>
+                        Connect with Showroom
+                        <span className="text-white/60 font-mono font-normal">→</span>
+                      </button>
+                    </div>
+
+                  </div>
+
+                  {/* Base filmstrips slider */}
                   <div className="space-y-2">
-                    <h4 className="text-white font-bold text-xs uppercase tracking-wider border-b border-[#1e293b] pb-1.5">Executive Presentation Description</h4>
+                    <span className="text-[8px] text-gray-500 uppercase font-mono font-bold tracking-widest block text-left">Scrolling Showcase Filmstrips</span>
+                    <div className="flex gap-2 overflow-x-auto pb-1.5 no-scrollbar">
+                      {[
+                        selectedListing.imageUrl,
+                        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=300",
+                        "https://images.unsplash.com/photo-1520050206274-a1ae446cb3cc?auto=format&fit=crop&q=80&w=300",
+                        "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=300"
+                      ].map((url, idx) => (
+                        <div key={idx} className="w-20 md:w-28 h-14 md:h-20 bg-slate-950 rounded-lg overflow-hidden border border-white/10 shrink-0 hover:border-cyan-400 cursor-pointer duration-150">
+                          <img src={url} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="filmstrip" referrerPolicy="no-referrer" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* High-Impact Base Hero Spec Cards at Left Column Footer - Mathematically derived layout */}
+                  <div className="grid grid-cols-3 gap-3 pt-2">
+                    {/* CARD 1: Fuel Economy */}
+                    <div className="relative overflow-hidden backdrop-blur-md bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 p-3 rounded-xl flex flex-col justify-between text-left transition-colors">
+                      <div className="space-y-0.5">
+                        <span className="text-[14px] md:text-base font-sans font-black text-[#38bdf8] block tracking-tight">
+                          11.8 - 10.1
+                        </span>
+                        <span className="text-[8px] text-gray-400 font-mono block leading-none">km/l</span>
+                      </div>
+                      <span className="text-[7.5px] text-gray-500 font-sans tracking-wide block mt-1">Fuel consumption, combined</span>
+                    </div>
+                    
+                    {/* CARD 2: Powertrain Configuration */}
+                    <div className="relative overflow-hidden backdrop-blur-md bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 p-3 rounded-xl flex flex-col justify-between text-left transition-colors">
+                      <div className="space-y-0.5">
+                        <span className="text-[14px] md:text-base font-sans font-black text-white block tracking-tight uppercase truncate">
+                          {selectedListing.fuelType || "Gasoline"}
+                        </span>
+                        <span className="text-[8px] text-sky-400 font-mono block leading-none">High Efficiency</span>
+                      </div>
+                      <span className="text-[7.5px] text-gray-500 font-sans tracking-wide block mt-1">Engine and Fuel Type</span>
+                    </div>
+
+                    {/* CARD 3: Absolute Purchase Price */}
+                    <div className="relative overflow-hidden backdrop-blur-md bg-white/[0.02] hover:bg-orange-500/5 border border-white/5 p-3 rounded-xl flex flex-col justify-between text-left transition-colors">
+                      <div className="space-y-0.5">
+                        <span className="text-[14px] md:text-base font-mono font-black text-orange-400 block tracking-tight truncate">
+                          {renderPrice(selectedListing.price).replace(' PKR', '')}
+                        </span>
+                        <span className="text-[8px] text-orange-500 font-mono block leading-none">PKR Value</span>
+                      </div>
+                      <span className="text-[7.5px] text-gray-500 font-sans tracking-wide block mt-1">Certified Purchase Price</span>
+                    </div>
+                  </div>
+
+                  {/* Executive Presentation description */}
+                  <div className="bg-[#0c1425] border border-white/5 p-4.5 rounded-xl space-y-2 text-left">
+                    <h4 className="text-[#38bdf8] font-black text-xs uppercase tracking-wider border-b border-white/5 pb-1.5">Executive Presentation Description</h4>
                     <p className="text-gray-300 text-xs leading-relaxed font-sans pr-4">{selectedListing.description}</p>
                   </div>
 
-                  {/* Adaptive deep-linking share block */}
-                  <div className="bg-[#121a2a] border border-[#1e293b] p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3 font-mono">
+                </div>
+
+                {/* RIGHT COLUMN: Sticky Pricing & Feature Tabs (5/12) */}
+                <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-0 text-left">
+                  
+                  {/* Title Panel */}
+                  <div className="space-y-2 border-b border-white/5 pb-4">
+                    <h2 className="text-xl md:text-2xl font-black text-white leading-tight uppercase">
+                      {selectedListing.title}
+                    </h2>
+                    <p className="text-[#38bdf8] text-xs font-mono font-bold flex items-center gap-1">
+                      <MapPin size={11} /> Peshawar Motorway Corridor Hub (Active Delivery)
+                    </p>
+                  </div>
+
+                  {/* Illumination Valuation panel */}
+                  <div className="bg-[#0c1425] border-2 border-white/5 p-4 rounded-2xl relative overflow-hidden shadow-lg space-y-3.5">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/10 rounded-full blur-xl pointer-events-none"></div>
+                    <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
+                      <span className="text-[8.5px] text-[#38bdf8] font-mono uppercase font-black tracking-widest">Pricing Matrix Index</span>
+                      <span className="text-[8px] bg-orange-500/10 text-orange-400 font-mono px-2 py-0.5 rounded border border-orange-500/25 uppercase font-bold">Standard Value</span>
+                    </div>
+                    
+                    <div className="space-y-1">
+                      <span className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block">Current Market Demand</span>
+                      <h3 className="text-2xl md:text-3xl font-black text-orange-400 tracking-tight">
+                        {renderPrice(selectedListing.price)}
+                      </h3>
+                    </div>
+
+                    {/* Competitive Leasing calculations placeholder */}
+                    <div className="bg-[#050912] p-2.5 rounded-xl border border-white/5 flex justify-between items-center text-left">
+                      <div>
+                        <span className="text-[7.5px] text-gray-500 font-mono uppercase block font-bold leading-none">Est. Leasing PKR</span>
+                        <span className="text-[10px] font-mono font-bold text-white leading-none">Rs. {(selectedListing.price * 0.021).toLocaleString(undefined, {maximumFractionDigits: 0})} / Month</span>
+                      </div>
+                      <span className="text-[7.5px] text-[#38bdf8] bg-sky-500/10 rounded border border-cyan-500/30 px-1.5 py-0.5 font-mono uppercase font-black shrink-0">
+                        3 Year @ 15% Down
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Left Aligned Metric Feature Tabs */}
+                  <div className="bg-[#0c1425] border border-white/5 p-4 rounded-xl space-y-4">
+                    <div className="flex justify-between items-center border-b border-white/5 pb-1.5">
+                      <span className="text-[8.5px] text-[#38bdf8] font-mono font-black uppercase tracking-wider">Metrics Groups Exploration</span>
+                      <span className="text-[8px] text-gray-500 font-mono">Select telemetry group</span>
+                    </div>
+
+                    {/* Dual segment: Left Buttons list, Right output details */}
+                    <div className="grid grid-cols-12 gap-3.5">
+                      
+                      {/* Left pillar list of buttons */}
+                      <div className="col-span-4 flex flex-col gap-1.5 border-r border-white/5 pr-2.5">
+                        {(['Design', 'Safety', 'Luxury', 'Performance'] as const).map((tab) => (
+                          <button
+                            type="button"
+                            key={tab}
+                            onClick={() => setActiveDetailTab(tab)}
+                            className={`w-full py-1.5 px-2 rounded-lg text-left text-[9px] font-mono uppercase transition-all duration-150 cursor-pointer ${
+                              activeDetailTab === tab
+                                ? 'bg-[#38bdf8] text-slate-950 font-black shadow shadow-[#38bdf8]/40'
+                                : 'bg-white/5 text-gray-400 hover:text-white'
+                            }`}
+                          >
+                            ● {tab}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Right output detail block without jumpiness */}
+                      <div className="col-span-8 space-y-2 text-left">
+                        {((activeDetailTab === 'Design' ? METRIC_TABS_DATA.Design :
+                           activeDetailTab === 'Safety' ? METRIC_TABS_DATA.Safety :
+                           activeDetailTab === 'Luxury' ? METRIC_TABS_DATA.Luxury :
+                           METRIC_TABS_DATA.Performance) || []).map((metric, midx) => (
+                          <div key={midx} className="border-b border-white/5 pb-1 last:border-0 leading-tight">
+                            <p className="text-[7.5px] text-gray-500 font-mono uppercase">{metric.label}</p>
+                            <p className="text-[9.5px] font-sans font-bold text-white truncate">{metric.value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* Technical Telemetry Metrics Grid (1px border cards) */}
+                  <div className="space-y-2">
+                    <span className="text-[8px] text-gray-500 uppercase font-mono font-bold tracking-widest block">Technical Aspect Telemetry</span>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="bg-[#0a1425] border border-white/10 p-3 rounded-xl hover:border-cyan-500/50 transition-colors">
+                        <span className="text-[7.5px] text-gray-500 font-mono uppercase block">Engine Displacement</span>
+                        <span className="text-[11px] font-mono font-bold text-white block mt-0.5">{selectedListing.specs.engineSize || '2,981 cc'}</span>
+                      </div>
+                      <div className="bg-[#0a1425] border border-white/10 p-3 rounded-xl hover:border-cyan-500/50 transition-colors">
+                        <span className="text-[7.5px] text-gray-500 font-mono uppercase block">Peak Power HP Unit</span>
+                        <span className="text-[11px] font-mono font-bold text-white block mt-0.5">{selectedListing.specs.horspower || '450 Horsepower'}</span>
+                      </div>
+                      <div className="bg-[#0a1425] border border-white/10 p-3 rounded-xl hover:border-cyan-500/50 transition-colors">
+                        <span className="text-[7.5px] text-gray-500 font-mono uppercase block">Outer Paint Body</span>
+                        <span className="text-[11px] font-mono font-bold text-white block mt-0.5">{selectedListing.specs.color || 'Aurora Black Met.'}</span>
+                      </div>
+                      <div className="bg-[#0a1425] border border-white/10 p-3 rounded-xl hover:border-cyan-500/50 transition-colors">
+                        <span className="text-[7.5px] text-gray-500 font-mono uppercase block">Specs standard</span>
+                        <span className="text-[11px] font-mono font-bold text-white block mt-0.5">{selectedListing.specs.regionalSpecs || 'KPK Provincial Spec'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Deep linking share block */}
+                  <div className="bg-[#0c1425] border border-white/5 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3 font-mono">
                     <div className="text-left space-y-0.5">
-                      <span className="text-[9.5px] uppercase font-black tracking-widest text-[#00a3ff] block">Adaptive Social Sharing</span>
+                      <span className="text-[9.5px] uppercase font-black tracking-widest text-[#38bdf8] block">Adaptive Sharing</span>
                       <span className="text-[8px] text-gray-400 font-sans block">Share certified specifications directly</span>
                     </div>
                     <button
@@ -1614,45 +1941,45 @@ export default function App() {
                       <span className="material-symbols-outlined text-[14px]">share</span> Share Spec Sheet
                     </button>
                   </div>
-                </div>
 
-                {/* Bid/Offer tool integrations */}
-                <div className="bg-[#121a2a]/40 border border-[#1e293b] p-4 rounded-xl space-y-3 font-sans mt-2">
-                  <span className="text-[10px] uppercase font-semibold text-gray-400 block tracking-wider">Dynamic Offer Pipeline</span>
-                  
-                  {offerSuccessMessage ? (
-                    <div className="p-3 bg-green-950/40 text-green-400 font-bold text-xs rounded border border-green-900 leading-relaxed font-sans shadow-inner">
-                      {offerSuccessMessage}
-                    </div>
-                  ) : (
-                    <form onSubmit={handleOfferSubmit} className="flex gap-2">
-                      <div className="bg-[#051020] border border-[#1e293b] p-2 rounded-lg flex items-center flex-grow">
-                        <DollarSign size={14} className="text-[#00a3ff] mr-1 shrink-0" />
-                        <input
-                          type="number"
-                          placeholder="Place custom offer in PKR / Rs..."
-                          className="bg-transparent border-none text-white focus:outline-none focus:ring-0 text-xs w-full"
-                          value={offerInput}
-                          onChange={(e) => setOfferInput(e.target.value)}
-                        />
+                  {/* Bid/Offer tool integrates */}
+                  <div className="bg-[#0c1425] border border-white/5 p-4 rounded-xl space-y-3 font-sans">
+                    <span className="text-[9.5px] uppercase font-mono font-black text-[#38bdf8] block tracking-wider">Dynamic Offer Pipeline</span>
+                    
+                    {offerSuccessMessage ? (
+                      <div className="p-3 bg-green-950/40 text-green-400 font-bold text-xs rounded border border-green-900 leading-relaxed font-sans shadow-inner">
+                        {offerSuccessMessage}
                       </div>
-                      <button
-                        type="submit"
-                        className="bg-[#00a3ff] hover:bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg flex items-center justify-center gap-1 duration-75 text-xs shadow"
-                      >
-                        <Send size={12} /> Submit Bid
-                      </button>
-                    </form>
-                  )}
-                  <span className="text-[9px] text-gray-500 mt-1 block font-sans">Offers sent via the pipeline are non-binding but pre-qualify you in standard showroom inventories.</span>
+                    ) : (
+                      <form onSubmit={handleOfferSubmit} className="flex gap-2">
+                        <div className="bg-[#051020] border border-white/10 p-2 rounded-lg flex items-center flex-grow">
+                          <DollarSign size={14} className="text-[#38bdf8] mr-1 shrink-0" />
+                          <input
+                            type="number"
+                            placeholder="Place custom offer in PKR..."
+                            className="bg-transparent border-none text-white focus:outline-none focus:ring-0 text-xs w-full font-mono font-bold"
+                            value={offerInput}
+                            onChange={(e) => setOfferInput(e.target.value)}
+                          />
+                        </div>
+                        <button
+                          type="submit"
+                          className="bg-[#38bdf8] hover:bg-[#299ecf] text-slate-950 font-mono font-black py-2.5 px-4 rounded-xl flex items-center justify-center gap-1 duration-75 text-xs select-none cursor-pointer"
+                        >
+                          <Send size={11} /> Submit
+                        </button>
+                      </form>
+                    )}
+                    <span className="text-[8.5px] text-gray-500 block leading-tight">Offers transmitted are non-binding but unlock priority validation within associated micro-showrooms.</span>
+                  </div>
+
                 </div>
 
               </div>
-
             </div>
 
             {/* Bottom converted Action CTA Bar */}
-            <div className="p-4 border-t border-[#1e293b] bg-[#121a2a] flex gap-3 shrink-0">
+            <div className="p-4 border-t border-white/5 bg-[#0c1425] flex gap-3 shrink-0">
               <button
                 onClick={() => {
                   const d = dealers.find((dl) => dl.id === selectedListing.dealerId);
@@ -1661,14 +1988,14 @@ export default function App() {
                     setSelectedListing(null);
                   }
                 }}
-                className="flex-1 bg-transparent border border-[#00a3ff] hover:bg-[#00a3ff]/10 text-[#00a3ff] font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-97 change-all duration-75"
+                className="flex-1 bg-transparent border border-sky-400 text-sky-400 hover:bg-sky-400/10 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-97 transition-all duration-75 cursor-pointer"
               >
                 <span className="material-symbols-outlined shrink-0 text-base">store</span> Contact Showroom Profile
               </button>
               
               <a
                 href={`mailto:amjid.bisconni@gmail.com?subject=Inquiry on ${selectedListing.title}&body=Hello, I am interested in checking vehicle specifications on the ${selectedListing.title} listed under id ${selectedListing.id}.`}
-                className="flex-1 bg-[#ff6b00] hover:bg-orange-600 border border-orange-500 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 text-center active:scale-97 change-all duration-75 shadow"
+                className="flex-1 bg-orange-500 hover:bg-orange-600 border border-orange-400 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-1.5 text-center active:scale-97 transition-all duration-75 shadow cursor-pointer"
               >
                 <span className="material-symbols-outlined shrink-0 text-base">mail</span> Submit Instant Query Card
               </a>

@@ -56,9 +56,20 @@ export default function TopAppBar({
               <span className="absolute text-[9px] font-black text-sky-400 tracking-tighter">360</span>
             </div>
             {/* Typography Wrapper */}
-            <div className="flex flex-col">
-              <span className="text-[17px] font-black text-white tracking-widest leading-none">BAZAR<span className="text-orange-500">360</span></span>
-              <span className="text-[8px] font-bold text-sky-450 tracking-[0.22em] uppercase pl-0.5">Ecosystem</span>
+            <div className="flex items-center">
+              <div className="flex flex-col">
+                <span className="text-[17px] font-black text-white tracking-widest leading-none">BAZAR<span className="text-orange-500">360</span></span>
+                <span className="text-[8px] font-bold text-sky-400 tracking-[0.22em] uppercase pl-0.5">Ecosystem</span>
+              </div>
+              {currentCategory === 'auto' && (
+                <>
+                  <div className="h-6 w-px bg-white/20 mx-3 hidden sm:block" id="brand-vertical-divider"></div>
+                  <div className="flex flex-col text-left hidden sm:flex" id="brand-premium-tag">
+                    <span className="text-xs font-black text-white uppercase tracking-wider leading-none">AUTO CHOICE</span>
+                    <span className="text-[7.5px] font-black text-[#ff6b00] tracking-widest uppercase mt-0.5 leading-none">PREMIUM PARTNER</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
