@@ -47,10 +47,12 @@ const USERS_COLLECTION = 'users';
 
 // Seed Database helper
 export async function seedDatabaseIfEmpty() {
-  if (typeof window !== 'undefined' && localStorage.getItem('bazar360_db_seeded') === 'true') {
-    console.log('BAZAR360 database already seeded on this client. Skipping check.');
-    return;
-  }
+  try {
+    if (typeof window !== 'undefined' && localStorage.getItem('bazar360_db_seeded') === 'true') {
+      console.log('BAZAR360 database already seeded on this client. Skipping check.');
+      return;
+    }
+  } catch(e) {}
 
   try {
     // Check sentinel document first to avoid 20+ parallel read queries
@@ -59,7 +61,7 @@ export async function seedDatabaseIfEmpty() {
     if (sentinelSnap.exists() && sentinelSnap.data()?.completed === true) {
       console.log('Firestore backend reports database is already fully seeded. Saving Client index.');
       if (typeof window !== 'undefined') {
-        localStorage.setItem('bazar360_db_seeded', 'true');
+        try { localStorage.setItem('bazar360_db_seeded', 'true'); } catch(e) {}
       }
       return;
     }
@@ -134,7 +136,7 @@ export async function seedDatabaseIfEmpty() {
     await setDoc(sentinelRef, { completed: true, timestamp: new Date().toISOString() });
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('bazar360_db_seeded', 'true');
+      try { localStorage.setItem('bazar360_db_seeded', 'true'); } catch(e) {}
     }
     console.log('BAZAR360 Seeding completed/verified.');
   } catch (err) {

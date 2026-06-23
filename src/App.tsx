@@ -72,6 +72,7 @@ export default function AppWrapper() {
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/dealers/:showroomSlug" element={<ShowroomProfile />} />
+        <Route path="/showroom/:showroomSlug" element={<ShowroomProfile />} />
       </Routes>
     </Router>
   );
@@ -82,14 +83,18 @@ function App() {
 
   const [theme, setTheme] = useState<string>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('bazar360_theme') || 'cosmic-dark';
+      try {
+        return localStorage.getItem('bazar360_theme') || 'cosmic-dark';
+      } catch (e) {
+        return 'cosmic-dark';
+      }
     }
     return 'cosmic-dark';
   });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('bazar360_theme', theme);
+      try { localStorage.setItem('bazar360_theme', theme); } catch (e) { /* ignore */ }
       const themes = ['theme-cosmic-dark', 'theme-luxury-light', 'theme-mint-emerald', 'theme-obsidian-gold'];
       themes.forEach(t => {
         document.documentElement.classList.remove(t);
@@ -170,27 +175,27 @@ function App() {
 
   // Persist gamified registers
   useEffect(() => {
-    localStorage.setItem('bazar360_votes', JSON.stringify(votes));
+    try { localStorage.setItem('bazar360_votes', JSON.stringify(votes)); } catch (e) { /* ignore */ }
   }, [votes]);
 
   useEffect(() => {
-    localStorage.setItem('bazar360_user_voted', JSON.stringify(userVoted));
+    try { localStorage.setItem('bazar360_user_voted', JSON.stringify(userVoted)); } catch (e) { /* ignore */ }
   }, [userVoted]);
 
   useEffect(() => {
-    localStorage.setItem('bazar360_notifications', JSON.stringify(notifications));
+    try { localStorage.setItem('bazar360_notifications', JSON.stringify(notifications)); } catch (e) { /* ignore */ }
   }, [notifications]);
 
   useEffect(() => {
-    localStorage.setItem('bazar360_teaser_votes', teaserVotes.toString());
+    try { localStorage.setItem('bazar360_teaser_votes', teaserVotes.toString()); } catch (e) { /* ignore */ }
   }, [teaserVotes]);
 
   useEffect(() => {
-    localStorage.setItem('bazar360_user_teaser_voted', userTeaserVoted ? 'true' : 'false');
+    try { localStorage.setItem('bazar360_user_teaser_voted', userTeaserVoted ? 'true' : 'false'); } catch (e) { /* ignore */ }
   }, [userTeaserVoted]);
 
   useEffect(() => {
-    localStorage.setItem('bazar360_teaser_notified', teaserNotified ? 'true' : 'false');
+    try { localStorage.setItem('bazar360_teaser_notified', teaserNotified ? 'true' : 'false'); } catch (e) { /* ignore */ }
   }, [teaserNotified]);
 
   // Dynamic Tagline Rotation Logic with Variant Titles & Sub-Taglines
@@ -343,7 +348,8 @@ function App() {
 
   // Active Session User Profile
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('bazar360_user');
+    let saved = null;
+    try { saved = localStorage.getItem('bazar360_user'); } catch (e) { /* ignore */ }
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -383,11 +389,11 @@ function App() {
   // Sync session profile to standard storage
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('bazar360_user', JSON.stringify(currentUser));
+      try { localStorage.setItem('bazar360_user', JSON.stringify(currentUser)); } catch (e) { /* ignore */ }
       // Save profile to database
       dbSaveUserProfile(currentUser).catch(err => console.warn('Bypass profile save:', err));
     } else {
-      localStorage.removeItem('bazar360_user');
+      try { localStorage.removeItem('bazar360_user'); } catch (e) { /* ignore */ }
     }
   }, [currentUser]);
 
@@ -491,7 +497,7 @@ function App() {
       console.warn("Silent auth signout warning:", err);
     }
     setCurrentUser(null);
-    localStorage.removeItem('bazar360_user');
+    try { localStorage.removeItem('bazar360_user'); } catch (e) { /* ignore */ }
     setTab('home');
   };
 
@@ -1244,7 +1250,7 @@ function App() {
   }
 
   return (
-    <div className="bg-[#0b121f] text-white min-h-screen text-sm font-sans flex flex-col pb-24 md:pb-8 overflow-x-hidden">
+    <div className="bg-[var(--brand-bg)] text-white min-h-screen text-sm font-sans flex flex-col pb-24 md:pb-8 overflow-x-hidden">
       
       {/* 🚀 FAST LIVE ENGINE TICKER MARQUEE */}
       {currentCategory === 'auto' && (
@@ -1386,6 +1392,53 @@ function App() {
           </div>
         ) : (
           <>
+            {/* Elegant Sticky Pinning Banner for Flagship Auto Choice Peshawar */}
+            {(currentTab === 'home' || currentTab === 'inventory' || currentTab === 'search' || currentTab === 'dealers') && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.002 }}
+                onClick={() => onSelectDealer('auto-choice-peshawar')}
+                className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-6 mt-4 cursor-pointer relative z-40 group"
+              >
+                <div className="bg-gradient-to-r from-[#121214] via-[#1c1b18] to-[#121214] border border-[#c5a880]/20 rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:border-[#c5a880]/40 transition-all duration-300">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-[#c5a880]/5 rounded-full blur-2xl pointer-events-none group-hover:bg-[#c5a880]/8 transition-all duration-300"></div>
+                  
+                  {/* Left Column info */}
+                  <div className="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
+                    <div className="w-12 h-12 rounded-full border border-[#c5a880]/30 flex items-center justify-center bg-[#1a1a1c] shrink-0 text-[#c5a880] font-sans font-black tracking-tighter shadow-md">
+                      AC
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+                        <span className="bg-[#c5a880]/10 border border-[#c5a880]/30 text-[#c5a880] px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">★ PREMIUM FLAGSHIP PARTNER</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#c5a880] animate-pulse"></span>
+                        <span className="text-[10px] text-gray-400 font-mono uppercase tracking-widest">LIVE INVENTORY SPOTLIGHT</span>
+                      </div>
+                      <h4 className="text-lg md:text-xl font-bold tracking-tight text-white mt-1 group-hover:text-[#c5a880] transition-colors">
+                        Auto Choice Peshawar Showroom
+                      </h4>
+                      <p className="text-xs text-gray-450 font-sans mt-0.5">Explore Khyber Pakhtunkhwa's elite luxury fleet. Direct transparent verification guarantees.</p>
+                    </div>
+                  </div>
+
+                  {/* Right Column Action */}
+                  <div className="flex items-center gap-4.5 shrink-0 w-full md:w-auto justify-center">
+                    <div className="text-right hidden lg:block">
+                      <span className="text-[10px] text-[#c5a880] font-mono font-black uppercase block tracking-wider">DIRECT ACCESS PROTOCOL</span>
+                      <span className="text-[10px] text-gray-500 block">Immediate multi-role VIP routing</span>
+                    </div>
+                    <button 
+                      type="button"
+                      className="bg-[#c5a880] hover:bg-[#d0b896] text-black font-sans font-extrabold tracking-widest text-[10.5px] uppercase py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer max-md:w-full"
+                    >
+                      Enter Showroom
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Show Moderation Dashboard to Admins or Showroom Owners on home page */}
             {currentTab === 'home' && (currentUser?.role === 'Admin' || currentUser?.role === 'Showroom Owner') && (
               <div className="mb-8">

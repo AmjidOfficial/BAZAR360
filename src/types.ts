@@ -43,6 +43,13 @@ export interface CarListing {
   isSold?: boolean;
 }
 
+export interface ShowroomThemeSettings {
+  primaryColor?: string;
+  secondaryColor?: string;
+  fontFamily?: string;
+  bgStyle?: 'dark' | 'light' | 'emerald' | 'gold';
+}
+
 export interface Dealer {
   id: string;
   name: string;
@@ -74,6 +81,15 @@ export interface Dealer {
   };
   activityFeed: ActivityPost[];
   theme_choice?: 'Cosmic' | 'Bone' | 'Emerald' | 'Gold';
+  themeSettings?: ShowroomThemeSettings;
+  theme_config?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    fontFamily?: string;
+    bgStyle?: 'dark' | 'light' | 'emerald' | 'gold';
+    borderStyle?: string;
+    headerStyle?: string;
+  };
 }
 
 export interface ActivityPost {

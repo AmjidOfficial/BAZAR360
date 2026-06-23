@@ -15,14 +15,14 @@ body {
 }
 
 :root {
-  --brand-bg: #0B1121;
+  --brand-bg: #0a0a0b;
   --brand-text: #ffffff;
-  --brand-text-muted: #94a3b8;
-  --brand-card: #121c32;
+  --brand-text-muted: #a1a1aa;
+  --brand-card: #121214;
   --brand-border: rgba(255, 255, 255, 0.05);
-  --brand-accent: #f97316;
-  --brand-accent-hover: #ea580c;
-  --brand-accent-rgb: 249, 115, 22;
+  --brand-accent: #c5a880;
+  --brand-accent-hover: #b4966e;
+  --brand-accent-rgb: 197, 168, 128;
 }
 
 .theme-luxury-light {

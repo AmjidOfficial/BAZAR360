@@ -94,13 +94,13 @@ const PRELOADED_VIDEOS: VideoFeedItem[] = [
 
 export default function MediaFeedView({ dealers, currentUser, onForceLogin }: MediaFeedViewProps) {
   const [videoFeed, setVideoFeed] = useState<VideoFeedItem[]>(() => {
-    const saved = localStorage.getItem('bazar360_videos');
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('bazar360_videos');
+      if (saved) {
         return JSON.parse(saved);
-      } catch (err) {
-        // fallback
       }
+    } catch (err) {
+      // fallback
     }
     return PRELOADED_VIDEOS;
   });
@@ -122,7 +122,7 @@ export default function MediaFeedView({ dealers, currentUser, onForceLogin }: Me
   const [isSubmitSuccessful, setIsSubmitSuccessful] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('bazar360_videos', JSON.stringify(videoFeed));
+    try { localStorage.setItem('bazar360_videos', JSON.stringify(videoFeed)); } catch(e) {}
   }, [videoFeed]);
 
   // Is current logged in user an admin?
