@@ -7,7 +7,7 @@ import {
   Mail, 
   Lock, 
   Check, 
-  UploadCloud, 
+  CloudUpload, 
   MapPin, 
   UserPlus, 
   AlertCircle,
@@ -536,7 +536,7 @@ export default function SecureRegistrationPage({ onSuccess, onRoleChange }: Secu
                         accept=".pdf,.png,.jpg,.jpeg"
                       />
                       <label htmlFor="document-file-picker" className="cursor-pointer block w-full">
-                        <UploadCloud className={`mx-auto h-8 w-8 mb-2 ${uploadedDocName ? 'text-emerald-400' : 'text-gray-500'}`} />
+                        <CloudUpload className={`mx-auto h-8 w-8 mb-2 ${uploadedDocName ? 'text-emerald-400' : 'text-gray-500'}`} />
                         {uploadedDocName ? (
                           <div>
                             <p className="text-xs text-emerald-400 font-extrabold truncate">✓ Doc Added: {uploadedDocName}</p>

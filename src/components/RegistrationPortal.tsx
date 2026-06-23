@@ -4,12 +4,14 @@ import {
   Car, 
   Shield, 
   Check, 
+  Store,
   AlertTriangle 
 } from 'lucide-react';
 import { UserProfile, dbSaveUserProfile, dbSaveListing } from '../lib/dbService';
 import { CarListing, Dealer } from '../types';
 import SecureRegistrationPage from './SecureRegistrationPage';
 import DetailedVehiclePostingPage, { ComplexListingPayload } from './DetailedVehiclePostingPage';
+import DealerSignup from './DealerSignup';
 import { motion } from 'motion/react';
 
 interface RegistrationPortalProps {
@@ -26,7 +28,7 @@ export default function RegistrationPortal({
   onClose 
 }: RegistrationPortalProps) {
   // Navigation active tab for portal views
-  const [activeForm, setActiveForm] = useState<'secure-onboarding' | 'detailed-posting' | 'privilege-simulator'>('secure-onboarding');
+  const [activeForm, setActiveForm] = useState<'secure-onboarding' | 'detailed-posting' | 'privilege-simulator' | 'showroom-signup'>('secure-onboarding');
   const [portalSuccessMessage, setPortalSuccessMessage] = useState('');
 
   // Handle high fidelity user profile onboarding
@@ -193,6 +195,18 @@ export default function RegistrationPortal({
             <Car size={14} />
             Localized Car Posting Form
           </button>
+          
+          <button
+            onClick={() => setActiveForm('showroom-signup')}
+            className={`px-4 py-3 rounded-xl font-bold flex items-center gap-2 duration-200 uppercase tracking-wider text-[10.5px] select-none ${
+              activeForm === 'showroom-signup'
+                ? 'bg-[#ff6b00] text-slate-950 shadow-lg shadow-[#ff6b00]/20'
+                : 'bg-[#070c18] text-gray-400 hover:text-white border border-[#1f2937]'
+            }`}
+          >
+            <Store size={14} />
+            Dealer Signup (Zero-Friction)
+          </button>
         </div>
 
         <button
@@ -232,6 +246,10 @@ export default function RegistrationPortal({
           <DetailedVehiclePostingPage 
             onPostCreated={handleVehiclePostingSuccess} 
           />
+        )}
+
+        {activeForm === 'showroom-signup' && (
+          <DealerSignup />
         )}
 
         {activeForm === 'privilege-simulator' && (

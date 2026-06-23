@@ -32,6 +32,8 @@ import { UserProfile } from '../lib/dbService';
 import { callMarketingEngine } from '../services/api';
 import { ALL_PAKISTAN_CITIES } from '../lib/cities';
 import { formatPKRCurrency } from './SellWithAIView';
+import ShowroomShareWidget from './ShowroomShareWidget';
+import BulkMediaUpload from './BulkMediaUpload';
 
 interface ShowroomHQHubProps {
   dealer: Dealer;
@@ -854,6 +856,10 @@ export default function ShowroomHQHub({
                   />
                 </div>
               </div>
+              
+              <div className="pt-4 border-t border-white/5">
+                <ShowroomShareWidget dealer={dealer} />
+              </div>
 
               <div className="flex justify-end pt-3">
                 <button
@@ -1582,14 +1588,8 @@ export default function ShowroomHQHub({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-white/60 font-semibold block uppercase font-mono text-[9px]">Listing cover Image URL alignment:</label>
-            <input
-              type="text"
-              required
-              className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-3.5 text-white focus:outline-none focus:border-orange-500 text-xs font-mono"
-              value={carImgUrl}
-              onChange={e => setCarImgUrl(e.target.value)}
-            />
+            <label className="text-white/60 font-semibold block uppercase font-mono text-[9px]">Media Attachment Pipeline:</label>
+            <BulkMediaUpload />
           </div>
 
           <div className="space-y-1.5">

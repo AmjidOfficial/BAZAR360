@@ -39,6 +39,8 @@ export interface CarListing {
   assemblyType?: 'Local' | 'Imported';
   dentPaintDescription?: string;
   tokenTaxStatus?: 'Paid' | 'Outstanding';
+  
+  isSold?: boolean;
 }
 
 export interface Dealer {
@@ -56,6 +58,7 @@ export interface Dealer {
   phone: string;
   whatsapp: string;
   flagshipVerified?: boolean;
+  verified?: boolean;
   lines?: {
     lineA: string;
     lineB: string;

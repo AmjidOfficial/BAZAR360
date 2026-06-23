@@ -63,7 +63,21 @@ const HOTSPOTS_LIST = [
   { id: 'exhaust', name: 'Exhaust airflow channel', text: 'Quad low-back-pressure active exhaust ports with carbon acoustic resonators.', x: '88%', y: '65%' },
 ];
 
-export default function App() {
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import ShowroomProfile from './pages/ShowroomProfile';
+
+export default function AppWrapper() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/dealers/:showroomSlug" element={<ShowroomProfile />} />
+      </Routes>
+    </Router>
+  );
+}
+
+function App() {
   const { renderPrice } = useCurrencyMode();
 
   const [theme, setTheme] = useState<string>(() => {
@@ -1230,7 +1244,7 @@ export default function App() {
   }
 
   return (
-    <div className="bg-[#0b121f] text-white min-h-screen text-sm font-sans flex flex-col pb-24 md:pb-8">
+    <div className="bg-[#0b121f] text-white min-h-screen text-sm font-sans flex flex-col pb-24 md:pb-8 overflow-x-hidden">
       
       {/* 🚀 FAST LIVE ENGINE TICKER MARQUEE */}
       {currentCategory === 'auto' && (
@@ -1338,64 +1352,6 @@ export default function App() {
 
       {/* Main Container Core Shell */}
       <main className={`flex-grow max-w-[1440px] mx-auto w-full px-5 md:px-16 transition-all ${currentCategory === 'auto' ? 'pt-28' : 'pt-20'}`}>
-        
-        {/* PREMIUM REPOSITIONED & ACCELERATED BRAND SCROLL MARQUEE */}
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mb-6 bg-[#0c1322] border border-white/5 py-3 rounded-2xl overflow-hidden relative shadow-inner select-none" 
-          id="repositioned-brand-marquee"
-        >
-          <div className="absolute top-0 left-0 w-16 h-full bg-gradient-to-r from-[#0b121f] to-transparent z-10 pointer-events-none"></div>
-          <div className="absolute top-0 right-0 w-16 h-full bg-gradient-to-l from-[#0b121f] to-transparent z-10 pointer-events-none"></div>
-
-          <div className="flex overflow-hidden relative w-full h-8 items-center">
-            <div className="animate-marquee flex gap-12 text-slate-500 font-mono text-[11px] font-black items-center min-w-full uppercase">
-              {['Suzuki', 'Toyota', 'Honda', 'BYD', 'Changan', 'Zeekr', 'Deepal'].map((brand, i) => (
-                <button
-                  key={`top-b1-${i}`}
-                  onClick={() => {
-                    setTab('inventory');
-                    setSearchQuery(brand);
-                  }}
-                  className="flex items-center gap-2 hover:text-white text-slate-400 font-mono text-[10px] uppercase font-black tracking-wider transition-all hover:scale-105 active:scale-95 duration-150 cursor-pointer border border-transparent hover:border-white/5 hover:bg-white/[0.02] px-3 py-1.5 rounded-xl group shrink-0"
-                >
-                  <span className="text-orange-500 font-black">✦</span>
-                  <span className="group-hover:text-orange-400">{brand}</span>
-                </button>
-              ))}
-              {/* Duplicate sequences for infinite effect */}
-              {['Suzuki', 'Toyota', 'Honda', 'BYD', 'Changan', 'Zeekr', 'Deepal'].map((brand, i) => (
-                <button
-                  key={`top-b2-${i}`}
-                  onClick={() => {
-                    setTab('inventory');
-                    setSearchQuery(brand);
-                  }}
-                  className="flex items-center gap-2 hover:text-white text-slate-400 font-mono text-[10px] uppercase font-black tracking-wider transition-all hover:scale-105 active:scale-95 duration-150 cursor-pointer border border-transparent hover:border-white/5 hover:bg-white/[0.02] px-3 py-1.5 rounded-xl group shrink-0"
-                >
-                  <span className="text-orange-500 font-black">✦</span>
-                  <span className="group-hover:text-orange-400">{brand}</span>
-                </button>
-              ))}
-              {/* Triplicated sequence */}
-              {['Suzuki', 'Toyota', 'Honda', 'BYD', 'Changan', 'Zeekr', 'Deepal'].map((brand, i) => (
-                <button
-                  key={`top-b3-${i}`}
-                  onClick={() => {
-                    setTab('inventory');
-                    setSearchQuery(brand);
-                  }}
-                  className="flex items-center gap-2 hover:text-white text-slate-400 font-mono text-[10px] uppercase font-black tracking-wider transition-all hover:scale-105 active:scale-95 duration-150 cursor-pointer border border-transparent hover:border-white/5 hover:bg-white/[0.02] px-3 py-1.5 rounded-xl group shrink-0"
-                >
-                  <span className="text-orange-500 font-black">✦</span>
-                  <span className="group-hover:text-orange-400">{brand}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
         
         {activeIndustry !== 'Automotive' && (
           <div className="mb-6 bg-slate-950/90 backdrop-blur-md border border-[#38BDF8]/30 p-5 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-scale-fade shadow-xl">
@@ -2197,7 +2153,7 @@ export default function App() {
         {/* Mobile Side Drawer Sliding Panel */}
         <div 
           id="mobile-drawer"
-          className="fixed top-0 bottom-0 w-[280px] bg-[#070c18] z-50 border-r border-white/5 transition-all duration-300 flex flex-col justify-between shadow-2xl p-6 md:hidden text-left"
+          className="fixed top-0 bottom-0 w-[280px] bg-[#070c18] z-50 border-r border-white/5 transition-all duration-300 flex flex-col justify-between shadow-2xl p-6 md:hidden text-left overflow-x-hidden overflow-y-auto"
           style={{ left: isMobileDrawerOpen ? '0' : '-280px' }}
         >
           {/* Drawer top branding container */}
