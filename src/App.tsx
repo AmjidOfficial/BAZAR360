@@ -20,9 +20,12 @@ import {
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useCurrencyMode } from './lib/currency';
+import { ThemeProvider, useTheme } from './components/ThemeContext';
+import ThemeEngine from './components/ThemeEngine';
 
 import TopAppBar from './components/TopAppBar';
 import BottomNavBar from './components/BottomNavBar';
+import Footer from './components/Footer';
 import HomeView from './components/HomeView';
 import DealerStorefrontView from './components/DealerStorefrontView';
 import SellWithAIView from './components/SellWithAIView';
@@ -33,6 +36,8 @@ import MediaFeedView from './components/MediaFeedView';
 import MarketInsightsView from './components/MarketInsightsView';
 import ConciergeView from './components/ConciergeView';
 import { motion } from 'motion/react';
+import { initializeVisitorTracking, trackSearchQuery, trackVehicleView } from './lib/visitorTracking';
+import LuxuryPortal from './components/luxury/LuxuryPortal';
 
 const METRIC_TABS_DATA = {
   Design: [
@@ -68,42 +73,22 @@ import ShowroomProfile from './pages/ShowroomProfile';
 
 export default function AppWrapper() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/dealers/:showroomSlug" element={<ShowroomProfile />} />
-        <Route path="/showroom/:showroomSlug" element={<ShowroomProfile />} />
-      </Routes>
-    </Router>
+    <ThemeProvider>
+      <ThemeEngine />
+      <Router>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/dealers/:showroomSlug" element={<ShowroomProfile />} />
+          <Route path="/showroom/:showroomSlug" element={<ShowroomProfile />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
 function App() {
   const { renderPrice } = useCurrencyMode();
-
-  const [theme, setTheme] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return localStorage.getItem('bazar360_theme') || 'cosmic-dark';
-      } catch (e) {
-        return 'cosmic-dark';
-      }
-    }
-    return 'cosmic-dark';
-  });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try { localStorage.setItem('bazar360_theme', theme); } catch (e) { /* ignore */ }
-      const themes = ['theme-cosmic-dark', 'theme-luxury-light', 'theme-mint-emerald', 'theme-obsidian-gold'];
-      themes.forEach(t => {
-        document.documentElement.classList.remove(t);
-        document.body.classList.remove(t);
-      });
-      document.documentElement.classList.add(`theme-${theme}`);
-      document.body.classList.add(`theme-${theme}`);
-    }
-  }, [theme]);
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const [currentTab, setTab] = useState<string>('home');
   const [selectedDealerId, setSelectedDealerId] = useState<string>('auto-choice-peshawar');
@@ -113,7 +98,7 @@ function App() {
   const [compareList, setCompareList] = useState<CarListing[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState<boolean>(false);
   const [activeIndustry, setActiveIndustry] = useState<'Automotive' | 'Footwear' | 'Apparel' | 'Electronics'>('Automotive');
-  const [currentCategory, setCurrentCategory] = useState<'gateway' | 'auto' | 'footwear' | 'food'>('auto');
+  const [currentCategory, setCurrentCategory] = useState<'gateway' | 'auto' | 'footwear' | 'food'>('gateway');
   const [comingSoonSector, setComingSoonSector] = useState<{ title: string; tagline: string; desc: string; icon: string; spec: string } | null>(null);
 
   // Ecosystem Gateway gamified voting & notification registers
@@ -294,7 +279,12 @@ function App() {
 
     // 2. Reflect state changes in browser URL bar if needed
     if (window.location.pathname !== targetPath) {
-      window.history.pushState(null, '', targetPath);
+      try {
+        window.history.pushState(null, '', targetPath);
+      } catch (e) {
+        // Suppress security block warnings inside restricted sandbox contexts
+        console.warn('Navigation state sync bypassed due to sandbox restrictions:', e);
+      }
     }
   }, [currentTab, selectedDealerId, selectedListing]);
 
@@ -382,6 +372,23 @@ function App() {
     }
   }, [selectedCategory]);
 
+  // Automated Visitor clickstream tracking for vehicle views
+  useEffect(() => {
+    if (selectedListing) {
+      trackVehicleView(selectedListing.id).catch(err => console.warn('Vehicle view track bypass:', err));
+    }
+  }, [selectedListing]);
+
+  // Automated Visitor debounced clickstream tracking for search keywords
+  useEffect(() => {
+    if (searchQuery.trim().length > 3) {
+      const timer = setTimeout(() => {
+        trackSearchQuery(searchQuery.trim()).catch(err => console.warn('Search query track bypass:', err));
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery]);
+
   // Bid interaction state inside Detail modal
   const [offerInput, setOfferInput] = useState('');
   const [offerSuccessMessage, setOfferSuccessMessage] = useState('');
@@ -443,7 +450,9 @@ function App() {
         setDbLoading(false);
       }
     }
-    initDatabase();
+    initDatabase().then(() => {
+      initializeVisitorTracking().catch(err => console.warn('Visitor tracking engine bypass:', err));
+    });
   }, []);
 
   // Listen for Firebase Auth state changes to sync active user profile details
@@ -794,14 +803,14 @@ function App() {
     ];
 
     return (
-      <div className="bg-[#030712] text-white min-h-screen text-sm font-sans flex flex-col justify-between p-4 md:p-12 relative overflow-hidden select-none">
+      <div className="bg-[#030712] text-white h-screen max-h-screen text-sm font-sans flex flex-col justify-between p-4 md:p-6 lg:p-8 relative overflow-hidden select-none">
         {/* Ambient Cosmic Background Lighting */}
         <div className="absolute top-[-25%] left-[-15%] w-[60%] h-[60%] bg-sky-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse"></div>
         <div className="absolute bottom-[-15%] right-[-15%] w-[60%] h-[60%] bg-orange-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse"></div>
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff02_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
 
         {/* 1. STREAMLINED PREMIUM GATEWAY NAVBAR */}
-        <header className="w-full flex items-center justify-between py-4 border-b border-white/5 relative z-20 mb-8 max-w-7xl mx-auto">
+        <header className="w-full flex items-center justify-between py-2 border-b border-white/5 relative z-20 mb-3 max-w-7xl mx-auto shrink-0">
           {/* Core Branding */}
           <div className="flex items-center space-x-2.5 cursor-pointer select-none">
             <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-slate-900 to-blue-950 border border-blue-500/30 shadow-lg shadow-black">
@@ -820,7 +829,7 @@ function App() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleSetCategory('auto')}
-              className="group flex items-center gap-2 px-4 py-2.5 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-slate-950 border border-orange-500/30 hover:border-orange-500 rounded-xl text-xs font-mono font-black tracking-widest uppercase transition-all duration-300 cursor-pointer shadow-lg shadow-orange-950/20 active:scale-[0.98]"
+              className="group flex items-center gap-2 px-4 py-2 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-slate-950 border border-orange-500/30 hover:border-orange-500 rounded-xl text-xs font-mono font-black tracking-widest uppercase transition-all duration-300 cursor-pointer shadow-lg shadow-orange-950/20 active:scale-[0.98]"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
@@ -834,28 +843,28 @@ function App() {
 
         {/* Hero Console */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex flex-col items-center justify-center text-center mt-2 mb-10 space-y-4 relative z-10 max-w-2xl mx-auto"
+          className="flex flex-col items-center justify-center text-center mt-1 mb-3 space-y-2 relative z-10 max-w-2xl mx-auto shrink-0"
         >
-          <span className="text-[10px] uppercase font-mono font-black tracking-[0.3em] text-[#38BDF8] bg-sky-500/10 px-4 py-1.5 rounded-full border border-sky-500/20 shadow-md">
+          <span className="text-[9px] uppercase font-mono font-black tracking-[0.25em] text-[#38BDF8] bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/20 shadow-md">
             Pakistan's Premium Multi-Tenant Trade Network
           </span>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white uppercase">
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight text-white uppercase">
             Unified Digital <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] to-orange-500 leading-normal">Ecosystem Entry</span>
           </h1>
-          <p className="text-xs text-gray-400 leading-relaxed font-sans max-w-xl">
+          <p className="text-[11px] md:text-xs text-gray-400 leading-relaxed font-sans max-w-xl">
             Switch sectors instantly to explore specialized inventories, localized financial scales, and high-resolution verified trade assets under one cryptographic catalog gateway.
           </p>
         </motion.div>
 
         {/* Redesigned 2-Column Responsive Layout Grid */}
-        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch relative z-10 px-4 mb-20 animate-fade-in">
+        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-stretch relative z-10 px-4 mb-2 flex-1 min-h-0 animate-fade-in">
           
           {/* Column 1: FLAGSHIP SECTOR - Auto Choice (Live Partition) */}
-          <div className="space-y-4 flex flex-col justify-between">
-            <div className="flex items-center justify-between px-1">
+          <div className="space-y-2 flex flex-col min-h-0 h-full">
+            <div className="flex items-center justify-between px-1 shrink-0">
               <span className="text-[10px] font-mono tracking-widest text-[#38BDF8] uppercase font-black">
                 ● FLAGSHIP DIVISION ACTIVE
               </span>
@@ -866,15 +875,15 @@ function App() {
 
             <div 
               onClick={() => handleSetCategory('auto')}
-              className="flex-1 bg-gradient-to-b from-slate-900/95 to-slate-950/95 border border-[#38BDF8]/20 rounded-[32px] p-6 md:p-8 flex flex-col justify-between transition-all duration-300 hover:border-[#38BDF8]/60 hover:shadow-2xl hover:shadow-[#38BDF8]/15 hover:-translate-y-1 active:scale-[0.99] cursor-pointer group select-none relative overflow-hidden min-h-[480px]"
+              className="flex-1 bg-gradient-to-b from-slate-900/95 to-slate-950/95 border border-[#38BDF8]/20 rounded-2xl p-4 md:p-6 flex flex-col justify-between transition-all duration-300 hover:border-[#38BDF8]/60 hover:shadow-2xl hover:shadow-[#38BDF8]/15 hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer group select-none relative overflow-hidden min-h-0"
             >
               {/* Premium Background Grid overlay inside the live card */}
               <div className="absolute inset-0 bg-[radial-gradient(#38BDF8_0.6px,transparent_0.6px)] [background-size:12px_12px] opacity-10"></div>
               <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
 
-              <div className="space-y-6 relative z-10">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-mono text-orange-500 font-black tracking-widest uppercase bg-orange-500/10 px-3 py-1.5 rounded-lg border border-orange-500/20">
+              <div className="space-y-4 relative z-10 flex-1 flex flex-col justify-between">
+                <div className="flex justify-between items-center shrink-0">
+                  <span className="text-[10px] font-mono text-orange-500 font-black tracking-widest uppercase bg-orange-500/10 px-3 py-1 rounded-lg border border-orange-500/20">
                     SECTOR 01 • ACTIVE PORTAL
                   </span>
                   <div className="flex items-center gap-1.5 font-mono text-[9px] text-[#38BDF8]">
@@ -883,25 +892,25 @@ function App() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 shrink-0">
                   <img 
                     src="/auto_choice_logo_1781509565476.jpg" 
-                    className="w-16 h-16 rounded-2xl object-cover border border-[#22d55e]/20 shadow-2xl transition-transform duration-300 group-hover:scale-105" 
+                    className="w-12 h-12 rounded-xl object-cover border border-[#22d55e]/20 shadow-2xl transition-transform duration-300 group-hover:scale-105" 
                     alt="Auto Choice Flagship"
                   />
-                  <div>
-                    <h2 className="text-2xl font-black font-sans text-white uppercase tracking-tight">Auto Choice</h2>
+                  <div className="text-left">
+                    <h2 className="text-xl font-black font-sans text-white uppercase tracking-tight">Auto Choice</h2>
                     <p className="text-[#38BDF8] font-mono text-[10px] font-black tracking-widest uppercase mt-0.5">Automotive division</p>
                   </div>
                 </div>
 
-                <p className="text-gray-300/90 text-xs leading-relaxed font-sans">
+                <p className="text-gray-300/90 text-xs leading-relaxed font-sans text-left flex-1 min-h-0 overflow-y-auto no-scrollbar py-1">
                   Experience Pakistan's elite digitized automotive platform. Browse certified SUVs, premium electric sedans, and high-performance imports with live valuation matrices, secure direct trade options, and instant physical spot-inspection alignments.
                 </p>
 
                 {/* Vehicle vector silhouette */}
-                <div className="py-2 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                  <svg className="w-full h-16 text-sky-400/25 group-hover:text-[#38BDF8]/45 transition-colors" viewBox="0 0 120 40" fill="none" stroke="currentColor" strokeWidth="1.2">
+                <div className="py-1 opacity-60 group-hover:opacity-100 transition-opacity duration-300 shrink-0 hidden sm:block">
+                  <svg className="w-full h-10 text-sky-400/25 group-hover:text-[#38BDF8]/45 transition-colors" viewBox="0 0 120 40" fill="none" stroke="currentColor" strokeWidth="1.2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 28 C 10 24, 25 24, 30 18 L 45 10 C 50 8, 70 8, 75 14 L 90 20 C 105 20, 110 24, 110 28 Z" />
                     <circle cx="30" cy="28" r="5" fill="#030712" />
                     <circle cx="85" cy="28" r="5" fill="#030712" />
@@ -910,11 +919,11 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-white/5 pt-6 relative z-10 w-full">
+              <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-2 relative z-10 w-full shrink-0">
                 <span className="text-[10px] font-mono font-bold text-gray-400 uppercase group-hover:text-[#38BDF8] transition-colors">
                   Tap to enter matrix
                 </span>
-                <div className="bg-orange-500 text-slate-950 rounded-xl px-5 py-3 text-xs font-mono font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-orange-950/20 group-hover:bg-orange-400 transition-all active:scale-[0.98]">
+                <div className="bg-orange-500 text-slate-950 rounded-xl px-4 py-2 text-xs font-mono font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-orange-950/20 group-hover:bg-orange-400 transition-all active:scale-[0.98]">
                   <span>Access Showroom</span>
                   <span className="text-base">→</span>
                 </div>
@@ -923,8 +932,8 @@ function App() {
           </div>
 
           {/* Column 2: RESPONSIVE COMING SOON CONTENT BOX */}
-          <div className="space-y-4 flex flex-col justify-between" id="coming-soon-content-box">
-            <div className="flex items-center justify-between px-1">
+          <div className="space-y-2 flex flex-col min-h-0 h-full" id="coming-soon-content-box">
+            <div className="flex items-center justify-between px-1 shrink-0">
               <span className="text-[10px] font-mono tracking-widest text-[#38BDF8] uppercase font-black flex items-center gap-1.5">
                 <Sparkles size={12} className="text-cyan-400 animate-pulse" /> FUTURE SATELLITE PIPELINES
               </span>
@@ -934,21 +943,24 @@ function App() {
             </div>
 
             <div 
-              className="flex-1 bg-gradient-to-b from-[#09152a] to-slate-950/95 border border-[#38BDF8]/20 rounded-[32px] p-6 md:p-8 flex flex-col justify-between transition-all duration-300 hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-950/15 min-h-[480px] relative overflow-hidden group select-none"
+              className="flex-1 bg-gradient-to-b from-[#09152a] to-slate-950/95 border border-[#38BDF8]/20 rounded-2xl p-4 md:p-6 flex flex-col justify-between transition-all duration-300 hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-950/15 min-h-0 relative overflow-hidden group select-none"
             >
               {/* Backdrops */}
               <div className="absolute inset-0 bg-[radial-gradient(#06b6d4_0.6px,transparent_0.6px)] [background-size:12px_12px] opacity-10"></div>
               <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
 
-              <div className="space-y-6 relative z-10 text-left">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-mono text-[#38BDF8] font-black tracking-widest uppercase bg-sky-500/10 px-3 py-1.5 rounded-lg border border-[#38BDF8]/20">
+              <div className="space-y-3 relative z-10 text-left flex-1 flex flex-col justify-between min-h-0">
+                <div className="flex justify-between items-center shrink-0">
+                  <span className="text-[10px] font-mono text-[#38BDF8] font-black tracking-widest uppercase bg-sky-500/10 px-3 py-1 rounded-lg border border-[#38BDF8]/20">
                     Bazar360 Premium Expansion
                   </span>
                   
                   {/* Notify Me Toggle button */}
                   <button
-                    onClick={() => setTeaserNotified(!teaserNotified)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTeaserNotified(!teaserNotified);
+                    }}
                     className={`p-2 rounded-xl border transition-all duration-300 cursor-pointer select-none flex items-center justify-center ${
                       teaserNotified 
                         ? 'bg-amber-500/20 text-amber-500 border-amber-500/50 animate-pulse' 
@@ -963,31 +975,31 @@ function App() {
                   </button>
                 </div>
 
-                <div className="space-y-3.5">
+                <div className="space-y-2 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <h2 className="text-xl md:text-2xl font-black font-sans text-white uppercase tracking-tight">
+                    <h2 className="text-lg font-black font-sans text-white uppercase tracking-tight">
                       {activeTaglineVariant.title}
                     </h2>
                   </div>
-                  <p className="text-gray-300 text-xs md:text-sm leading-relaxed font-sans">
+                  <p className="text-gray-300 text-xs leading-relaxed font-sans">
                     {activeTaglineVariant.sub}
                   </p>
                 </div>
 
                 {/* SUGGESTION ENGINE BOX */}
-                <div className="pt-4 space-y-3">
+                <div className="pt-2 space-y-2 shrink-0">
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input 
                       type="text"
                       id="community-suggestion-input"
                       value={suggestionText}
                       onChange={(e) => setSuggestionText(e.target.value)}
-                      placeholder="Enter your suggestion (e.g., smart appraisal tracking)..."
-                      className="flex-1 bg-slate-900/90 border border-[#38BDF8]/30 rounded-xl px-4 py-3 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#38BDF8] transition-colors"
+                      placeholder="Enter suggestion (e.g., smart appraisal)..."
+                      className="flex-1 bg-slate-900/90 border border-[#38BDF8]/30 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#38BDF8] transition-colors"
                     />
                     <button
                       id="submit-suggestion-btn"
@@ -996,32 +1008,32 @@ function App() {
                         handleOnSubmitSuggestion();
                       }}
                       disabled={isSubmittingSuggestion || !suggestionText.trim()}
-                      className="px-5 py-3 bg-[#38BDF8] hover:bg-[#0ea5e9] disabled:bg-gray-700 disabled:text-gray-400 text-slate-950 font-sans font-black text-xs rounded-xl uppercase tracking-widest transition-all duration-200 cursor-pointer select-none active:scale-[0.98] shrink-0"
+                      className="px-4 py-2 bg-[#38BDF8] hover:bg-[#0ea5e9] disabled:bg-gray-700 disabled:text-gray-400 text-slate-950 font-sans font-black text-xs rounded-xl uppercase tracking-widest transition-all duration-200 cursor-pointer select-none active:scale-[0.98] shrink-0"
                     >
-                      {isSubmittingSuggestion ? "Submitting..." : "Submit Suggestion"}
+                      {isSubmittingSuggestion ? "Submitting..." : "Submit"}
                     </button>
                   </div>
                   
-                  <div className="flex flex-wrap gap-1.5 items-center">
-                    <span className="text-[8.5px] text-gray-500 font-mono font-bold uppercase">Propose features:</span>
+                  <div className="flex flex-wrap gap-1 items-center">
+                    <span className="text-[8px] text-gray-500 font-mono font-bold uppercase">Propose:</span>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setSuggestionText("Smart appraisal tracking"); }}
-                      className="px-2.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8.5px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
                     >
-                      + Smart Appraisal Tracking
+                      + Appraisal Track
                     </button>
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setSuggestionText("Automated escrow security"); }}
-                      className="px-2.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8.5px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
+                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
                     >
-                      + Automated Escrow
+                      + Escrow Security
                     </button>
                   </div>
 
                   {suggestionMessage && (
-                    <p className={`text-[11px] font-medium font-sans ${suggestionMessage.isError ? 'text-red-400' : 'text-emerald-400 animate-pulse'}`}>
+                    <p className={`text-[10px] font-medium font-sans ${suggestionMessage.isError ? 'text-red-400' : 'text-emerald-400 animate-pulse'}`}>
                       {suggestionMessage.text}
                     </p>
                   )}
@@ -1029,13 +1041,13 @@ function App() {
               </div>
 
               {/* Voting Footer */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/5 pt-6 mt-4 relative z-10 w-full text-left">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/5 pt-3 mt-2 relative z-10 w-full text-left shrink-0">
                 <div className="shrink-0">
-                  <p className="text-[10px] uppercase font-mono font-extrabold text-gray-500 tracking-wider">
-                    Community Interest Weight
+                  <p className="text-[9px] uppercase font-mono font-extrabold text-gray-500 tracking-wider">
+                    Community Weight
                   </p>
-                  <p className="text-sm font-mono font-black text-white mt-0.5">
-                    🗳️ <span className="text-cyan-400 animate-pulse">{teaserVotes.toLocaleString()}</span> Verified Votes
+                  <p className="text-xs font-mono font-black text-white mt-0.5">
+                    🗳️ <span className="text-cyan-400 animate-pulse">{teaserVotes.toLocaleString()}</span> Votes
                   </p>
                 </div>
 
@@ -1050,13 +1062,13 @@ function App() {
                       setUserTeaserVoted(true);
                     }
                   }}
-                  className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-mono font-black uppercase tracking-widest text-center transition-all duration-300 cursor-pointer select-none active:scale-[0.98] ${
+                  className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-mono font-black uppercase tracking-widest text-center transition-all duration-300 cursor-pointer select-none active:scale-[0.98] ${
                     userTeaserVoted
                       ? 'bg-orange-500 text-slate-950 font-black shadow-lg shadow-orange-950/45'
                       : 'bg-transparent text-[#38BDF8] border border-[#38BDF8]/40 hover:border-[#38BDF8] hover:bg-[#38BDF8]/10 shadow-lg'
                   }`}
                 >
-                  {userTeaserVoted ? "✓ Voted to Unlock" : "Vote to Unlock First"}
+                  {userTeaserVoted ? "✓ Voted" : "Vote to Unlock"}
                 </button>
               </div>
             </div>
@@ -1112,8 +1124,8 @@ function App() {
         )}
 
         {/* Footer */}
-        <div className="text-center text-gray-600 text-[10px] uppercase font-mono tracking-widest pb-[env(safe-area-inset-bottom)] md:pb-2 relative z-10">
-          BAZAR360 Pakistan Enterprise &copy; 2026. SECURED THROUGH ADVANCED LOCAL BLUEPRINT.
+        <div className="text-center text-gray-500 text-[9px] md:text-[10px] uppercase font-mono tracking-widest pb-[env(safe-area-inset-bottom)] md:pb-1 mt-1 shrink-0 relative z-10">
+          Founder: Muhammad Amjid &bull; Helpline Connect: <a href="tel:03149198403" className="text-orange-400 hover:underline">03149198403</a> &bull; BAZAR360 Pakistan Enterprise &copy; 2026. SECURED THROUGH ADVANCED LOCAL BLUEPRINT.
         </div>
       </div>
     );
@@ -1557,7 +1569,7 @@ function App() {
               </div>
             )}
 
-            {currentTab === 'dealer-storefront' && (
+            {currentTab === 'dealer-storefront' && currentDealer && (
               <DealerStorefrontView
                 dealer={currentDealer}
                 listings={prioritizedListings}
@@ -1580,24 +1592,37 @@ function App() {
             )}
 
             {currentTab === 'portal' && (
-              <div className="max-w-4xl mx-auto space-y-8 pb-16">
-                <div className="border-b border-[#1e293b] pb-3">
-                  <h2 className="font-sans font-bold text-xl md:text-2xl text-[#38bdf8] uppercase tracking-tight">BAZAR360 Portal & Forms</h2>
-                  <p className="text-xs text-gray-400 mt-1">Register user accounts, submit dealership catalogs, or toggle RBAC privilege contexts for end-to-end testing.</p>
-                </div>
-                <RegistrationPortal
+              <div className="max-w-7xl mx-auto space-y-12 pb-16 px-4 md:px-8 text-left">
+                {/* 1. Master Luxury Portal Diagnostic & Operations Suite */}
+                <LuxuryPortal
                   currentUser={currentUser}
                   setCurrentUser={setCurrentUser}
-                  onDealerRegistered={(newD) => {
-                    setDealers((prev) => [...prev, newD]);
-                    setReviewsMap((prev) => ({ ...prev, [newD.id]: [] }));
-                  }}
+                  dealers={dealers}
+                  listings={listings}
+                  setDealers={setDealers}
+                  setListings={setListings}
                 />
+
+                {/* 2. Original Secondary Registration Portal and Submissions forms */}
+                <div className="border border-white/5 rounded-3xl p-6 md:p-8 bg-[#0a0a0c] text-left">
+                  <div className="border-b border-white/5 pb-3 mb-6">
+                    <h2 className="font-sans font-extrabold text-lg md:text-xl text-zinc-400 uppercase tracking-wider">Multi-Role Registration & Onboarding Suite</h2>
+                    <p className="text-[10px] text-zinc-500 mt-1">Simulate secure customer registration, detailed car posting schema outputs, and regional dealership signups.</p>
+                  </div>
+                  <RegistrationPortal
+                    currentUser={currentUser}
+                    setCurrentUser={setCurrentUser}
+                    onDealerRegistered={(newD) => {
+                      setDealers((prev) => [...prev, newD]);
+                      setReviewsMap((prev) => ({ ...prev, [newD.id]: [] }));
+                    }}
+                  />
+                </div>
               </div>
             )}
           </>
         )}
-
+        <Footer />
       </main>
 
       {/* Bottom Nav Bar (Mobile Only) */}
@@ -2247,6 +2272,12 @@ function App() {
                 📋 Active Inventory
               </button>
               <button
+                onClick={() => { setTab('dealers'); setIsMobileDrawerOpen(false); }}
+                className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'dealers' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+              >
+                🏢 Showrooms
+              </button>
+              <button
                 onClick={() => { setTab('media'); setIsMobileDrawerOpen(false); }}
                 className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'media' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
               >
@@ -2286,10 +2317,12 @@ function App() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 bg-[#121c32]/65 p-3 rounded-xl border border-white/5">
                   <div className="w-7 h-7 rounded-full bg-orange-500 text-white flex items-center justify-center font-black text-xs uppercase shrink-0">
-                    {currentUser.displayName.substring(0, 1).toUpperCase()}
+                    {(currentUser.displayName || currentUser.email || 'User').substring(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-white font-bold text-xs truncate leading-none">{currentUser.displayName}</p>
+                    <p className="text-white font-bold text-xs truncate leading-none">
+                      {currentUser.displayName || currentUser.email || 'User'}
+                    </p>
                     <span className="text-[8px] text-orange-400 font-mono uppercase tracking-widest block mt-1">{currentUser.role}</span>
                   </div>
                 </div>

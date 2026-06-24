@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, ShieldCheck, Mail, Phone, Star, Building, ArrowLeft } from 'lucide-react';
 import { Dealer, CarListing } from '../types';
 import { dbFetchDealers, dbFetchListings } from '../lib/dbService';
+import { ShowroomThemeWrapper } from '../components/ShowroomThemeWrapper';
+import { VehicleCard } from '../components/VehicleCard';
 
 export default function ShowroomProfile() {
   const { showroomSlug } = useParams<{ showroomSlug: string }>();
@@ -84,31 +86,33 @@ export default function ShowroomProfile() {
     bgStyle: 'dark'
   };
 
+  const safeTheme = theme || { bgStyle: 'dark', primaryColor: '#00d2ff' };
+
   const bgStyleClass = 
-    theme.bgStyle === 'light' ? 'bg-[#f8fafc] text-slate-900 font-sans' :
-    theme.bgStyle === 'emerald' ? 'bg-[#03140f] text-[#e2f0ec] font-mono' :
-    theme.bgStyle === 'gold' ? 'bg-[#050505] text-[#f4f4f5] font-sans' :
+    safeTheme.bgStyle === 'light' ? 'bg-[#f8fafc] text-slate-900 font-sans' :
+    safeTheme.bgStyle === 'emerald' ? 'bg-[#03140f] text-[#e2f0ec] font-mono' :
+    safeTheme.bgStyle === 'gold' ? 'bg-[#050505] text-[#f4f4f5] font-sans' :
     'bg-[#0a0a0b] text-white font-sans'; // Default Obsidian Black
 
   const cardStyleClass = 
-    theme.bgStyle === 'light' ? 'bg-white border text-slate-800' :
-    theme.bgStyle === 'emerald' ? 'bg-[#08211a] text-emerald-100' :
-    theme.bgStyle === 'gold' ? 'bg-[#121215] text-zinc-100 font-mono' :
+    safeTheme.bgStyle === 'light' ? 'bg-white border text-slate-800' :
+    safeTheme.bgStyle === 'emerald' ? 'bg-[#08211a] text-emerald-100' :
+    safeTheme.bgStyle === 'gold' ? 'bg-[#121215] text-zinc-100 font-mono' :
     'bg-[#121214] text-slate-100'; // Default Graphite Card
 
   const textMutedClass = 
-    theme.bgStyle === 'light' ? 'text-slate-500' :
-    theme.bgStyle === 'emerald' ? 'text-emerald-400/80' :
-    theme.bgStyle === 'gold' ? 'text-zinc-400 font-mono' :
+    safeTheme.bgStyle === 'light' ? 'text-slate-500' :
+    safeTheme.bgStyle === 'emerald' ? 'text-emerald-400/80' :
+    safeTheme.bgStyle === 'gold' ? 'text-zinc-400 font-mono' :
     'text-gray-400';
 
   const borderStyleClass = 
-    theme.bgStyle === 'light' ? 'border-[#e2e8f0]' :
-    theme.bgStyle === 'emerald' ? 'border-[#10b981]/20' :
-    theme.bgStyle === 'gold' ? 'border-[#c5a880]/10' :
+    safeTheme.bgStyle === 'light' ? 'border-[#e2e8f0]' :
+    safeTheme.bgStyle === 'emerald' ? 'border-[#10b981]/20' :
+    safeTheme.bgStyle === 'gold' ? 'border-[#c5a880]/10' :
     'border-white/5';
 
-  const brandAccentHex = theme.primaryColor || '#00d2ff';
+  const brandAccentHex = safeTheme.primaryColor || '#00d2ff';
 
   const [callbackSuccess, setCallbackSuccess] = useState('');
 
@@ -180,13 +184,7 @@ export default function ShowroomProfile() {
   };
 
   return (
-    <div 
-      className={`min-h-screen ${bgStyleClass} transition-colors duration-300 pb-20`}
-      style={{ 
-        '--dynamic-accent': brandAccentHex, 
-        fontFamily: theme.fontFamily || 'Inter, sans-serif' 
-      } as React.CSSProperties}
-    >
+    <ShowroomThemeWrapper themeConfig={theme}>
       {/* Header Banner */}
       <div className={`relative h-64 md:h-80 w-full overflow-hidden border-b ${borderStyleClass}`}>
         {dealer.coverImage ? (
@@ -328,44 +326,16 @@ export default function ShowroomProfile() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 animate-fade-in">
             {listings.map(car => (
-              <div 
-                key={car.id} 
-                onClick={() => registerShowroomLead('View Inventory Details', car.title, car.id)}
-                className={`${cardStyleClass} border ${borderStyleClass} rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 group cursor-pointer shadow-lg hover:shadow-xl`}
-              >
-                <div className="h-48 overflow-hidden relative">
-                  <img 
-                    src={car.images?.[0] || car.imageUrl} 
-                    alt={car.title} 
-                    className={`w-full h-full object-cover transition-transform duration-500 ${car.isSold ? 'grayscale contrast-125 brightness-75 opacity-90' : 'group-hover:scale-105'}`}
-                  />
-                  {car.isSold && (
-                    <div className="absolute top-6 right-6 z-30 bg-[#ff6b00] text-white text-sm font-black tracking-widest uppercase px-4 py-1.5 rounded shadow-2xl border-2 border-white rotate-12 scale-110 select-none">
-                      SOLD
-                    </div>
-                  )}
-                  {car.featured && !car.isSold && (
-                    <div className="absolute top-3 left-3 bg-[#ff6b00] text-white text-[10px] font-black px-2 py-0.5 rounded shadow z-10 uppercase">
-                      Featured
-                    </div>
-                  )}
-                  <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[11px] font-mono px-3 py-1 rounded-lg border border-white/10 z-10">
-                    {car.year} Model
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h4 className="font-bold text-[15px] truncate mb-1 text-white">{car.title}</h4>
-                  <div className="flex items-center gap-3 text-xs text-gray-400 mb-4">
-                    <span>{car.mileage.toLocaleString()} km</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-                    <span>{car.transmission}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                    <span className="font-bold text-[var(--dynamic-accent)] tracking-tight">PKR {Math.floor(car.price / 100000)} Lacs</span>
-                    <button className="text-[10px] uppercase font-bold text-gray-400 hover:text-white transition-colors">Details →</button>
-                  </div>
-                </div>
-              </div>
+              <VehicleCard
+                key={car.id}
+                car={car}
+                dealer={dealer}
+                variant="grid"
+                onSelect={(selectedCar) => {
+                  registerShowroomLead('View Inventory Details', selectedCar.title, selectedCar.id);
+                  navigate('/');
+                }}
+              />
             ))}
           </div>
 
@@ -377,6 +347,6 @@ export default function ShowroomProfile() {
         </div>
 
       </div>
-    </div>
+    </ShowroomThemeWrapper>
   );
 }

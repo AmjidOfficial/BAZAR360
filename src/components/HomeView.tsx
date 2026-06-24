@@ -25,13 +25,16 @@ import {
   X,
   Lock,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Grid,
+  List
 } from 'lucide-react';
 import { Dealer, CarListing } from '../types';
 import { useCurrencyMode } from '../lib/currency';
 import { PAKISTAN_CITIES_MATRIX, ALL_PAKISTAN_CITIES } from '../lib/cities';
 import { UserProfile, dbSaveLead } from '../lib/dbService';
 import AutoChoiceEngine from './AutoChoiceEngine';
+import { VehicleCard } from './VehicleCard';
 
 export const VEHICLE_DICTIONARY: Record<string, Array<{ make: string; model: string; price: number; description: string }>> = {
   SUV: [
@@ -124,6 +127,7 @@ export default function HomeView({
   const [sortBy, setSortBy] = useState('Newest');
   const [filterYearMin, setFilterYearMin] = useState<number>(2000);
   const [filterYearMax, setFilterYearMax] = useState<number>(2026);
+  const [cardLayout, setCardLayout] = useState<'grid' | 'list'>('grid');
 
   // Real-time synchronization of currency switches to the budget typing input box
   React.useEffect(() => {
@@ -1018,12 +1022,38 @@ export default function HomeView({
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* Layout Switcher */}
+              <div className="flex bg-bg-primary border border-border-main p-1 rounded-xl">
+                <button
+                  onClick={() => setCardLayout('grid')}
+                  className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+                    cardLayout === 'grid'
+                      ? 'bg-accent-main text-stone-950'
+                      : 'text-text-muted hover:text-text-main'
+                  }`}
+                  title="Grid Layout"
+                >
+                  <Grid size={13} />
+                </button>
+                <button
+                  onClick={() => setCardLayout('list')}
+                  className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+                    cardLayout === 'list'
+                      ? 'bg-accent-main text-stone-950'
+                      : 'text-text-muted hover:text-text-main'
+                  }`}
+                  title="List Layout"
+                >
+                  <List size={13} />
+                </button>
+              </div>
+
               <span className="text-[9px] text-gray-500 font-mono hidden sm:inline">SORT BY:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-[#121a2a] border border-[#1e293b] text-white font-mono text-[9px] uppercase font-bold py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-[#38BDF8] cursor-pointer"
+                className="bg-bg-secondary border border-border-main text-text-main font-mono text-[9px] uppercase font-bold py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-accent-main cursor-pointer"
               >
                 <option value="Newest">🔥 Newly Uploaded</option>
                 <option value="PriceLow">🪙 Price: Low to High</option>
@@ -1058,110 +1088,20 @@ export default function HomeView({
               }}
               initial="hidden"
               animate="show"
-              className="grid grid-cols-1 sm:grid-cols-2 gap-6"
+              className={cardLayout === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-6" : "flex flex-col gap-6"}
             >
               {sortedListings.map((car) => {
-                // Find associated dealer logo/avatar
                 const carDealer = dealers.find(d => d.id === car.dealerId);
-                const isAutoChoice = car.dealerId === 'auto-choice-peshawar';
-                
                 return (
-                  <motion.div
+                  <VehicleCard
                     key={car.id}
-                    variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 90, damping: 15 } }
-                    }}
-                    onClick={() => onSelectListing(car)}
-                    className="bg-[var(--brand-card)] border border-[var(--brand-border)] hover:border-[var(--brand-accent)]/80 rounded-2xl overflow-hidden group hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.6)] transition-all duration-300 cursor-pointer shadow-xl flex flex-col justify-between"
-                  >
-                    {/* Media viewport container with Clean ratio aspect */}
-                    <div className="relative aspect-[16/10] bg-black overflow-hidden">
-                      <img
-                        alt={car.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        src={car.imageUrl}
-                        referrerPolicy="no-referrer"
-                      />
-                      
-                      {/* Interactive certification badge overlay */}
-                      {isAutoChoice ? (
-                        <div className="absolute top-3 left-3 bg-[#c5a880] text-black px-3 py-1 rounded-lg text-[8.5px] font-mono font-black uppercase flex items-center gap-1 shadow-lg tracking-wider border border-[#d6bc97]/30">
-                          <Sparkles size={9} className="animate-pulse" /> Flagship Verified Bargain
-                        </div>
-                      ) : car.verified ? (
-                        <div className="absolute top-3 left-3 bg-black/85 backdrop-blur-sm border border-white/10 px-2.5 py-1 rounded-lg text-white text-[8.5px] font-mono font-extrabold uppercase flex items-center gap-1 shadow-lg">
-                          <Check size={10} className="text-[#c5a880]" /> Verified
-                        </div>
-                      ) : null}
-                      
-                      {/* Display model year overlay */}
-                      <div className="absolute bottom-3 right-3 text-[#f4f4f5] bg-black/80 border border-white/15 text-[8.5px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-widest">
-                        {car.year} Model
-                      </div>
-
-                      {onToggleCompare && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onToggleCompare(car);
-                          }}
-                          className={`absolute top-3 right-3 px-3 py-1.5 rounded-lg border text-[8.5px] font-mono font-black uppercase backdrop-blur-sm transition-all duration-200 cursor-pointer ${
-                            compareList.some(item => item.id === car.id)
-                              ? 'bg-[#c5a880] text-black border-[#c5a880] shadow-md shadow-[#c5a880]/20'
-                              : 'bg-black/75 text-gray-400 border-white/10 hover:text-white'
-                          }`}
-                          style={{ minHeight: '32px' }}
-                        >
-                          {compareList.some(item => item.id === car.id) ? '✓ Compare Active' : '+ Comparison'}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Meta descriptions and details wrapper */}
-                    <div className="p-5.5 space-y-4 flex-grow flex flex-col justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-1.5">
-                          <span className="text-[9.5px] text-[#c5a880] font-mono uppercase font-black tracking-widest truncate max-w-[150px]">
-                            {car.make}  {car.model}
-                          </span>
-                          {carDealer && (
-                            <span className="text-[8px] text-gray-400 font-sans tracking-wide truncate bg-[#0a0a0b] border border-white/5 px-2.5 py-0.5 rounded">
-                              {carDealer.name}
-                            </span>
-                          )}
-                        </div>
-
-                        <h3 className="text-white text-[13px] font-bold uppercase tracking-tight truncate group-hover:text-[#c5a880] transition-colors leading-tight">
-                          {car.title}
-                        </h3>
-
-                        {/* Interactive highlights summary */}
-                        <div className="flex items-center gap-2 text-[9px] text-white/50 font-mono uppercase flex-wrap">
-                          <span className="bg-[#0a0a0b] px-2 py-0.5 rounded flex items-center gap-1 border border-white/5">
-                            <Gauge size={10} className="text-[#c5a880]" /> {car.mileage.toLocaleString()} KM
-                          </span>
-                          <span className="bg-[#0a0a0b] px-2 py-0.5 rounded border border-white/5">{car.fuelType}</span>
-                          <span className="bg-[#0a0a0b] px-2 py-0.5 rounded border border-white/5">{car.transmission}</span>
-                        </div>
-                      </div>
-
-                      {/* Line partition */}
-                      <div className="pt-3 border-t border-white/5 flex items-end justify-between">
-                        <div className="flex flex-col">
-                          <span className="text-[8px] font-mono uppercase tracking-widest text-zinc-500">Valuation</span>
-                          <span className="text-[15px] font-black text-[#c5a880] tracking-wide">
-                            {renderPrice(car.price)}
-                          </span>
-                        </div>
-
-                        <div className="bg-[#0a0a0b] border border-white/5 group-hover:bg-[#c5a880]/15 group-hover:text-[#c5a880] group-hover:border-[#c5a880]/30 p-2.5 rounded-lg transition-all duration-300">
-                          <Eye size={12} />
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
+                    car={car}
+                    dealer={carDealer}
+                    variant={cardLayout}
+                    onSelect={onSelectListing}
+                    onToggleCompare={onToggleCompare}
+                    isComparing={compareList.some(item => item.id === car.id)}
+                  />
                 );
               })}
             </motion.div>
