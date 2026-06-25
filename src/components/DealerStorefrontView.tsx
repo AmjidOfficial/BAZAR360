@@ -32,7 +32,6 @@ import {
 import { Dealer, CarListing, Review, ChatMessage } from '../types';
 import ShowroomHQHub from './ShowroomHQHub';
 import { callDealerChat } from '../services/api';
-import AiTranslationWrapper from './AiTranslationWrapper';
 import { useCurrencyMode } from '../lib/currency';
 
 const FEED_STOCK_IMAGES = [
@@ -615,7 +614,7 @@ export default function DealerStorefrontView({
             </div>
             
             <div className="text-white/60 text-xs font-sans max-w-xl leading-relaxed">
-              <AiTranslationWrapper text={dealer.subtitle} />
+              {dealer.subtitle}
             </div>
 
             {/* Strict Socials Hiding Rule: website is completely deleted/unrendered if missing. No blank placeholders or tags. */}
@@ -799,7 +798,7 @@ export default function DealerStorefrontView({
                     <Award size={14} /> Executive Showroom Bio
                   </h3>
                   <div className="text-white/80 text-sm leading-relaxed font-sans">
-                    <AiTranslationWrapper text={dealer.description} />
+                    {dealer.description}
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5 font-mono text-center">
@@ -1380,7 +1379,7 @@ export default function DealerStorefrontView({
                             )}
                           </div>
                           <div className="text-white/70 text-xs leading-relaxed font-sans">
-                            <AiTranslationWrapper text={post.description} />
+                            {post.description}
                           </div>
                           
                           {/* Feed social controls */}
@@ -1476,7 +1475,7 @@ export default function DealerStorefrontView({
                           {blog.title}
                         </h4>
                         <div className="text-white/70 text-xs leading-relaxed font-sans">
-                          <AiTranslationWrapper text={blog.excerpt} />
+                          {blog.excerpt}
                         </div>
 
                         <div className="flex justify-between items-center pt-4 border-t border-white/5">

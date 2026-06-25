@@ -15,16 +15,6 @@ export const auth = getAuth();
 export const googleProvider = new GoogleAuthProvider();
 export const functions = getFunctions(app, 'us-central1'); // Defaulting to us-central1 (or project default)
 
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'system', 'connection'));
-  } catch (error) {
-    // Suppress Firestore connection errors from showing as critical unhandled exceptions on startup
-    console.warn("Firestore connection diagnostic check completed. Falling back to local/cached state:", error);
-  }
-}
-testConnection();
-
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',

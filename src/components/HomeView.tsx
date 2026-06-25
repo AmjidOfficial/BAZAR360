@@ -33,7 +33,6 @@ import { Dealer, CarListing } from '../types';
 import { useCurrencyMode } from '../lib/currency';
 import { PAKISTAN_CITIES_MATRIX, ALL_PAKISTAN_CITIES } from '../lib/cities';
 import { UserProfile, dbSaveLead } from '../lib/dbService';
-import AutoChoiceEngine from './AutoChoiceEngine';
 import { VehicleCard } from './VehicleCard';
 
 export const VEHICLE_DICTIONARY: Record<string, Array<{ make: string; model: string; price: number; description: string }>> = {
@@ -389,22 +388,10 @@ export default function HomeView({
   return (
     <div id="bazar360-home-viewport" className="flex flex-col space-y-8 pb-16 animate-fade-in text-white font-sans">
 
-      {/* CUSTOM INTEGRATED STUDIO-GRADE CAR DETAIL ARCHITECTURE & INTERACTIVE CANVAS ENGINE */}
-      <section className="order-1">
-        <AutoChoiceEngine 
-          allListings={listings} 
-          onViewChange={setEngineView}
-          onSelectExternalListing={(listingId) => {
-            const found = listings.find(l => l.id === listingId);
-            if (found) onSelectListing(found);
-          }} 
-        />
-      </section>
-
       {engineView === 'dashboard' && (
         <>
           {/* 1. HIGHLY VISUAL CATEGORY/BRAND ICON GRID SPLIT */}
-      <section className="bg-slate-900/60 p-5 rounded-3xl border border-white/5 space-y-4 shadow-xl order-1">
+      <section className="bg-[#1E293B] p-5 rounded-3xl border border-white/5 space-y-4 shadow-xl order-1">
         <div className="flex justify-between items-center border-b border-white/5 pb-2">
           <span className="text-[10px] font-mono font-black text-[#38BDF8] uppercase tracking-wider">
             Explore Bazar360 Portals By Group
@@ -432,7 +419,7 @@ export default function HomeView({
                   setTab(item.tab);
                 }
               }}
-              className="bg-[#0c1322] hover:bg-[#121a2a] border border-white/5 hover:border-orange-500/40 p-4.5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 duration-150 active:scale-95 transition-all select-none cursor-pointer group"
+              className="bg-[#111827] hover:bg-[#111827]/80 border border-white/5 hover:border-orange-500/40 p-4.5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 duration-150 active:scale-95 transition-all select-none cursor-pointer group"
             >
               <span className="text-2xl group-hover:scale-110 transition-transform duration-200">{item.icon}</span>
               <div className="min-w-0">

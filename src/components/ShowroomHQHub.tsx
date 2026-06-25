@@ -31,9 +31,14 @@ import { Dealer, CarListing, ActivityPost } from '../types';
 import { UserProfile } from '../lib/dbService';
 import { callMarketingEngine } from '../services/api';
 import { ALL_PAKISTAN_CITIES } from '../lib/cities';
-import { formatPKRCurrency } from './SellWithAIView';
-import ShowroomShareWidget from './ShowroomShareWidget';
-import BulkMediaUpload from './BulkMediaUpload';
+
+const formatPKRCurrency = (amount: number) => {
+  if (amount >= 10000000) {
+    return `Rs. ${(amount / 10000000).toFixed(2)} Crore`;
+  }
+  return `Rs. ${(amount / 100000).toFixed(2)} Lakh`;
+};
+
 
 interface ShowroomHQHubProps {
   dealer: Dealer;
@@ -862,8 +867,26 @@ export default function ShowroomHQHub({
                 </div>
               </div>
               
-              <div className="pt-4 border-t border-white/5">
-                <ShowroomShareWidget dealer={dealer} />
+              <div className="pt-4 border-t border-white/5 space-y-2">
+                <label className="text-white/60 font-semibold block uppercase font-mono text-[9px]">Shareable Storefront Link:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    className="bg-[#0F172A] border border-white/5 rounded-xl p-3 text-white focus:outline-none font-mono text-xs flex-1"
+                    value={`https://bazar360.online/showroom/${dealer.id}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://bazar360.online/showroom/${dealer.id}`);
+                      alert('Storefront link copied to clipboard!');
+                    }}
+                    className="bg-sky-500 hover:bg-sky-400 text-stone-950 font-sans font-black text-xs uppercase px-4 rounded-xl transition-all active:scale-95 cursor-pointer"
+                  >
+                    Copy
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-end pt-3">
@@ -1593,8 +1616,30 @@ export default function ShowroomHQHub({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-white/60 font-semibold block uppercase font-mono text-[9px]">Media Attachment Pipeline:</label>
-            <BulkMediaUpload />
+            <label className="text-white/60 font-semibold block uppercase font-mono text-[9px]">Stock Photo URL (pasted link or select preset):</label>
+            <input
+              type="text"
+              className="w-full bg-[#0F172A] border border-white/5 rounded-xl p-3 text-white focus:outline-none focus:border-orange-500 text-xs font-mono"
+              placeholder="Paste custom vehicle image URL"
+              value={carImgUrl}
+              onChange={e => setCarImgUrl(e.target.value)}
+            />
+            <div className="flex gap-2 mt-2">
+              {STOCK_CAR_PHOTOS.map((photo, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setCarImgUrl(photo.url)}
+                  className={`px-2 py-1 text-[9px] font-mono border rounded-lg transition-all ${
+                    carImgUrl === photo.url
+                      ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+                      : 'border-white/5 bg-slate-950/40 text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Preset {idx + 1} ({photo.name.split(' ')[0]})
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-1.5">

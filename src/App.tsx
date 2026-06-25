@@ -28,16 +28,11 @@ import BottomNavBar from './components/BottomNavBar';
 import Footer from './components/Footer';
 import HomeView from './components/HomeView';
 import DealerStorefrontView from './components/DealerStorefrontView';
-import SellWithAIView from './components/SellWithAIView';
 import SearchExplorerView from './components/SearchExplorerView';
 import RegistrationPortal from './components/RegistrationPortal';
 import AdminModerationDeck from './components/AdminModerationDeck';
-import MediaFeedView from './components/MediaFeedView';
-import MarketInsightsView from './components/MarketInsightsView';
-import ConciergeView from './components/ConciergeView';
 import { motion } from 'motion/react';
 import { initializeVisitorTracking, trackSearchQuery, trackVehicleView } from './lib/visitorTracking';
-import LuxuryPortal from './components/luxury/LuxuryPortal';
 
 const METRIC_TABS_DATA = {
   Design: [
@@ -803,37 +798,37 @@ function App() {
     ];
 
     return (
-      <div className="bg-[#030712] text-white h-screen max-h-screen text-sm font-sans flex flex-col justify-between p-4 md:p-6 lg:p-8 relative overflow-hidden select-none">
-        {/* Ambient Cosmic Background Lighting */}
-        <div className="absolute top-[-25%] left-[-15%] w-[60%] h-[60%] bg-sky-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse"></div>
-        <div className="absolute bottom-[-15%] right-[-15%] w-[60%] h-[60%] bg-orange-500/10 rounded-full blur-[160px] pointer-events-none animate-pulse"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff02_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+      <div className="bg-[#0B0F19] text-[#E2E8F0] min-h-screen text-sm font-sans flex flex-col justify-start py-6 px-4 md:px-8 relative overflow-y-auto select-none">
+        {/* Subtle, Sophisticated Background Ambient Glows */}
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#2563EB]/10 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-orange-500/5 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.05)_1.5px,transparent_1.5px)] [background-size:20px_20px] pointer-events-none opacity-85"></div>
 
-        {/* 1. STREAMLINED PREMIUM GATEWAY NAVBAR */}
-        <header className="w-full flex items-center justify-between py-2 border-b border-white/5 relative z-20 mb-3 max-w-7xl mx-auto shrink-0">
+        {/* 1. REFINED PREMIUM GATEWAY NAVBAR */}
+        <header className="w-full flex items-center justify-between py-3 border-b border-white/5 relative z-20 mb-3 max-w-7xl mx-auto shrink-0">
           {/* Core Branding */}
-          <div className="flex items-center space-x-2.5 cursor-pointer select-none">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-slate-900 to-blue-950 border border-blue-500/30 shadow-lg shadow-black">
-              <svg className="w-6 h-6 text-orange-500 animate-[spin_30s_linear_infinite]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+          <div className="flex items-center space-x-3 cursor-pointer select-none">
+            <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-[#1E293B] border border-white/5 shadow-sm">
+              <svg className="w-6 h-6 text-orange-500 animate-[spin_40s_linear_infinite]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"></path>
               </svg>
-              <span className="absolute text-[9px] font-black text-sky-400">360</span>
+              <span className="absolute text-[10px] font-black text-sky-400">360</span>
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-lg font-black text-white tracking-widest leading-none">BAZAR<span className="text-orange-500 font-extrabold">360</span></span>
-              <span className="text-[9px] font-black text-sky-400 tracking-[0.22em] uppercase pt-0.5">Ecosystem</span>
+              <span className="text-xl font-black text-white tracking-wider leading-none">BAZAR<span className="text-orange-500 font-extrabold">360</span></span>
+              <span className="text-[10px] font-mono font-black text-gray-500 tracking-[0.25em] uppercase pt-1">Ecosystem</span>
             </div>
           </div>
 
-          {/* Primary Active Sector Button ONLY (Spaces & Health replaced/cleaned from navbar) */}
+          {/* Primary Live Division Quick Access */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleSetCategory('auto')}
-              className="group flex items-center gap-2 px-4 py-2 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-slate-950 border border-orange-500/30 hover:border-orange-500 rounded-xl text-xs font-mono font-black tracking-widest uppercase transition-all duration-300 cursor-pointer shadow-lg shadow-orange-950/20 active:scale-[0.98]"
+              className="group flex items-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white border border-orange-500 rounded-xl text-xs font-mono font-black tracking-wider uppercase transition-all duration-300 cursor-pointer shadow-md shadow-orange-500/10 active:scale-[0.98]"
             >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500 group-hover:bg-slate-950 transition-colors"></span>
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
               </span>
               <span>Auto Choice [Live]</span>
               <span className="transition-transform duration-200 group-hover:translate-x-1">→</span>
@@ -841,89 +836,89 @@ function App() {
           </div>
         </header>
 
-        {/* Hero Console */}
+        {/* Hero Console (Redesigned with Premium Dark Pairings) */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex flex-col items-center justify-center text-center mt-1 mb-3 space-y-2 relative z-10 max-w-2xl mx-auto shrink-0"
+          className="flex flex-col items-center justify-center text-center mt-1 mb-4 space-y-2 relative z-10 max-w-2xl mx-auto shrink-0"
         >
-          <span className="text-[9px] uppercase font-mono font-black tracking-[0.25em] text-[#38BDF8] bg-sky-500/10 px-3 py-1 rounded-full border border-sky-500/20 shadow-md">
-            Pakistan's Premium Multi-Tenant Trade Network
+          <span className="text-[9px] uppercase font-mono font-black tracking-[0.25em] text-[#38BDF8] bg-[#38BDF8]/10 px-3.5 py-1.5 rounded-full border border-sky-500/20 shadow-sm">
+            ★ Pakistan’s Premier Automotive & Multi-Tenant Trade Network
           </span>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold tracking-tight text-white uppercase">
-            Unified Digital <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] to-orange-500 leading-normal">Ecosystem Entry</span>
+          <h1 className="text-2xl md:text-3.5xl lg:text-4xl font-black tracking-tight text-white uppercase leading-tight md:leading-snug">
+            Unified Digital <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] to-orange-500">Ecosystem Gateway</span>
           </h1>
-          <p className="text-[11px] md:text-xs text-gray-400 leading-relaxed font-sans max-w-xl">
-            Switch sectors instantly to explore specialized inventories, localized financial scales, and high-resolution verified trade assets under one cryptographic catalog gateway.
+          <p className="text-xs text-gray-400 leading-relaxed font-sans max-w-xl">
+            Seamless access to certified dealer inventories, direct buyer-seller chat routes, visitor intelligence models, and localized financial pipelines.
           </p>
         </motion.div>
 
-        {/* Redesigned 2-Column Responsive Layout Grid */}
-        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-stretch relative z-10 px-4 mb-2 flex-1 min-h-0 animate-fade-in">
+        {/* Redesigned 2-Column Responsive Layout Grid (Polished Dark Slate Cards) */}
+        <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-stretch relative z-10 px-4 mb-6 animate-fade-in">
           
-          {/* Column 1: FLAGSHIP SECTOR - Auto Choice (Live Partition) */}
-          <div className="space-y-2 flex flex-col min-h-0 h-full">
+          {/* Column 1: FLAGSHIP AUTOMOTIVE SECTOR */}
+          <div className="space-y-3 flex flex-col h-full">
             <div className="flex items-center justify-between px-1 shrink-0">
               <span className="text-[10px] font-mono tracking-widest text-[#38BDF8] uppercase font-black">
-                ● FLAGSHIP DIVISION ACTIVE
+                ● FLAGSHIP DIVISION LIVE
               </span>
-              <span className="text-[8px] bg-emerald-500/15 text-emerald-400 font-mono px-2 py-0.5 border border-emerald-500/20 rounded font-black tracking-widest uppercase">
-                100% ONLINE
+              <span className="text-[9px] bg-emerald-500/10 text-emerald-400 font-mono px-2.5 py-0.5 border border-emerald-500/20 rounded-md font-black tracking-widest uppercase">
+                100% Verified
               </span>
             </div>
 
             <div 
               onClick={() => handleSetCategory('auto')}
-              className="flex-1 bg-gradient-to-b from-slate-900/95 to-slate-950/95 border border-[#38BDF8]/20 rounded-2xl p-4 md:p-6 flex flex-col justify-between transition-all duration-300 hover:border-[#38BDF8]/60 hover:shadow-2xl hover:shadow-[#38BDF8]/15 hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer group select-none relative overflow-hidden min-h-0"
+              className="flex-1 bg-[#1E293B] border border-white/5 rounded-3xl p-6 md:p-8 flex flex-col justify-between transition-all duration-300 hover:border-[#38BDF8]/30 hover:shadow-2xl hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer group select-none relative overflow-hidden"
             >
-              {/* Premium Background Grid overlay inside the live card */}
-              <div className="absolute inset-0 bg-[radial-gradient(#38BDF8_0.6px,transparent_0.6px)] [background-size:12px_12px] opacity-10"></div>
-              <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
+              {/* Decorative Subtle Overlay Grid */}
+              <div className="absolute inset-0 bg-[radial-gradient(#38BDF8_0.5px,transparent_0.5px)] [background-size:16px_16px] opacity-5"></div>
+              <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#1E293B]/50 to-transparent pointer-events-none"></div>
 
-              <div className="space-y-4 relative z-10 flex-1 flex flex-col justify-between">
+              <div className="space-y-6 relative z-10 flex-1 flex flex-col justify-start">
                 <div className="flex justify-between items-center shrink-0">
-                  <span className="text-[10px] font-mono text-orange-500 font-black tracking-widest uppercase bg-orange-500/10 px-3 py-1 rounded-lg border border-orange-500/20">
-                    SECTOR 01 • ACTIVE PORTAL
+                  <span className="text-[10px] font-mono text-orange-400 font-black tracking-widest uppercase bg-orange-500/10 px-3 py-1 rounded-lg border border-orange-500/20">
+                    SECTOR 01 • ACTIVE MARKET
                   </span>
-                  <div className="flex items-center gap-1.5 font-mono text-[9px] text-[#38BDF8]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span>1,452 Active Bidders</span>
+                  <div className="flex items-center gap-1.5 font-mono text-[10px] text-[#38BDF8] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>1,452 Connected Sellers</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4 shrink-0">
-                  <img 
-                    src="/auto_choice_logo_1781509565476.jpg" 
-                    className="w-12 h-12 rounded-xl object-cover border border-[#22d55e]/20 shadow-2xl transition-transform duration-300 group-hover:scale-105" 
-                    alt="Auto Choice Flagship"
-                  />
+                  <div className="w-14 h-14 rounded-2xl bg-sky-500/10 flex items-center justify-center border border-sky-500/20 shadow-sm">
+                    <svg className="w-8 h-8 text-[#38BDF8] group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.129-1.125V11.25M3 14.25h15m-15 0a1.125 1.125 0 0 1-1.125-1.125V8.25a1.125 1.125 0 0 1 1.125-1.125h12.75c.621 0 1.125.504 1.125 1.125v5.25" />
+                    </svg>
+                  </div>
                   <div className="text-left">
                     <h2 className="text-xl font-black font-sans text-white uppercase tracking-tight">Auto Choice</h2>
-                    <p className="text-[#38BDF8] font-mono text-[10px] font-black tracking-widest uppercase mt-0.5">Automotive division</p>
+                    <p className="text-[#38BDF8] font-mono text-[10px] font-black tracking-wider uppercase mt-0.5">Automotive division</p>
                   </div>
                 </div>
 
-                <p className="text-gray-300/90 text-xs leading-relaxed font-sans text-left flex-1 min-h-0 overflow-y-auto no-scrollbar py-1">
-                  Experience Pakistan's elite digitized automotive platform. Browse certified SUVs, premium electric sedans, and high-performance imports with live valuation matrices, secure direct trade options, and instant physical spot-inspection alignments.
+                <p className="text-gray-400 text-xs leading-relaxed font-sans text-left flex-1 min-h-0 overflow-y-auto no-scrollbar py-1">
+                  Experience Pakistan’s elite digitized automotive platform. Browse certified SUVs, premium electric sedans, and high-performance imports with live valuation matrices, secure direct trade options, and instant spot-inspection alignments in Peshawar.
                 </p>
 
-                {/* Vehicle vector silhouette */}
-                <div className="py-1 opacity-60 group-hover:opacity-100 transition-opacity duration-300 shrink-0 hidden sm:block">
-                  <svg className="w-full h-10 text-sky-400/25 group-hover:text-[#38BDF8]/45 transition-colors" viewBox="0 0 120 40" fill="none" stroke="currentColor" strokeWidth="1.2">
+                {/* Styled Vehicle Vector Graphic in premium dark colors */}
+                <div className="py-2 opacity-85 group-hover:opacity-100 transition-opacity duration-300 shrink-0 hidden sm:block">
+                  <svg className="w-full h-12 text-[#38BDF8]/15 group-hover:text-[#38BDF8]/25 transition-colors" viewBox="0 0 120 40" fill="none" stroke="currentColor" strokeWidth="1.2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 28 C 10 24, 25 24, 30 18 L 45 10 C 50 8, 70 8, 75 14 L 90 20 C 105 20, 110 24, 110 28 Z" />
-                    <circle cx="30" cy="28" r="5" fill="#030712" />
-                    <circle cx="85" cy="28" r="5" fill="#030712" />
+                    <circle cx="30" cy="28" r="5" fill="#1E293B" stroke="currentColor" strokeWidth="2" />
+                    <circle cx="85" cy="28" r="5" fill="#1E293B" stroke="currentColor" strokeWidth="2" />
                     <path d="M5 28 L 115 28" strokeWidth="0.8" strokeDasharray="3,3" />
                   </svg>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-2 relative z-10 w-full shrink-0">
-                <span className="text-[10px] font-mono font-bold text-gray-400 uppercase group-hover:text-[#38BDF8] transition-colors">
-                  Tap to enter matrix
+              <div className="flex items-center justify-between border-t border-white/5 pt-3 mt-3 relative z-10 w-full shrink-0">
+                <span className="text-[10px] font-mono font-bold text-gray-500 uppercase group-hover:text-[#38BDF8] transition-colors">
+                  Tap anywhere to launch portal
                 </span>
-                <div className="bg-orange-500 text-slate-950 rounded-xl px-4 py-2 text-xs font-mono font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-orange-950/20 group-hover:bg-orange-400 transition-all active:scale-[0.98]">
+                <div className="bg-[#2563EB] text-white rounded-xl px-4 py-2 text-xs font-mono font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-sky-600/10 group-hover:bg-[#3B82F6] transition-all active:scale-[0.98]">
                   <span>Access Showroom</span>
                   <span className="text-base">→</span>
                 </div>
@@ -931,28 +926,28 @@ function App() {
             </div>
           </div>
 
-          {/* Column 2: RESPONSIVE COMING SOON CONTENT BOX */}
-          <div className="space-y-2 flex flex-col min-h-0 h-full" id="coming-soon-content-box">
+          {/* Column 2: FUTURE DIVISION PIPELINES (BENTO CARD OVERHAUL) */}
+          <div className="space-y-3 flex flex-col h-full">
             <div className="flex items-center justify-between px-1 shrink-0">
-              <span className="text-[10px] font-mono tracking-widest text-[#38BDF8] uppercase font-black flex items-center gap-1.5">
-                <Sparkles size={12} className="text-cyan-400 animate-pulse" /> FUTURE SATELLITE PIPELINES
+              <span className="text-[10px] font-mono tracking-widest text-orange-400 uppercase font-black flex items-center gap-1.5">
+                ★ SECURED SATELLITE PIPELINES
               </span>
-              <span className="text-[8px] bg-sky-500/15 text-sky-400 font-mono px-2 py-0.5 border border-sky-500/20 rounded font-black tracking-widest uppercase animate-pulse">
-                Expansion Active
+              <span className="text-[9px] bg-orange-500/10 text-orange-400 font-mono px-2.5 py-0.5 border border-orange-500/20 rounded-md font-black tracking-widest uppercase">
+                Nationwide Expansion
               </span>
             </div>
 
             <div 
-              className="flex-1 bg-gradient-to-b from-[#09152a] to-slate-950/95 border border-[#38BDF8]/20 rounded-2xl p-4 md:p-6 flex flex-col justify-between transition-all duration-300 hover:border-cyan-500/50 hover:shadow-2xl hover:shadow-cyan-950/15 min-h-0 relative overflow-hidden group select-none"
+              className="flex-1 bg-[#1E293B] border border-white/5 rounded-3xl p-5 md:p-6.5 flex flex-col justify-between transition-all duration-300 hover:border-orange-500/30 hover:shadow-2xl relative overflow-hidden group select-none"
             >
               {/* Backdrops */}
-              <div className="absolute inset-0 bg-[radial-gradient(#06b6d4_0.6px,transparent_0.6px)] [background-size:12px_12px] opacity-10"></div>
-              <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 bg-[radial-gradient(#f97316_0.5px,transparent_0.5px)] [background-size:16px_16px] opacity-5"></div>
+              <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[#1E293B]/50 to-transparent pointer-events-none"></div>
 
-              <div className="space-y-3 relative z-10 text-left flex-1 flex flex-col justify-between min-h-0">
+              <div className="space-y-4.5 relative z-10 text-left flex-1 flex flex-col justify-start">
                 <div className="flex justify-between items-center shrink-0">
-                  <span className="text-[10px] font-mono text-[#38BDF8] font-black tracking-widest uppercase bg-sky-500/10 px-3 py-1 rounded-lg border border-[#38BDF8]/20">
-                    Bazar360 Premium Expansion
+                  <span className="text-[10px] font-mono text-[#38BDF8] font-black tracking-widest uppercase bg-[#38BDF8]/10 px-3 py-1 rounded-lg border border-sky-500/20">
+                    Bazar360 Interactive Labs
                   </span>
                   
                   {/* Notify Me Toggle button */}
@@ -963,43 +958,43 @@ function App() {
                     }}
                     className={`p-2 rounded-xl border transition-all duration-300 cursor-pointer select-none flex items-center justify-center ${
                       teaserNotified 
-                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/50 animate-pulse' 
-                        : 'bg-white/5 text-gray-500 hover:text-white border-white/10'
+                        ? 'bg-amber-500 text-stone-900 border-amber-500 shadow-md shadow-amber-500/10' 
+                        : 'bg-[#111827] text-gray-400 hover:text-white border-white/5'
                     }`}
                     title={teaserNotified ? "Alert Registration Active" : "Notify Me on Launch"}
                   >
-                    <Bell size={14} className={teaserNotified ? "text-amber-500 shrink-0" : "text-gray-400 shrink-0"} />
+                    <Bell size={14} className={teaserNotified ? "text-stone-900 shrink-0 animate-bounce-subtle" : "text-gray-400 shrink-0"} />
                     <span className="text-[9px] font-mono font-black uppercase tracking-wider ml-1.5 hidden sm:inline-block">
                       {teaserNotified ? "Notified" : "Notify Me"}
                     </span>
                   </button>
                 </div>
 
-                <div className="space-y-2 shrink-0">
+                <div className="space-y-1.5 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
                     </span>
                     <h2 className="text-lg font-black font-sans text-white uppercase tracking-tight">
                       {activeTaglineVariant.title}
                     </h2>
                   </div>
-                  <p className="text-gray-300 text-xs leading-relaxed font-sans">
+                  <p className="text-gray-400 text-xs leading-relaxed font-sans">
                     {activeTaglineVariant.sub}
                   </p>
                 </div>
 
-                {/* SUGGESTION ENGINE BOX */}
-                <div className="pt-2 space-y-2 shrink-0">
+                {/* SUGGESTION ENGINE BOX (Sophisticated input fields) */}
+                <div className="pt-1.5 space-y-2.5 shrink-0">
                   <div className="flex flex-col sm:flex-row gap-2">
                     <input 
                       type="text"
                       id="community-suggestion-input"
                       value={suggestionText}
                       onChange={(e) => setSuggestionText(e.target.value)}
-                      placeholder="Enter suggestion (e.g., smart appraisal)..."
-                      className="flex-1 bg-slate-900/90 border border-[#38BDF8]/30 rounded-xl px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#38BDF8] transition-colors"
+                      placeholder="Propose custom tools (e.g. smart appraisers)..."
+                      className="flex-1 bg-[#111827] border border-white/5 rounded-xl px-3 py-2.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 focus:bg-[#111827] transition-all"
                     />
                     <button
                       id="submit-suggestion-btn"
@@ -1008,32 +1003,32 @@ function App() {
                         handleOnSubmitSuggestion();
                       }}
                       disabled={isSubmittingSuggestion || !suggestionText.trim()}
-                      className="px-4 py-2 bg-[#38BDF8] hover:bg-[#0ea5e9] disabled:bg-gray-700 disabled:text-gray-400 text-slate-950 font-sans font-black text-xs rounded-xl uppercase tracking-widest transition-all duration-200 cursor-pointer select-none active:scale-[0.98] shrink-0"
+                      className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-[#111827] disabled:text-gray-600 text-white font-sans font-black text-xs rounded-xl uppercase tracking-wider transition-all duration-200 cursor-pointer select-none active:scale-[0.98] shrink-0"
                     >
-                      {isSubmittingSuggestion ? "Submitting..." : "Submit"}
+                      {isSubmittingSuggestion ? "Sending..." : "Submit Proposal"}
                     </button>
                   </div>
                   
-                  <div className="flex flex-wrap gap-1 items-center">
-                    <span className="text-[8px] text-gray-500 font-mono font-bold uppercase">Propose:</span>
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    <span className="text-[8px] text-gray-500 font-mono font-bold uppercase">Presets:</span>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setSuggestionText("Smart appraisal tracking"); }}
-                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setSuggestionText("Peshawar Almas Car Valley location listings filter"); }}
+                      className="px-2.5 py-1 rounded-lg bg-[#111827] hover:bg-[#111827]/85 text-[8px] font-mono text-gray-300 border border-white/5 cursor-pointer transition-all"
                     >
-                      + Appraisal Track
+                      + Almas Valley Filters
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setSuggestionText("Automated escrow security"); }}
-                      className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-[8px] font-mono text-[#38BDF8] border border-cyan-500/20 cursor-pointer transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setSuggestionText("Smart inspection sheet uploading module"); }}
+                      className="px-2.5 py-1 rounded-lg bg-[#111827] hover:bg-[#111827]/85 text-[8px] font-mono text-gray-300 border border-white/5 cursor-pointer transition-all"
                     >
-                      + Escrow Security
+                      + Verified Sheets
                     </button>
                   </div>
 
                   {suggestionMessage && (
-                    <p className={`text-[10px] font-medium font-sans ${suggestionMessage.isError ? 'text-red-400' : 'text-emerald-400 animate-pulse'}`}>
+                    <p className={`text-[10px] font-semibold font-sans mt-1 ${suggestionMessage.isError ? 'text-rose-400' : 'text-emerald-400'}`}>
                       {suggestionMessage.text}
                     </p>
                   )}
@@ -1041,13 +1036,13 @@ function App() {
               </div>
 
               {/* Voting Footer */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/5 pt-3 mt-2 relative z-10 w-full text-left shrink-0">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/5 pt-3 mt-4 relative z-10 w-full text-left shrink-0">
                 <div className="shrink-0">
-                  <p className="text-[9px] uppercase font-mono font-extrabold text-gray-500 tracking-wider">
-                    Community Weight
+                  <p className="text-[9px] uppercase font-mono font-black text-gray-500 tracking-wider">
+                    Community Endorsement Weighted
                   </p>
-                  <p className="text-xs font-mono font-black text-white mt-0.5">
-                    🗳️ <span className="text-cyan-400 animate-pulse">{teaserVotes.toLocaleString()}</span> Votes
+                  <p className="text-xs font-mono font-black text-gray-200 mt-0.5">
+                    🗳️ <span className="text-orange-400 font-extrabold">{teaserVotes.toLocaleString()}</span> Community Votes
                   </p>
                 </div>
 
@@ -1062,13 +1057,13 @@ function App() {
                       setUserTeaserVoted(true);
                     }
                   }}
-                  className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-mono font-black uppercase tracking-widest text-center transition-all duration-300 cursor-pointer select-none active:scale-[0.98] ${
+                  className={`w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-mono font-black uppercase tracking-wider text-center transition-all duration-300 cursor-pointer select-none active:scale-[0.98] ${
                     userTeaserVoted
-                      ? 'bg-orange-500 text-slate-950 font-black shadow-lg shadow-orange-950/45'
-                      : 'bg-transparent text-[#38BDF8] border border-[#38BDF8]/40 hover:border-[#38BDF8] hover:bg-[#38BDF8]/10 shadow-lg'
+                      ? 'bg-[#2563EB] text-white shadow-md shadow-sky-600/10'
+                      : 'bg-transparent text-[#38BDF8] border border-[#38BDF8]/30 hover:border-[#38BDF8]/50 hover:bg-sky-500/5 shadow-sm'
                   }`}
                 >
-                  {userTeaserVoted ? "✓ Voted" : "Vote to Unlock"}
+                  {userTeaserVoted ? "✓ Voted successfully" : "Upvote Channel"}
                 </button>
               </div>
             </div>
@@ -1076,19 +1071,19 @@ function App() {
 
         </div>
 
-        {/* Floating Custom Overlay Modal for Expansion Details */}
+        {/* Floating Custom Overlay Modal for Expansion Details (Redesigned in Luxury Professional Mode) */}
         {comingSoonSector && (
-          <div className="fixed inset-0 bg-[#02050e]/90 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all animate-fade-in">
-            <div className="bg-[#0c1322] border border-[#38BDF8]/30 max-w-lg w-full rounded-3xl p-6.5 space-y-4 shadow-2xl relative">
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all animate-fade-in">
+            <div className="bg-[#1E293B] border border-white/5 max-w-lg w-full rounded-3xl p-6 md:p-8 space-y-4 shadow-2xl relative text-white text-left animate-slide-up">
               <button 
                 onClick={() => setComingSoonSector(null)} 
-                className="absolute top-4 right-4 bg-white/5 hover:bg-white/10 hover:text-white text-gray-400 p-2 rounded-xl transition-all cursor-pointer"
+                className="absolute top-4 right-4 bg-[#111827] hover:bg-[#111827]/80 text-gray-400 hover:text-white p-2 rounded-xl transition-all cursor-pointer border border-white/5"
               >
                 <X size={16} />
               </button>
 
               <div className="flex items-center gap-3.5 pt-2">
-                <div className="text-3xl bg-[#38BDF8]/10 p-3 rounded-2xl border border-[#38BDF8]/20">{comingSoonSector.icon}</div>
+                <div className="text-3xl bg-sky-500/10 p-3 rounded-2xl border border-sky-500/20 text-[#38BDF8] font-sans">{comingSoonSector.icon}</div>
                 <div>
                   <h3 className="text-lg font-black uppercase text-white tracking-tight">{comingSoonSector.title}</h3>
                   <p className="text-[#38BDF8] font-mono text-[10px] font-black uppercase tracking-widest">Active Development Channel</p>
@@ -1096,27 +1091,27 @@ function App() {
               </div>
 
               <div className="space-y-3 pt-2">
-                <div className="bg-[#050912] p-4 rounded-2xl border border-white/5">
+                <div className="bg-[#111827] p-4 rounded-2xl border border-white/5">
                   <span className="text-[8px] uppercase tracking-wider text-orange-400 font-mono block font-black mb-1">Target Mission Statement:</span>
-                  <p className="text-white font-sans font-bold text-xs">{comingSoonSector.tagline}</p>
+                  <p className="text-white font-sans font-bold text-xs leading-relaxed">{comingSoonSector.tagline}</p>
                 </div>
 
-                <div className="bg-[#050912] p-4 rounded-2xl border border-white/5">
+                <div className="bg-[#111827] p-4 rounded-2xl border border-white/5">
                   <span className="text-[8px] uppercase tracking-wider text-[#38BDF8] font-mono block font-black mb-1">Functional Outline:</span>
-                  <p className="text-gray-300 text-xs font-sans leading-relaxed">{comingSoonSector.desc}</p>
+                  <p className="text-gray-400 text-xs font-sans leading-relaxed">{comingSoonSector.desc}</p>
                 </div>
 
-                <div className="bg-[#12221b]/40 border border-[#22c55e]/20 p-3 rounded-xl text-[10px] text-green-400 font-mono">
-                  🚀 {comingSoonSector.spec}
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-3.5 rounded-xl text-[10.5px] text-emerald-400 font-mono font-medium leading-relaxed">
+                  🚀 Compliance: {comingSoonSector.spec}
                 </div>
               </div>
 
               <div className="pt-2 text-center">
                 <button 
                   onClick={() => setComingSoonSector(null)}
-                  className="bg-gradient-to-r from-orange-500 to-orange-600 text-slate-950 font-mono font-black py-3 px-6 rounded-xl w-full text-xs uppercase hover:from-orange-600 hover:to-orange-700 active:scale-[0.98] duration-100 cursor-pointer shadow-lg"
+                  className="bg-[#2563EB] hover:bg-[#3B82F6] text-white font-mono font-black py-3.5 px-6 rounded-xl w-full text-xs uppercase active:scale-[0.98] duration-100 cursor-pointer shadow-lg"
                 >
-                  Confirm Understanding & Return
+                  Dismiss & Return
                 </button>
               </div>
             </div>
@@ -1124,8 +1119,8 @@ function App() {
         )}
 
         {/* Footer */}
-        <div className="text-center text-gray-500 text-[9px] md:text-[10px] uppercase font-mono tracking-widest pb-[env(safe-area-inset-bottom)] md:pb-1 mt-1 shrink-0 relative z-10">
-          Founder: Muhammad Amjid &bull; Helpline Connect: <a href="tel:03149198403" className="text-orange-400 hover:underline">03149198403</a> &bull; BAZAR360 Pakistan Enterprise &copy; 2026. SECURED THROUGH ADVANCED LOCAL BLUEPRINT.
+        <div className="text-center text-slate-500 text-[9px] md:text-[10px] uppercase font-mono tracking-widest pb-[env(safe-area-inset-bottom)] md:pb-1 mt-1 shrink-0 relative z-10 border-t border-white/5 pt-3">
+          Founder: Muhammad Amjid &bull; Helpline Connect: <a href="tel:03149198403" className="text-orange-500 hover:underline font-bold">03149198403</a> &bull; BAZAR360 Pakistan Enterprise &copy; 2026. SECURED THROUGH ADVANCED LOCAL BLUEPRINT.
         </div>
       </div>
     );
@@ -1262,20 +1257,20 @@ function App() {
   }
 
   return (
-    <div className="bg-[var(--brand-bg)] text-white min-h-screen text-sm font-sans flex flex-col pb-24 md:pb-8 overflow-x-hidden">
+    <div className="bg-[var(--brand-bg)] text-slate-800 dark:text-stone-100 min-h-screen text-sm font-sans flex flex-col pb-24 md:pb-8 overflow-x-hidden">
       
       {/* 🚀 FAST LIVE ENGINE TICKER MARQUEE */}
       {currentCategory === 'auto' && (
-        <div className="fixed top-16 left-0 w-full h-8 bg-[#040812] border-b border-orange-500/10 z-40 flex items-center overflow-hidden select-none">
-          <div className="absolute left-0 top-0 h-full bg-[#121c32] px-3.5 flex items-center gap-1.5 border-r border-[#38BDF8]/20 z-15 shadow-[10px_0_15px_rgba(0,0,0,0.8)]">
+        <div className="fixed top-16 left-0 w-full h-8 bg-white dark:bg-[#040812] border-b border-slate-200 dark:border-orange-500/10 z-40 flex items-center overflow-hidden select-none">
+          <div className="absolute left-0 top-0 h-full bg-slate-100 dark:bg-[#121c32] px-3.5 flex items-center gap-1.5 border-r border-slate-200 dark:border-[#38BDF8]/20 z-15">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
             </span>
-            <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest font-mono">LIVE PRICES</span>
+            <span className="text-[9px] font-black text-orange-600 dark:text-orange-500 uppercase tracking-widest font-mono">LIVE PRICES</span>
           </div>
           <div className="w-full pl-28 overflow-hidden relative">
-            <div className="animate-fast-ticker flex items-center whitespace-nowrap gap-12 font-mono text-[9px] text-[#38BDF8]/90 font-bold tracking-tight uppercase">
+            <div className="animate-fast-ticker flex items-center whitespace-nowrap gap-12 font-mono text-[9px] text-sky-700 dark:text-[#38BDF8]/90 font-bold tracking-tight uppercase">
               <span>🔥 SUZUKI ALTO VXR: Rs. 2,330,000 (LAC 23.3)</span>
               <span>⚡ BYD SEAL PREMIUM EV: Rs. 14,500,000 (LAC 145)</span>
               <span>🚀 TOYOTA FORTUNER LEGENDER: Rs. 18,500,000 (LAC 185)</span>
@@ -1404,53 +1399,6 @@ function App() {
           </div>
         ) : (
           <>
-            {/* Elegant Sticky Pinning Banner for Flagship Auto Choice Peshawar */}
-            {(currentTab === 'home' || currentTab === 'inventory' || currentTab === 'search' || currentTab === 'dealers') && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.002 }}
-                onClick={() => onSelectDealer('auto-choice-peshawar')}
-                className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-6 mt-4 cursor-pointer relative z-40 group"
-              >
-                <div className="bg-gradient-to-r from-[#121214] via-[#1c1b18] to-[#121214] border border-[#c5a880]/20 rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden shadow-[0_15px_30px_rgba(0,0,0,0.5)] group-hover:border-[#c5a880]/40 transition-all duration-300">
-                  <div className="absolute top-0 right-0 w-48 h-48 bg-[#c5a880]/5 rounded-full blur-2xl pointer-events-none group-hover:bg-[#c5a880]/8 transition-all duration-300"></div>
-                  
-                  {/* Left Column info */}
-                  <div className="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
-                    <div className="w-12 h-12 rounded-full border border-[#c5a880]/30 flex items-center justify-center bg-[#1a1a1c] shrink-0 text-[#c5a880] font-sans font-black tracking-tighter shadow-md">
-                      AC
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                        <span className="bg-[#c5a880]/10 border border-[#c5a880]/30 text-[#c5a880] px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider">★ PREMIUM FLAGSHIP PARTNER</span>
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#c5a880] animate-pulse"></span>
-                        <span className="text-[10px] text-gray-400 font-mono uppercase tracking-widest">LIVE INVENTORY SPOTLIGHT</span>
-                      </div>
-                      <h4 className="text-lg md:text-xl font-bold tracking-tight text-white mt-1 group-hover:text-[#c5a880] transition-colors">
-                        Auto Choice Peshawar Showroom
-                      </h4>
-                      <p className="text-xs text-gray-450 font-sans mt-0.5">Explore Khyber Pakhtunkhwa's elite luxury fleet. Direct transparent verification guarantees.</p>
-                    </div>
-                  </div>
-
-                  {/* Right Column Action */}
-                  <div className="flex items-center gap-4.5 shrink-0 w-full md:w-auto justify-center">
-                    <div className="text-right hidden lg:block">
-                      <span className="text-[10px] text-[#c5a880] font-mono font-black uppercase block tracking-wider">DIRECT ACCESS PROTOCOL</span>
-                      <span className="text-[10px] text-gray-500 block">Immediate multi-role VIP routing</span>
-                    </div>
-                    <button 
-                      type="button"
-                      className="bg-[#c5a880] hover:bg-[#d0b896] text-black font-sans font-extrabold tracking-widest text-[10.5px] uppercase py-3 px-6 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer max-md:w-full"
-                    >
-                      Enter Showroom
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
             {/* Show Moderation Dashboard to Admins or Showroom Owners on home page */}
             {currentTab === 'home' && (currentUser?.role === 'Admin' || currentUser?.role === 'Showroom Owner') && (
               <div className="mb-8">
@@ -1492,24 +1440,6 @@ function App() {
                 compareList={compareList}
                 currentCategory={currentCategory}
                 currentUser={currentUser}
-              />
-            )}
-
-            {currentTab === 'media' && (
-              <MediaFeedView
-                dealers={dealers}
-                currentUser={currentUser}
-                onForceLogin={() => setTab('portal')}
-              />
-            )}
-
-            {currentTab === 'insights' && (
-              <MarketInsightsView />
-            )}
-
-            {currentTab === 'concierge' && (
-              <ConciergeView
-                dealers={dealers}
               />
             )}
 
@@ -1583,27 +1513,9 @@ function App() {
               />
             )}
 
-            {currentTab === 'sell' && (
-              <SellWithAIView
-                onAddListing={handleAddListing}
-                setTab={setTab}
-                currentUser={currentUser}
-              />
-            )}
-
             {currentTab === 'portal' && (
               <div className="max-w-7xl mx-auto space-y-12 pb-16 px-4 md:px-8 text-left">
-                {/* 1. Master Luxury Portal Diagnostic & Operations Suite */}
-                <LuxuryPortal
-                  currentUser={currentUser}
-                  setCurrentUser={setCurrentUser}
-                  dealers={dealers}
-                  listings={listings}
-                  setDealers={setDealers}
-                  setListings={setListings}
-                />
-
-                {/* 2. Original Secondary Registration Portal and Submissions forms */}
+                {/* Secondary Registration Portal and Submissions forms */}
                 <div className="border border-white/5 rounded-3xl p-6 md:p-8 bg-[#0a0a0c] text-left">
                   <div className="border-b border-white/5 pb-3 mb-6">
                     <h2 className="font-sans font-extrabold text-lg md:text-xl text-zinc-400 uppercase tracking-wider">Multi-Role Registration & Onboarding Suite</h2>
@@ -1633,13 +1545,13 @@ function App() {
         onCategoryChange={handleSetCategory} 
       />
 
-      {/* DYNAMIC LISTING DETAILS POPUP MODAL */}
+      {/* DYNAMIC LISTING DETAILS FULL SCREEN MODAL */}
       {selectedListing && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 md:p-6 overflow-y-auto animate-fade-in">
-          <div className="bg-[#070b13] border border-white/10 rounded-2xl max-w-5xl w-full text-xs font-sans shadow-2xl overflow-hidden relative max-h-[90vh] flex flex-col animate-scale-fade">
+        <div id="fullscreen-spec-modal" className="fixed inset-0 bg-[#0F172A] z-50 overflow-y-auto animate-fade-in flex flex-col">
+          <div className="min-h-screen w-full text-xs font-sans text-white flex flex-col relative max-w-7xl mx-auto px-4 md:px-8 py-6">
             
             {/* Header banner */}
-            <div className="bg-[#0c1425] p-4 border-b border-white/5 flex justify-between items-center shrink-0">
+            <div className="bg-[#1E293B] p-4 border border-white/5 rounded-2xl flex justify-between items-center shrink-0 mb-6">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 font-mono font-bold text-[9px] uppercase tracking-wider border border-sky-500/20 flex items-center gap-1">
                   <ShieldCheck size={10} /> Certified Spec Sheet
@@ -2019,13 +1931,88 @@ function App() {
                     <span className="text-[8.5px] text-gray-500 block leading-tight">Offers transmitted are non-binding but unlock priority validation within associated micro-showrooms.</span>
                   </div>
 
+                  {/* 🔍 SUGGESTIONS AS PER SEARCH SECTION */}
+                  <div className="mt-12 border-t border-white/5 pt-8 space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-sans font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                          <Sparkles size={14} className="text-orange-500 animate-pulse" /> SUGGESTIONS AS PER SEARCH
+                        </h3>
+                        <p className="text-[10px] text-slate-400 font-mono tracking-wide">
+                          Smart match recommendations mapped by category, price range, and custom metrics.
+                        </p>
+                      </div>
+                      <span className="text-[8.5px] font-mono bg-orange-500/10 text-orange-400 px-2.5 py-0.5 rounded border border-orange-500/20 uppercase font-black">
+                        {selectedListing.fuelType?.toUpperCase() || 'AUTO'} Portal Fits
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {prioritizedListings
+                        .filter((car) => car.id !== selectedListing.id)
+                        .sort((a, b) => {
+                          // Prioritize same fuelType first, then same make
+                          if (a.fuelType === selectedListing.fuelType && b.fuelType !== selectedListing.fuelType) return -1;
+                          if (a.fuelType !== selectedListing.fuelType && b.fuelType === selectedListing.fuelType) return 1;
+                          if (a.make === selectedListing.make && b.make !== selectedListing.make) return -1;
+                          return 0;
+                        })
+                        .slice(0, 4)
+                        .map((car) => {
+                          const dealerName = dealers.find((d) => d.id === car.dealerId)?.name || 'Premium Showroom';
+                          return (
+                            <div
+                              key={car.id}
+                              onClick={() => {
+                                setSelectedListing(car);
+                                setOfferSuccessMessage('');
+                                // Scroll the modal content to top
+                                const modalContainer = document.getElementById('fullscreen-spec-modal');
+                                if (modalContainer) {
+                                  modalContainer.scrollTo({ top: 0, behavior: 'smooth' });
+                                }
+                              }}
+                              className="bg-[#1E293B] hover:bg-[#2d3a4f] border border-white/5 hover:border-orange-500/30 p-3 rounded-2xl flex flex-col justify-between cursor-pointer transition-all duration-150 group text-left select-none"
+                            >
+                              <div className="space-y-2">
+                                <div className="relative h-28 w-full rounded-xl overflow-hidden bg-slate-950">
+                                  <img
+                                    src={car.imageUrl}
+                                    alt={car.title}
+                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <div className="absolute top-2 left-2 bg-black/75 px-1.5 py-0.5 rounded text-[7px] font-mono font-bold text-[#38bdf8] border border-white/5 uppercase">
+                                    {car.condition}
+                                  </div>
+                                </div>
+                                <div className="space-y-0.5">
+                                  <span className="text-[7.5px] font-mono text-slate-400 uppercase">{car.make} • {car.year}</span>
+                                  <h4 className="font-extrabold text-xs text-white truncate group-hover:text-orange-400 transition-colors uppercase leading-none">{car.title}</h4>
+                                  <p className="text-[8px] text-[#38bdf8] font-mono truncate">{dealerName}</p>
+                                </div>
+                              </div>
+                              <div className="mt-3 pt-2 border-t border-white/5 flex items-center justify-between">
+                                <span className="font-mono text-orange-400 font-bold text-[10.5px]">
+                                  {renderPrice(car.price)}
+                                </span>
+                                <span className="text-[7.5px] font-mono text-slate-400 uppercase group-hover:text-white transition-colors">
+                                  View Spec →
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+
                 </div>
 
               </div>
             </div>
 
             {/* Bottom converted Action CTA Bar */}
-            <div className="p-4 border-t border-white/5 bg-[#0c1425] flex gap-3 shrink-0">
+            <div className="p-4 border border-white/5 rounded-2xl bg-[#1E293B] flex gap-3 shrink-0 mt-8">
               <button
                 onClick={() => {
                   const d = dealers.find((dl) => dl.id === selectedListing.dealerId);
