@@ -196,7 +196,7 @@ export default function HomeView({
   // Translations dictionary matching the exact mockups and bilingual instructions
   const t = {
     en: {
-      heroBadge: "★ PAKISTAN'S #1 AUTOMOTIVE MARKETPLACE",
+      heroBadge: "★ PESHAWAR'S #1 AUTOMOTIVE MARKETPLACE",
       heroTitle1: "Find Your",
       heroTitle2: "Perfect Ride",
       heroSubtitle: "Pakistan's simplest automotive marketplace. Browse, buy, and sell with complete confidence.",
@@ -232,7 +232,7 @@ export default function HomeView({
       ]
     },
     ur: {
-      heroBadge: "★ پاکستان کا نمبر 1 آٹوموٹو مارکیٹ پلیس",
+      heroBadge: "★ پشاور کا نمبر 1 آٹوموٹو مارکیٹ پلیس",
       heroTitle1: "اپنی پسندیدہ",
       heroTitle2: "گاڑی تلاش کریں",
       heroSubtitle: "پاکستان کا سب سے آسان آٹوموٹو مارکیٹ پلیس۔ اعتماد کے ساتھ براؤز کریں، خریدیں اور بیچیں۔",
@@ -331,77 +331,94 @@ export default function HomeView({
             {t.heroSubtitle}
           </p>
 
-          {/* Interactive Responsive Search bar */}
-          <div className="w-full max-w-2xl mt-4 shrink-0">
-            {/* Condition Tabs */}
-            <div className="flex items-center gap-1 mb-1.5 justify-start">
-              {(['all', 'used', 'new'] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSearchType(type)}
-                  className={`px-4 py-2 rounded-t-xl text-[10px] md:text-xs font-mono font-black uppercase tracking-wider transition-all duration-150 border-b-2 ${
-                    searchType === type
-                      ? 'bg-[#030712]/90 text-[#38bdf8] border-[#38bdf8]'
-                      : 'text-slate-400 border-transparent hover:text-white'
-                  }`}
-                >
-                  {type === 'all' ? (lang === 'en' ? 'All Cars' : 'تمام گاڑیاں') : 
-                   type === 'used' ? (lang === 'en' ? 'Used Cars' : 'استعمال شدہ') : 
-                   (lang === 'en' ? 'New Cars' : 'نئی گاڑیاں')}
-                </button>
-              ))}
-            </div>
+          {/* Interactive Responsive Search bar - Highly Polished Bento Box Widget */}
+          <div className="w-full max-w-4xl mt-6 p-5 md:p-6 bg-[#0B0F19] border border-white/5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden text-left flex flex-col gap-5">
+            {/* Soft glow border background effect */}
+            <div className="absolute -top-12 -left-12 w-48 h-48 bg-[#38bdf8]/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <form onSubmit={handleSearchSubmit} className="space-y-4 relative z-10">
+              {/* Header section & Search bar (Single Line Flow on lg screens) */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full">
+                
+                {/* Tabs on Left */}
+                <div className="flex items-center gap-1 bg-[#030712] p-1 rounded-xl border border-white/5 shrink-0 self-start lg:self-auto">
+                  {(['all', 'used', 'new'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setSearchType(type)}
+                      className={`px-3 md:px-4 py-2 rounded-lg text-[10px] md:text-xs font-mono font-black uppercase tracking-wider transition-all duration-200 ${
+                        searchType === type
+                          ? 'bg-[#38bdf8] text-[#030712] shadow-[0_0_15px_rgba(56,189,248,0.35)] font-extrabold'
+                          : 'text-slate-400 hover:text-white font-medium'
+                      }`}
+                    >
+                      {type === 'all' ? (lang === 'en' ? 'ALL CARS' : 'تمام گاڑیاں') : 
+                       type === 'used' ? (lang === 'en' ? 'USED CARS' : 'استعمال شدہ') : 
+                       (lang === 'en' ? 'NEW CARS' : 'نئی گاڑیاں')}
+                    </button>
+                  ))}
+                </div>
 
-            <form onSubmit={handleSearchSubmit} className="space-y-3">
-              <div className="bg-[#030712]/80 backdrop-blur-md border border-white/10 rounded-2xl p-2.5 flex items-center gap-2 shadow-[0_10px_40px_rgba(0,0,0,0.4)] hover:border-[#38bdf8]/40 transition-colors">
-                <Search className="text-gray-400 shrink-0 ml-2" size={20} />
-                <input
-                  type="text"
-                  value={localQuery}
-                  onChange={(e) => setLocalQuery(e.target.value)}
-                  placeholder={t.searchPlaceholder}
-                  className="flex-grow bg-transparent text-sm md:text-base border-none outline-none focus:ring-0 text-white placeholder-gray-500 w-full"
-                />
-                <button
-                  type="submit"
-                  className="bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-sans font-extrabold text-xs md:text-sm uppercase tracking-wider px-6 py-3 rounded-xl transition-all cursor-pointer whitespace-nowrap active:scale-95 shadow-md shadow-[#0ea5e9]/20 shrink-0"
-                  style={{ minHeight: '44px' }}
-                >
-                  {t.searchBtn}
-                </button>
+                {/* Search input/button row on Right */}
+                <div className="flex-grow flex items-center gap-2 bg-[#030712] border border-white/5 rounded-xl p-1.5 focus-within:border-[#38bdf8]/40 hover:border-white/10 transition-all shadow-inner w-full lg:max-w-2xl">
+                  <Search className="text-slate-400 shrink-0 ml-2" size={18} />
+                  <input
+                    type="text"
+                    value={localQuery}
+                    onChange={(e) => setLocalQuery(e.target.value)}
+                    placeholder={t.searchPlaceholder}
+                    className="flex-grow bg-transparent text-xs md:text-sm border-none outline-none focus:ring-0 text-white placeholder-slate-500 w-full font-sans"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-[#38bdf8] hover:bg-[#0ea5e9] text-[#030712] font-sans text-xs md:text-sm uppercase tracking-widest px-5 py-2.5 rounded-lg transition-all duration-200 cursor-pointer whitespace-nowrap active:scale-95 shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_25px_rgba(56,189,248,0.5)] shrink-0 font-black"
+                  >
+                    {lang === 'en' ? 'SEARCH' : t.searchBtn}
+                  </button>
+                </div>
+
               </div>
 
-              {/* Advanced filter select dropdowns underneath search input */}
-              <div className="grid grid-cols-2 gap-3 w-full">
-                <div className="text-left">
-                  <label className="text-[9px] font-mono uppercase text-slate-400 block mb-1">City Location</label>
+              {/* Filters Section (Single Line Flow) */}
+              <div className="flex flex-col sm:flex-row gap-4 w-full pt-1 border-t border-white/5">
+                
+                {/* CITY LOCATION */}
+                <div className="flex-1 text-left">
+                  <label className="text-[10px] font-mono font-bold uppercase text-[#38bdf8] tracking-widest block mb-1.5">
+                    {lang === 'en' ? 'CITY LOCATION' : 'شہر'}
+                  </label>
                   <select
                     value={searchCity}
                     onChange={(e) => setSearchCity(e.target.value)}
-                    className="w-full bg-[#030712]/90 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#38bdf8] cursor-pointer"
+                    className="w-full bg-[#030712] border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-[#38bdf8] cursor-pointer hover:border-white/10 transition-all font-mono"
                   >
-                    <option value="All">{lang === 'en' ? 'All Cities' : 'تمام شہر'}</option>
-                    <option value="Peshawar">Peshawar</option>
-                    <option value="Islamabad">Islamabad</option>
-                    <option value="Lahore">Lahore</option>
-                    <option value="Karachi">Karachi</option>
+                    <option value="All">{lang === 'en' ? 'ALL CITIES' : 'تمام شہر'}</option>
+                    <option value="Peshawar">PESHAWAR</option>
+                    <option value="Islamabad">ISLAMABAD</option>
+                    <option value="Lahore">LAHORE</option>
+                    <option value="Karachi">KARACHI</option>
                   </select>
                 </div>
-                <div className="text-left">
-                  <label className="text-[9px] font-mono uppercase text-slate-400 block mb-1">Budget Range</label>
+
+                {/* BUDGET RANGE */}
+                <div className="flex-1 text-left">
+                  <label className="text-[10px] font-mono font-bold uppercase text-[#38bdf8] tracking-widest block mb-1.5">
+                    {lang === 'en' ? 'BUDGET RANGE' : 'بجٹ'}
+                  </label>
                   <select
                     value={searchPrice}
                     onChange={(e) => setSearchPrice(e.target.value)}
-                    className="w-full bg-[#030712]/90 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#38bdf8] cursor-pointer"
+                    className="w-full bg-[#030712] border border-white/5 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-[#38bdf8] cursor-pointer hover:border-white/10 transition-all font-mono"
                   >
-                    <option value="All">{lang === 'en' ? 'Any Budget' : 'کوئی بھی قیمت'}</option>
-                    <option value="Under 15 Lakhs">{lang === 'en' ? 'Under 15 Lakhs' : '15 لاکھ سے کم'}</option>
-                    <option value="15-35 Lakhs">{lang === 'en' ? '15 - 35 Lakhs' : '15 سے 35 لاکھ'}</option>
-                    <option value="35-75 Lakhs">{lang === 'en' ? '35 - 75 Lakhs' : '35 سے 75 لاکھ'}</option>
-                    <option value="75+ Lakhs">{lang === 'en' ? '75 Lakhs +' : '75 لاکھ سے زیادہ'}</option>
+                    <option value="All">{lang === 'en' ? 'ANY BUDGET' : 'کوئی بھی قیمت'}</option>
+                    <option value="Under 15 Lakhs">{lang === 'en' ? 'UNDER 15 LAKHS' : '15 لاکھ سے کم'}</option>
+                    <option value="15-35 Lakhs">{lang === 'en' ? '15 - 35 LAKHS' : '15 سے 35 لاکھ'}</option>
+                    <option value="35-75 Lakhs">{lang === 'en' ? '35 - 75 LAKHS' : '35 سے 75 لاکھ'}</option>
+                    <option value="75+ Lakhs">{lang === 'en' ? '75 LAKHS +' : '75 لاکھ سے زیادہ'}</option>
                   </select>
                 </div>
+
               </div>
             </form>
           </div>
