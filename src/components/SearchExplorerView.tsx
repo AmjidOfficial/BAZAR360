@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { CarListing, Dealer } from '../types';
 import { VehicleCard } from './VehicleCard';
+import { motion } from 'motion/react';
 
 interface SearchExplorerViewProps {
   listings: CarListing[];
@@ -480,15 +481,25 @@ export default function SearchExplorerView({
 
           {sortedVehicles.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {sortedVehicles.map((car) => (
-                <VehicleCard
+              {sortedVehicles.map((car, index) => (
+                <motion.div
                   key={car.id}
-                  car={car}
-                  dealer={dealers.find((d) => d.id === car.dealerId)}
-                  onSelect={onSelectListing}
-                  onToggleCompare={onToggleCompare}
-                  isComparing={compareList.some((c) => c.id === car.id)}
-                />
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.4,
+                    delay: Math.min(index * 0.04, 0.45),
+                    ease: [0.215, 0.610, 0.355, 1.000],
+                  }}
+                >
+                  <VehicleCard
+                    car={car}
+                    dealer={dealers.find((d) => d.id === car.dealerId)}
+                    onSelect={onSelectListing}
+                    onToggleCompare={onToggleCompare}
+                    isComparing={compareList.some((c) => c.id === car.id)}
+                  />
+                </motion.div>
               ))}
             </div>
           ) : (
