@@ -285,6 +285,10 @@ function App() {
     });
   };
 
+  const handleSelectListing = (car: CarListing) => {
+    setSelectedListing(car);
+  };
+
   // Dynamic States
   const [listings, setListings] = useState<CarListing[]>([]);
   const [dealers, setDealers] = useState<Dealer[]>([]);
@@ -1452,7 +1456,7 @@ function App() {
                 setSelectedCategory={setSelectedCategory}
                 setSearchQuery={setSearchQuery}
                 onSelectDealer={onSelectDealer}
-                onSelectListing={setSelectedListing}
+                onSelectListing={handleSelectListing}
                 onToggleCompare={handleToggleCompare}
                 compareList={compareList}
                 currentCategory={currentCategory}
@@ -1469,7 +1473,7 @@ function App() {
                 setSelectedCategory={setSelectedCategory}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
-                onSelectListing={setSelectedListing}
+                onSelectListing={handleSelectListing}
                 onToggleCompare={handleToggleCompare}
                 compareList={compareList}
                 currentCategory={currentCategory}
@@ -1613,7 +1617,7 @@ function App() {
                 listings={prioritizedListings}
                 reviews={reviewsMap[selectedDealerId] || []}
                 onAddReview={handleAddReview}
-                onSelectListing={setSelectedListing}
+                onSelectListing={handleSelectListing}
                 onPublishActivity={handlePublishActivity}
                 onApproveActivity={handleApproveActivity}
                 currentUser={currentUser}
@@ -1669,8 +1673,8 @@ function App() {
 
       {/* DYNAMIC LISTING DETAILS FULL SCREEN MODAL */}
       {selectedListing && (
-        <div id="fullscreen-spec-modal" className="fixed inset-0 bg-[#0F172A] z-50 overflow-y-auto animate-fade-in flex flex-col">
-          <div className="min-h-screen w-full text-xs font-sans text-white flex flex-col relative max-w-7xl mx-auto px-4 md:px-8 py-6">
+        <div id="fullscreen-spec-modal" className="fixed inset-0 bg-[#0F172A] z-50 overflow-y-auto animate-fade-in animate-once">
+          <div className="min-h-screen w-full text-xs font-sans text-white flex flex-col relative max-w-full px-4 md:px-12 py-6">
             
             {/* Header banner */}
             <div className="bg-[#1E293B] p-4 border border-white/5 rounded-2xl flex justify-between items-center shrink-0 mb-6">
@@ -1691,8 +1695,8 @@ function App() {
               </button>
             </div>
 
-            {/* Scrolling Core Content with Asymmetrical Columns */}
-            <div className="flex-grow overflow-y-auto no-scrollbar pb-6">
+            {/* Core Content with Asymmetrical Columns - truly full-screen and scrollable */}
+            <div className="flex-grow pb-6">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 items-start">
                 
                 {/* LEFT COLUMN: Visual Media Showcase (7/12) */}
