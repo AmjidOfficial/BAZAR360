@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { initializeFirestore, setLogLevel, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, setLogLevel, doc, getDocFromServer, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -11,6 +11,14 @@ export const app = initializeApp(firebaseConfig);
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
 }, firebaseConfig.firestoreDatabaseId);
+
+// Enable offline persistence to seamlessly handle sandbox iframe connectivity restrictions
+if (typeof window !== 'undefined') {
+  enableIndexedDbPersistence(db).catch((err) => {
+    console.warn('Firestore offline persistence not enabled:', err.code || err.message);
+  });
+}
+
 export const auth = getAuth();
 export const googleProvider = new GoogleAuthProvider();
 export const functions = getFunctions(app, 'us-central1'); // Defaulting to us-central1 (or project default)

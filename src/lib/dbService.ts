@@ -608,3 +608,116 @@ export async function dbFetchLikes(listingId: string): Promise<string[]> {
   }
 }
 
+// 12. Lead Activity Tracking Engine (BAZAR360 v3.0 PRO)
+export interface TrackedLeadAction {
+  id: string;
+  userName: string;
+  userPhone: string;
+  userWhatsApp?: string;
+  userEmail: string;
+  actionType: 'search' | 'vehicle_view' | 'showroom_view' | 'favorite' | 'share' | 'call_click' | 'whatsapp_click' | 'message' | 'session_start';
+  details: string; // e.g. "Searched for Toyota Fortuner"
+  leadSource: string; // "Web" | "Mobile"
+  leadScore: number;
+  leadCategory: 'Cold' | 'Warm' | 'Hot' | 'VIP';
+  visitorCategory: 'Guest' | 'Registered User' | 'Dealer' | 'Admin';
+  timeOnSite?: number; // seconds
+  sessionHistory?: string[];
+  createdAt: string;
+}
+
+export async function dbTrackLeadAction(action: Omit<TrackedLeadAction, 'id' | 'createdAt'>): Promise<void> {
+  try {
+    const actionId = `act-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const fullAction: TrackedLeadAction = {
+      ...action,
+      id: actionId,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Save details to lead_actions subcollection or general actions
+    await setDoc(doc(db, 'lead_actions', actionId), fullAction);
+    
+    // Also update/aggregate a consolidated user profile under the "leads" collection
+    const leadId = action.userPhone ? `lead-${action.userPhone}` : `lead-${action.userEmail.replace(/[@.]/g, '-')}`;
+    const leadRef = doc(db, 'leads', leadId);
+    
+    const leadDoc = await getDoc(leadRef);
+    let previousScore = 0;
+    let previousHistory: string[] = [];
+    
+    if (leadDoc.exists()) {
+      const data = leadDoc.data();
+      previousScore = Number(data.leadScore) || 0;
+      previousHistory = Array.isArray(data.sessionHistory) ? data.sessionHistory : [];
+    }
+    
+    const newScore = previousScore + action.leadScore;
+    const updatedHistory = [...previousHistory, `${action.actionType}: ${action.details}`].slice(-30); // Keep last 30 events
+    
+    // Determine categories
+    let leadCategory: 'Cold' | 'Warm' | 'Hot' | 'VIP' = 'Cold';
+    if (newScore > 250) leadCategory = 'VIP';
+    else if (newScore > 120) leadCategory = 'Hot';
+    else if (newScore > 50) leadCategory = 'Warm';
+    
+    await setDoc(leadRef, {
+      id: leadId,
+      userName: action.userName || 'Anonymous',
+      userPhone: action.userPhone || '',
+      userWhatsApp: action.userWhatsApp || action.userPhone || '',
+      userEmail: action.userEmail || '',
+      searchHistory: action.actionType === 'search' ? updatedHistory : previousHistory,
+      leadSource: action.leadSource || 'Web',
+      leadScore: newScore,
+      leadCategory,
+      visitorCategory: action.visitorCategory || 'Guest',
+      timeOnSite: (Number(leadDoc.data()?.timeOnSite) || 0) + (action.timeOnSite || 15), // increment time
+      sessionHistory: updatedHistory,
+      updatedAt: new Date().toISOString(),
+      createdAt: leadDoc.data()?.createdAt || new Date().toISOString()
+    }, { merge: true });
+    
+    console.log(`Lead Activity logged successfully to Firebase. Score updated: ${newScore}`);
+  } catch (err) {
+    console.warn('Silent lead action save fallback (local storage):', err);
+    // LocalStorage fallback so the app continues operating perfectly offline
+    try {
+      const cached = localStorage.getItem('bazar360_offline_actions');
+      const list = cached ? JSON.parse(cached) : [];
+      list.push({ ...action, id: `offline-${Date.now()}`, createdAt: new Date().toISOString() });
+      localStorage.setItem('bazar360_offline_actions', JSON.stringify(list));
+    } catch (e) {}
+  }
+}
+
+export async function dbFetchLeadActions(): Promise<TrackedLeadAction[]> {
+  try {
+    const snap = await getDocs(collection(db, 'lead_actions'));
+    const list: TrackedLeadAction[] = [];
+    snap.forEach((doc) => {
+      const data = doc.data();
+      list.push({
+        id: doc.id,
+        userName: data.userName || '',
+        userPhone: data.userPhone || '',
+        userWhatsApp: data.userWhatsApp || '',
+        userEmail: data.userEmail || '',
+        actionType: data.actionType || 'session_start',
+        details: data.details || '',
+        leadSource: data.leadSource || 'Web',
+        leadScore: Number(data.leadScore) || 0,
+        leadCategory: data.leadCategory || 'Cold',
+        visitorCategory: data.visitorCategory || 'Guest',
+        timeOnSite: data.timeOnSite || 0,
+        sessionHistory: data.sessionHistory || [],
+        createdAt: data.createdAt || new Date().toISOString()
+      });
+    });
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (err) {
+    console.warn('Offline lead actions fetch issue:', err);
+    return [];
+  }
+}
+

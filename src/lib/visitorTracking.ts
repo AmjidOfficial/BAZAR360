@@ -7,6 +7,7 @@ import {
   increment 
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { dbTrackLeadAction } from './dbService';
 
 export interface VisitorData {
   visitorId: string;
@@ -204,6 +205,21 @@ export async function trackVehicleView(listingId: string): Promise<void> {
       totalViews: increment(1),
       lastSeen: new Date().toISOString()
     });
+
+    // Dispatch to BAZAR360 Lead Intelligence engine
+    dbTrackLeadAction({
+      userName: 'Visitor User',
+      userPhone: '',
+      userEmail: 'guest@bazar360.online',
+      actionType: 'vehicle_view',
+      details: `Viewed vehicle listing: ${listingId}`,
+      leadSource: typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mobile' : 'Web',
+      leadScore: 30, // 30 points for vehicle view
+      leadCategory: 'Cold',
+      visitorCategory: 'Guest',
+      timeOnSite: 20,
+      sessionHistory: []
+    }).catch(() => {});
   } catch (e) {
     console.log('View log cached locally.');
   }
@@ -225,11 +241,37 @@ export async function trackHighIntentClick(action: 'whatsapp' | 'call'): Promise
         clicksToWhatsApp: increment(1),
         lastSeen: new Date().toISOString()
       });
+      dbTrackLeadAction({
+        userName: 'Visitor User',
+        userPhone: '',
+        userEmail: 'guest@bazar360.online',
+        actionType: 'whatsapp_click',
+        details: 'Clicked WhatsApp contact button',
+        leadSource: typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mobile' : 'Web',
+        leadScore: 100, // 100 points for whatsapp
+        leadCategory: 'Cold',
+        visitorCategory: 'Guest',
+        timeOnSite: 30,
+        sessionHistory: []
+      }).catch(() => {});
     } else {
       await updateDoc(visitorRef, {
         clicksToCall: increment(1),
         lastSeen: new Date().toISOString()
       });
+      dbTrackLeadAction({
+        userName: 'Visitor User',
+        userPhone: '',
+        userEmail: 'guest@bazar360.online',
+        actionType: 'call_click',
+        details: 'Clicked direct phone call dialer',
+        leadSource: typeof window !== 'undefined' && window.innerWidth < 768 ? 'Mobile' : 'Web',
+        leadScore: 100, // 100 points for phone call click
+        leadCategory: 'Cold',
+        visitorCategory: 'Guest',
+        timeOnSite: 30,
+        sessionHistory: []
+      }).catch(() => {});
     }
   } catch (e) {
     console.log('CTR intent cached locally.');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ShieldCheck, MapPin, Gauge, Fuel, Milestone, Star, Award, DollarSign, Send, Hourglass, Bell, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, MapPin, Gauge, Fuel, Milestone, Star, Award, DollarSign, Send, Hourglass, Bell, Sparkles, Car } from 'lucide-react';
 import { CarListing, Dealer, Review } from './types';
 import { INITIAL_DEALERS, INITIAL_LISTINGS, INITIAL_REVIEWS } from './data';
 
@@ -15,7 +15,8 @@ import {
   dbFetchUserProfile,
   UserProfile,
   seedDatabaseIfEmpty,
-  dbSaveSuggestion
+  dbSaveSuggestion,
+  dbTrackLeadAction
 } from './lib/dbService';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -30,7 +31,10 @@ import HomeView from './components/HomeView';
 import DealerStorefrontView from './components/DealerStorefrontView';
 import SearchExplorerView from './components/SearchExplorerView';
 import RegistrationPortal from './components/RegistrationPortal';
+import DetailedVehiclePostingPage from './components/DetailedVehiclePostingPage';
 import AdminModerationDeck from './components/AdminModerationDeck';
+import AutoServicesView from './components/AutoServicesView';
+import ContactView from './components/ContactView';
 import { motion } from 'motion/react';
 import { initializeVisitorTracking, trackSearchQuery, trackVehicleView } from './lib/visitorTracking';
 
@@ -85,7 +89,34 @@ function App() {
   const { renderPrice } = useCurrencyMode();
   const { theme, resolvedTheme, setTheme } = useTheme();
 
+  // Bilingual support state with automatic browser detection
+  const [lang, setLang] = useState<'en' | 'ur'>(() => {
+    try {
+      const savedLang = localStorage.getItem('bazar360_lang');
+      if (savedLang === 'en' || savedLang === 'ur') {
+        return savedLang;
+      }
+      // Check system/browser language
+      const browserLang = typeof navigator !== 'undefined' ? (navigator.language || '').toLowerCase() : '';
+      if (browserLang.startsWith('ur')) {
+        return 'ur';
+      }
+    } catch (e) {
+      console.warn('Locale storage access restricted, reverting to default English locale.');
+    }
+    return 'en';
+  });
+
+  const toggleLanguage = () => {
+    const nextLang = lang === 'en' ? 'ur' : 'en';
+    setLang(nextLang);
+    try {
+      localStorage.setItem('bazar360_lang', nextLang);
+    } catch (e) {}
+  };
+
   const [currentTab, setTab] = useState<string>('home');
+  const [showroomSearch, setShowroomSearch] = useState<string>('');
   const [selectedDealerId, setSelectedDealerId] = useState<string>('auto-choice-peshawar');
   const [selectedListing, setSelectedListing] = useState<CarListing | null>(null);
   const [activeDetailTab, setActiveDetailTab] = useState<'Design' | 'Safety' | 'Luxury' | 'Performance'>('Design');
@@ -93,7 +124,7 @@ function App() {
   const [compareList, setCompareList] = useState<CarListing[]>([]);
   const [showComparisonModal, setShowComparisonModal] = useState<boolean>(false);
   const [activeIndustry, setActiveIndustry] = useState<'Automotive' | 'Footwear' | 'Apparel' | 'Electronics'>('Automotive');
-  const [currentCategory, setCurrentCategory] = useState<'gateway' | 'auto' | 'footwear' | 'food'>('gateway');
+  const [currentCategory, setCurrentCategory] = useState<'gateway' | 'auto' | 'footwear' | 'food'>('auto');
   const [comingSoonSector, setComingSoonSector] = useState<{ title: string; tagline: string; desc: string; icon: string; spec: string } | null>(null);
 
   // Ecosystem Gateway gamified voting & notification registers
@@ -406,7 +437,7 @@ function App() {
       
       // Fast connection race-timer to guarantee instant rendering even if connection is firewalled or slow
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Firebase connection timeout - loading high speed local layout')), 4500)
+        setTimeout(() => reject(new Error('Firebase connection timeout - loading high speed local layout')), 2500)
       );
 
       try {
@@ -1310,6 +1341,8 @@ function App() {
         currentCategory={currentCategory}
         onCategoryChange={handleSetCategory}
         onMobileMenuToggle={() => setIsMobileDrawerOpen(prev => !prev)}
+        lang={lang}
+        onLanguageToggle={toggleLanguage}
       />
 
       {/* Super-Admin Multi-Role Gateway (Exclusive email interception) */}
@@ -1424,6 +1457,7 @@ function App() {
                 compareList={compareList}
                 currentCategory={currentCategory}
                 currentUser={currentUser}
+                lang={lang}
               />
             )}
 
@@ -1440,62 +1474,136 @@ function App() {
                 compareList={compareList}
                 currentCategory={currentCategory}
                 currentUser={currentUser}
+                lang={lang}
               />
             )}
 
-            {currentTab === 'dealers' && (
-              <div className="space-y-6">
-                <div className="border-b border-[#1e293b] pb-3">
-                  <h2 className="font-sans font-bold text-xl md:text-2xl text-white">Verified Automotive Dealerships</h2>
-                  <p className="text-xs text-gray-400 mt-1">Select an elite showroom partner to inspect dedicated inventories and talk with experts</p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {dealers.map((dealer) => (
-                    <div
-                      key={dealer.id}
-                      onClick={() => onSelectDealer(dealer.id)}
-                      className="bg-[#121a2a] border border-[#1e293b] rounded-2xl overflow-hidden group hover:-translate-y-1 cursor-pointer relative shadow-xl duration-200 hover:border-[#00a3ff]"
-                    >
-                      <div className="h-32 bg-[#051020] relative flex items-center justify-center overflow-hidden">
-                        <img
-                          alt={dealer.name}
-                          className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-300"
-                          src={dealer.coverImage}
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center z-10 shadow-lg border-2 border-[#121a2a]">
-                          <span className="font-sans font-bold text-xl text-black">
-                            {dealer.avatarLetter}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="p-5 space-y-4">
-                        <div>
-                          <h3 className="font-sans font-extrabold text-[#00a3ff] text-base group-hover:text-blue-400 transition-colors uppercase tracking-tight">
-                            {dealer.name}
-                          </h3>
-                          <p className="text-gray-400 text-xs mt-1 flex items-center gap-1 font-sans">
-                            <MapPin size={12} className="text-[#00a3ff]" /> {dealer.location}
-                          </p>
-                        </div>
+            {currentTab === 'dealers' && (() => {
+              const showT = {
+                en: {
+                  title: "Verified Showrooms",
+                  subtitle: "Select an elite showroom partner to inspect dedicated inventories and talk with experts",
+                  placeholder: "Search showrooms by name or city...",
+                  activeListings: "Active Listings",
+                  userScore: "User Score",
+                  noShowrooms: "No showrooms found. Try adjusting your search query."
+                },
+                ur: {
+                  title: "تصدیق شدہ شورومز",
+                  subtitle: "خصوصی انوینٹریز اور گاڑیوں کی خریداری کے لیے بہترین شوروم کا انتخاب کریں",
+                  placeholder: "نام یا شہر سے شوروم تلاش کریں...",
+                  activeListings: "فعال اشتہارات",
+                  userScore: "صارفین کی درجہ بندی",
+                  noShowrooms: "کوئی شوروم نہیں ملا۔ اپنی تلاش تبدیل کریں۔"
+                }
+              }[lang];
 
-                        <p className="text-[#a3b3cc] text-xs leading-relaxed line-clamp-2 pr-2 font-sans">
-                          {dealer.description}
-                        </p>
+              const filteredDealers = dealers.filter((d) => {
+                if (!showroomSearch) return true;
+                const s = showroomSearch.toLowerCase();
+                return d.name.toLowerCase().includes(s) || d.location.toLowerCase().includes(s);
+              });
 
-                        <div className="flex justify-between items-center border-t border-[#1e293b]/50 pt-3 text-[10px]/relaxed">
-                          <div className="flex items-center gap-1 font-sans text-gray-500 uppercase tracking-widest font-bold">
-                            <Star size={12} className="fill-[#ff6b00] text-[#ff6b00]" /> {dealer.rating} User Score
-                          </div>
-                          <span className="font-sans text-gray-500 uppercase tracking-widest font-bold">
-                            {listings.filter((l) => l.dealerId === dealer.id).length} Active Listings
-                          </span>
-                        </div>
-                      </div>
+              const isRtl = lang === 'ur';
+
+              return (
+                <div className={`space-y-8 animate-fade-in text-white font-sans ${isRtl ? 'text-right' : 'text-left'}`} dir={isRtl ? 'rtl' : 'ltr'}>
+                  {/* Showrooms Header with Search Bar */}
+                  <div className="border-b border-white/5 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-black uppercase tracking-wider text-[#38BDF8]">{showT.title}</h2>
+                      <p className="text-xs text-gray-400 mt-1">{showT.subtitle}</p>
                     </div>
-                  ))}
+
+                    <div className="relative w-full md:w-80">
+                      <input
+                        type="text"
+                        value={showroomSearch}
+                        onChange={(e) => setShowroomSearch(e.target.value)}
+                        placeholder={showT.placeholder}
+                        className={`w-full bg-[#0b0f19] border border-white/5 text-xs rounded-xl p-3 focus:border-[#38bdf8] outline-none text-white ${
+                          isRtl ? 'text-right' : 'text-left'
+                        }`}
+                      />
+                      {showroomSearch && (
+                        <button
+                          onClick={() => setShowroomSearch('')}
+                          className={`absolute top-1/2 -translate-y-1/2 text-gray-400 hover:text-white ${isRtl ? 'left-3' : 'right-3'}`}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {filteredDealers.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredDealers.map((dealer) => (
+                        <div
+                          key={dealer.id}
+                          onClick={() => onSelectDealer(dealer.id)}
+                          className="bg-[#0b0f19] border border-white/5 rounded-3xl overflow-hidden group hover:-translate-y-1 cursor-pointer relative shadow-xl duration-200 hover:border-[#38bdf8]"
+                        >
+                          <div className="h-32 bg-[#030712] relative flex items-center justify-center overflow-hidden">
+                            <img
+                              alt={dealer.name}
+                              className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-300"
+                              src={dealer.coverImage}
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center z-10 shadow-lg border-4 border-[#0b0f19]">
+                              <span className="font-sans font-black text-xl text-black">
+                                {dealer.avatarLetter}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-5 space-y-4 text-left">
+                            <div>
+                              <h3 className="font-sans font-black text-[#38bdf8] text-sm group-hover:text-blue-400 transition-colors uppercase tracking-tight">
+                                {dealer.name}
+                              </h3>
+                              <p className="text-gray-400 text-[10px] mt-1 flex items-center gap-1 font-sans uppercase tracking-wider">
+                                <MapPin size={11} className="text-[#38bdf8]" /> {dealer.location}
+                              </p>
+                            </div>
+
+                            <p className="text-[#a3b3cc] text-xs leading-relaxed line-clamp-2 pr-2 font-sans">
+                              {dealer.description}
+                            </p>
+
+                            <div className="flex justify-between items-center border-t border-white/5 pt-3 text-[9px] uppercase tracking-wider">
+                              <div className="flex items-center gap-1 font-sans text-gray-400 font-extrabold">
+                                <Star size={11} className="fill-amber-500 text-amber-500" /> {dealer.rating} {showT.userScore}
+                              </div>
+                              <span className="font-sans text-gray-400 font-extrabold">
+                                {listings.filter((l) => l.dealerId === dealer.id).length} {showT.activeListings}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-[#0b0f19] border border-white/5 rounded-3xl p-16 text-center flex flex-col items-center justify-center space-y-4">
+                      <Car size={36} className="text-gray-600 animate-pulse" />
+                      <p className="text-gray-400 text-xs font-sans">
+                        {showT.noShowrooms}
+                      </p>
+                    </div>
+                  )}
                 </div>
+              );
+            })()}
+
+            {currentTab === 'services' && (
+              <div className="max-w-7xl mx-auto pb-16 px-4 md:px-8">
+                <AutoServicesView lang={lang} />
+              </div>
+            )}
+
+            {currentTab === 'contact' && (
+              <div className="max-w-7xl mx-auto pb-16 px-4 md:px-8">
+                <ContactView lang={lang} />
               </div>
             )}
 
@@ -1532,6 +1640,19 @@ function App() {
                 </div>
               </div>
             )}
+
+            {currentTab === 'sell' && (
+              <div className="max-w-7xl mx-auto pb-16 px-4 md:px-8 text-left">
+                <DetailedVehiclePostingPage
+                  lang={lang}
+                  currentUser={currentUser}
+                  onPostCreated={(newL) => {
+                    setListings((prev) => [newL, ...prev]);
+                    setTab('search');
+                  }}
+                />
+              </div>
+            )}
           </>
         )}
         <Footer />
@@ -1543,6 +1664,7 @@ function App() {
         setTab={setTab} 
         currentCategory={currentCategory} 
         onCategoryChange={handleSetCategory} 
+        lang={lang}
       />
 
       {/* DYNAMIC LISTING DETAILS FULL SCREEN MODAL */}
@@ -2245,49 +2367,40 @@ function App() {
             </div>
 
             {/* Nav Links */}
-            <nav className="flex flex-col gap-4 font-mono text-xs uppercase tracking-wider text-left">
-              <button
-                onClick={() => { setTab('home'); setIsMobileDrawerOpen(false); }}
-                className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'home' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-              >
-                🏠 Home Feed
-              </button>
-              <button
-                onClick={() => { setTab('inventory'); setIsMobileDrawerOpen(false); }}
-                className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'inventory' || currentTab === 'search' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-              >
-                📋 Active Inventory
-              </button>
-              <button
-                onClick={() => { setTab('dealers'); setIsMobileDrawerOpen(false); }}
-                className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'dealers' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-              >
-                🏢 Showrooms
-              </button>
-              <button
-                onClick={() => { setTab('media'); setIsMobileDrawerOpen(false); }}
-                className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'media' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-              >
-                🎥 Showroom Media
-              </button>
-              <button
-                onClick={() => { setTab('insights'); setIsMobileDrawerOpen(false); }}
-                className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'insights' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-              >
-                📈 Market Insights
-              </button>
-              <button
-                onClick={() => { setTab('concierge'); setIsMobileDrawerOpen(false); }}
-                className={`font-black py-2.5 text-left transition-colors cursor-pointer block w-full ${currentTab === 'concierge' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-              >
-                📞 Direct Concierge
-              </button>
-              <button
-                onClick={() => { handleSetCategory('gateway'); setIsMobileDrawerOpen(false); }}
-                className="font-black py-3 text-left text-orange-500 hover:text-orange-400 border-t border-white/5 pt-4 flex items-center gap-1.5 uppercase tracking-widest mt-2"
-              >
-                Return to Gateway
-              </button>
+            <nav className="flex flex-col gap-4 font-sans text-xs uppercase tracking-wider text-left">
+              {(() => {
+                const navItems = {
+                  en: [
+                    { id: 'home', label: '🏠 Home' },
+                    { id: 'inventory', label: '🚗 Inventory' },
+                    { id: 'dealers', label: '🏢 Showrooms' },
+                    { id: 'services', label: '⚙️ Services' },
+                    { id: 'contact', label: '📞 Contact' }
+                  ],
+                  ur: [
+                    { id: 'home', label: '🏠 ہوم' },
+                    { id: 'inventory', label: '🚗 انوینٹری' },
+                    { id: 'dealers', label: '🏢 شورومز' },
+                    { id: 'services', label: '⚙️ سروسز' },
+                    { id: 'contact', label: '📞 رابطہ' }
+                  ]
+                }[lang];
+
+                return navItems.map((item) => {
+                  const isActive = currentTab === item.id || (item.id === 'inventory' && (currentTab === 'inventory' || currentTab === 'search'));
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => { setTab(item.id); setIsMobileDrawerOpen(false); }}
+                      className={`font-extrabold py-2.5 text-left transition-colors cursor-pointer block w-full border-b border-white/5 pb-2 ${
+                        isActive ? 'text-[#38BDF8]' : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                });
+              })()}
             </nav>
           </div>
 

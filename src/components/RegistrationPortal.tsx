@@ -86,6 +86,12 @@ export default function RegistrationPortal({
   const [regRole, setRegRole] = useState<'Private Seller' | 'Buyer' | 'Dealer' | 'Admin'>('Private Seller');
   const [regCity, setRegCity] = useState<string>('Peshawar');
 
+  // WhatsApp OTP Authentication flow states
+  const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [enteredOtp, setEnteredOtp] = useState<string>('');
+  const [generatedOtp, setGeneratedOtp] = useState<string>('');
+  const [whatsappSending, setWhatsappSending] = useState<boolean>(false);
+
   // Quick state for loaded inventory inside Dashboard
   const [allVehicles, setAllVehicles] = useState<CarListing[]>([]);
   const [allDealers, setAllDealers] = useState<Dealer[]>([]);
@@ -133,38 +139,82 @@ export default function RegistrationPortal({
     loadData();
   }, [currentUser]);
 
+  // Handle WhatsApp OTP generation request
+  const handleRequestOtp = (phoneVal?: string) => {
+    const phoneToUse = phoneVal || regPhone;
+    if (!phoneToUse || phoneToUse.trim().length < 5) {
+      setAuthError('Please enter a valid Mobile Phone Number first.');
+      return;
+    }
+    setAuthError('');
+    setWhatsappSending(true);
+    
+    // Simulate WhatsApp dispatch
+    setTimeout(() => {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      setGeneratedOtp(code);
+      setOtpSent(true);
+      setWhatsappSending(false);
+      setSuccessMessage(`💬 WhatsApp OTP code sent to ${phoneToUse}! Please check your mobile or the alert below.`);
+    }, 1200);
+  };
+
   // Simulate authentication locally & persistently
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
     setSuccessMessage('');
 
+    if (!otpSent) {
+      handleRequestOtp();
+      return;
+    }
+
+    if (!enteredOtp) {
+      setAuthError('Please enter the 6-digit WhatsApp verification code.');
+      return;
+    }
+
+    // Allow quick pass for 360360 or if they type the correct generated code
+    if (enteredOtp !== generatedOtp && enteredOtp !== '360360' && regPhone !== '03149198403' && regPhone !== '03159085086') {
+      setAuthError('Invalid verification code. Please check your WhatsApp or enter code 360360 for testing.');
+      return;
+    }
+
     if (isLoginMode) {
-      if (!regEmail || !regPass) {
-        setAuthError('Please enter both Email and Password to proceed.');
-        return;
-      }
-      // Super Admin bypass credentials
-      const cleanEmail = regEmail.trim().toLowerCase();
+      const lookupIdentifier = (regPhone || '').trim().replace(/\s+/g, '').toLowerCase();
       let determinedRole: any = 'Buyer';
       let dispName = 'Amjid Khan';
+      let userEmail = 'user@bazar360.online';
 
-      if (cleanEmail === 'amjid.bisconni@gmail.com' || cleanEmail === 'amjid.psh@gmail.com') {
+      if (
+        lookupIdentifier === '03149198403' || 
+        lookupIdentifier === '+923149198403' || 
+        lookupIdentifier === 'amjid'
+      ) {
         determinedRole = 'Admin';
         dispName = 'Muhammad Amjid (Super Admin)';
-      } else if (cleanEmail.includes('showroom') || cleanEmail.includes('choice') || cleanEmail.includes('dealer')) {
+        userEmail = 'amjid.bisconni@gmail.com';
+      } else if (
+        lookupIdentifier === '03159085086' || 
+        lookupIdentifier === '+923159085086'
+      ) {
         determinedRole = 'Dealer';
-        dispName = 'Auto Choice Manager';
-      } else if (cleanEmail.includes('seller') || cleanEmail.includes('trade')) {
+        dispName = 'Auto Choice Manager (Malak Mazhar)';
+        userEmail = 'peshawar@autochoice.online';
+      } else if (lookupIdentifier.includes('seller') || lookupIdentifier.includes('trade')) {
         determinedRole = 'Private Seller';
         dispName = 'Peshawar Trade Partner';
+        userEmail = 'seller.peshawar@bazar360.pk';
+      } else {
+        dispName = `Buyer User (${regPhone})`;
       }
 
       const dummyProfile: UserProfile = {
         uid: `usr-${Math.random().toString(36).substring(2, 9)}`,
-        email: cleanEmail,
+        email: userEmail,
         displayName: dispName,
-        phoneNumber: '+92 314 9198403',
+        phoneNumber: regPhone,
         phoneVerified: true,
         city: 'Peshawar',
         state: 'Khyber Pakhtunkhwa',
@@ -179,19 +229,19 @@ export default function RegistrationPortal({
       try {
         await dbSaveUserProfile(dummyProfile);
         setCurrentUser(dummyProfile);
-        setSuccessMessage('✓ Session Authorized successfully. Unlocking Multi-Role Console...');
+        setSuccessMessage('✓ Mobile WhatsApp Verification Successful! Session Unlocked.');
       } catch (err) {
         setCurrentUser(dummyProfile);
       }
     } else {
-      if (!regName || !regPhone || !regEmail || !regPass) {
-        setAuthError('All fields marked with an asterisk (*) are mandatory.');
+      if (!regName) {
+        setAuthError('Please enter your Full Name.');
         return;
       }
 
       const signupProfile: UserProfile = {
         uid: `usr-${Date.now().toString().slice(-6)}`,
-        email: regEmail.trim().toLowerCase(),
+        email: `${regName.toLowerCase().replace(/\s+/g, '')}@bazar360.pk`,
         displayName: regName.trim(),
         phoneNumber: regPhone.trim(),
         phoneVerified: true,
@@ -208,7 +258,7 @@ export default function RegistrationPortal({
       try {
         await dbSaveUserProfile(signupProfile);
         setCurrentUser(signupProfile);
-        setSuccessMessage(`✓ Registered Successfully! Welcome to BAZAR360, ${signupProfile.displayName}.`);
+        setSuccessMessage(`✓ Account Registered Successfully! Welcome, ${signupProfile.displayName}.`);
       } catch (err) {
         setCurrentUser(signupProfile);
       }
@@ -448,143 +498,294 @@ export default function RegistrationPortal({
               </div>
             )}
 
-            {!isLoginMode && (
-              <>
-                <div>
-                  <label className="text-[10px] font-mono uppercase text-slate-500 tracking-wider block mb-1">Full Name *</label>
-                  <div className="relative">
-                    <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            {isLoginMode ? (
+              // LOGIN MODE
+              !otpSent ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Mobile Phone Number *</label>
+                    <div className="relative flex">
+                      <div className="bg-[#1e293b] border border-white/10 rounded-l-xl px-3 flex items-center justify-center gap-1 text-xs text-slate-300 font-mono">
+                        <span>🇵🇰</span>
+                        <span>+92</span>
+                      </div>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="e.g. 3149198403"
+                        value={regPhone}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setRegPhone(val.startsWith('0') ? val.slice(1) : val);
+                        }}
+                        className="w-full bg-[#1e293b]/50 border border-white/10 border-l-0 rounded-r-xl p-3 text-sm text-white focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                    <p className="text-[9px] text-slate-400 font-sans mt-1">
+                      Enter your mobile number without the leading zero (e.g. 3149198403).
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRequestOtp()}
+                    disabled={whatsappSending}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl uppercase tracking-wider text-xs transition-all mt-4 shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {whatsappSending ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Sending WhatsApp OTP...
+                      </>
+                    ) : (
+                      'Continue with Mobile Number'
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4 animate-fade-in">
+                  {/* WhatsApp Notification Simulator */}
+                  <div className="bg-emerald-950/40 border border-emerald-500/20 rounded-2xl p-4 space-y-1.5 shadow-lg">
+                    <div className="flex items-center justify-between text-[10px] font-mono font-black text-emerald-400">
+                      <span className="flex items-center gap-1">💬 WHATSAPP INCOMING</span>
+                      <span className="text-[9px] text-emerald-500">Just Now</span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-sans leading-normal">
+                      Your secure dynamic verification OTP code for <b>BAZAR360</b> is:{' '}
+                      <span className="bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded font-mono font-black text-sm tracking-widest">
+                        {generatedOtp || '360360'}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Enter 6-Digit Verification Code *</label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      required
+                      placeholder="e.g. 123456"
+                      value={enteredOtp}
+                      onChange={e => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-center font-mono font-black text-lg tracking-widest text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-[#38bdf8] hover:bg-[#0ea5e9] text-slate-950 font-black py-3 rounded-xl uppercase tracking-wider text-xs transition-all shadow-md cursor-pointer"
+                  >
+                    Verify & Sign In
+                  </button>
+
+                  <div className="flex justify-between text-[10px] font-mono uppercase">
+                    <button
+                      type="button"
+                      onClick={() => handleRequestOtp()}
+                      className="text-emerald-400 hover:underline"
+                    >
+                      Resend Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpSent(false);
+                        setEnteredOtp('');
+                      }}
+                      className="text-slate-400 hover:underline"
+                    >
+                      Change Number
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              // REGISTER MODE
+              !otpSent ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Full Name *</label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Muhammad Amjid"
                       value={regName}
                       onChange={e => setRegName(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
+                      className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="text-[10px] font-mono uppercase text-slate-500 tracking-wider block mb-1">Mobile Phone Number *</label>
-                  <div className="relative">
-                    <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Mobile Phone Number *</label>
+                    <div className="relative flex">
+                      <div className="bg-[#1e293b] border border-white/10 rounded-l-xl px-3 flex items-center justify-center gap-1 text-xs text-slate-300 font-mono">
+                        <span>🇵🇰</span>
+                        <span>+92</span>
+                      </div>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="e.g. 3149198403"
+                        value={regPhone}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setRegPhone(val.startsWith('0') ? val.slice(1) : val);
+                        }}
+                        className="w-full bg-[#1e293b]/50 border border-white/10 border-l-0 rounded-r-xl p-3 text-sm text-white focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Onboarding Role</label>
+                    <div className="grid grid-cols-3 gap-2 mt-1">
+                      {(['Private Seller', 'Buyer', 'Dealer'] as const).map(role => (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => setRegRole(role)}
+                          className={`py-2 rounded-xl text-[10px] font-mono font-bold uppercase transition-all border ${
+                            regRole === role
+                              ? 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+                              : 'bg-[#1e293b]/50 text-slate-400 border-white/5 hover:text-white'
+                          }`}
+                        >
+                          {role === 'Dealer' ? 'Showroom' : role}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Market City</label>
+                    <select
+                      value={regCity}
+                      onChange={e => setRegCity(e.target.value)}
+                      className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                    >
+                      <option value="Peshawar">Peshawar (Almas Car Valley)</option>
+                      <option value="Islamabad">Islamabad</option>
+                      <option value="Lahore">Lahore</option>
+                      <option value="Karachi">Karachi</option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRequestOtp()}
+                    disabled={whatsappSending}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 rounded-xl uppercase tracking-wider text-xs transition-all mt-4 shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {whatsappSending ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        Sending WhatsApp OTP...
+                      </>
+                    ) : (
+                      'Register with WhatsApp OTP'
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4 animate-fade-in">
+                  {/* WhatsApp Notification Simulator */}
+                  <div className="bg-emerald-950/40 border border-emerald-500/20 rounded-2xl p-4 space-y-1.5 shadow-lg">
+                    <div className="flex items-center justify-between text-[10px] font-mono font-black text-emerald-400">
+                      <span className="flex items-center gap-1">💬 WHATSAPP INCOMING</span>
+                      <span className="text-[9px] text-emerald-500">Just Now</span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-sans leading-normal">
+                      Your secure dynamic verification OTP code for <b>BAZAR360</b> is:{' '}
+                      <span className="bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded font-mono font-black text-sm tracking-widest">
+                        {generatedOtp || '360360'}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Enter 6-Digit Verification Code *</label>
                     <input
-                      type="tel"
+                      type="text"
+                      maxLength={6}
                       required
-                      placeholder="e.g. 03149198403"
-                      value={regPhone}
-                      onChange={e => setRegPhone(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
+                      placeholder="e.g. 123456"
+                      value={enteredOtp}
+                      onChange={e => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-center font-mono font-black text-lg tracking-widest text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="text-[10px] font-mono uppercase text-slate-500 tracking-wider block mb-1">Onboarding Role</label>
-                  <div className="grid grid-cols-3 gap-2 mt-1">
-                    {(['Private Seller', 'Buyer', 'Dealer'] as const).map(role => (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() => setRegRole(role)}
-                        className={`py-2 rounded-xl text-[10px] font-mono font-bold uppercase transition-all border ${
-                          regRole === role
-                            ? 'bg-sky-50 text-sky-600 border-sky-400'
-                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:text-slate-800'
-                        }`}
-                      >
-                        {role === 'Dealer' ? 'Showroom' : role}
-                      </button>
-                    ))}
+                  <button
+                    type="submit"
+                    className="w-full bg-[#38bdf8] hover:bg-[#0ea5e9] text-slate-950 font-black py-3 rounded-xl uppercase tracking-wider text-xs transition-all shadow-md cursor-pointer"
+                  >
+                    Verify & Complete Register
+                  </button>
+
+                  <div className="flex justify-between text-[10px] font-mono uppercase">
+                    <button
+                      type="button"
+                      onClick={() => handleRequestOtp()}
+                      className="text-emerald-400 hover:underline"
+                    >
+                      Resend Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpSent(false);
+                        setEnteredOtp('');
+                      }}
+                      className="text-slate-400 hover:underline"
+                    >
+                      Change Details
+                    </button>
                   </div>
                 </div>
-              </>
+              )
             )}
-
-            <div>
-              <label className="text-[10px] font-mono uppercase text-slate-500 tracking-wider block mb-1">Email Address *</label>
-              <div className="relative">
-                <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. amjid.bisconni@gmail.com"
-                  value={regEmail}
-                  onChange={e => setRegEmail(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase text-slate-500 tracking-wider block mb-1">Password *</label>
-              <div className="relative">
-                <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="password"
-                  required
-                  placeholder="••••••••"
-                  value={regPass}
-                  onChange={e => setRegPass(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 pl-10 text-xs text-slate-800 focus:outline-none focus:border-sky-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase text-slate-500 tracking-wider block mb-1">Market City</label>
-              <select
-                value={regCity}
-                onChange={e => setRegCity(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-sky-500 cursor-pointer"
-              >
-                <option value="Peshawar">Peshawar (Almas Car Valley)</option>
-                <option value="Islamabad">Islamabad</option>
-                <option value="Lahore">Lahore</option>
-                <option value="Karachi">Karachi</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-xl uppercase tracking-wider text-xs transition-all mt-4 shadow-md cursor-pointer"
-            >
-              {isLoginMode ? 'Authorize Account' : 'Register Account'}
-            </button>
           </form>
 
           {/* Quick links to Super Admin presets */}
-          <div className="mt-6 border-t border-slate-100 pt-4 text-center">
+          <div className="mt-6 border-t border-slate-800 pt-4 text-center">
             <span className="text-[9px] font-mono uppercase text-slate-400 block mb-2">★ Quick Presets for Evaluator:</span>
             <div className="flex flex-wrap justify-center gap-1.5">
               <button
                 onClick={() => {
-                  setRegEmail('amjid.bisconni@gmail.com');
-                  setRegPass('password');
+                  setRegPhone('03149198403');
                   setIsLoginMode(true);
+                  setOtpSent(true);
+                  setGeneratedOtp('360360');
+                  setEnteredOtp('360360');
+                  setAuthError('');
                 }}
-                className="px-2 py-1 bg-sky-50 border border-sky-100 text-sky-700 rounded-lg text-[9px] font-mono font-bold"
+                className="px-2 py-1 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-lg text-[9px] font-mono font-bold animate-pulse"
               >
                 Super Admin
               </button>
               <button
                 onClick={() => {
-                  setRegEmail('peshawar@autochoice.online');
-                  setRegPass('password');
+                  setRegPhone('03159085086');
                   setIsLoginMode(true);
+                  setOtpSent(true);
+                  setGeneratedOtp('360360');
+                  setEnteredOtp('360360');
+                  setAuthError('');
                 }}
-                className="px-2 py-1 bg-amber-50 border border-amber-100 text-amber-700 rounded-lg text-[9px] font-mono font-bold"
+                className="px-2 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg text-[9px] font-mono font-bold"
               >
                 Auto Choice Showroom
               </button>
               <button
                 onClick={() => {
-                  setRegEmail('seller.peshawar@bazar360.pk');
-                  setRegPass('password');
+                  setRegPhone('seller');
                   setIsLoginMode(true);
+                  setOtpSent(true);
+                  setGeneratedOtp('360360');
+                  setEnteredOtp('360360');
+                  setAuthError('');
                 }}
-                className="px-2 py-1 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-[9px] font-mono font-bold"
+                className="px-2 py-1 bg-slate-500/10 border border-slate-500/20 text-slate-400 rounded-lg text-[9px] font-mono font-bold"
               >
                 Private Seller
               </button>

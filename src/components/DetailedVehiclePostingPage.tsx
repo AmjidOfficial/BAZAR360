@@ -1,1076 +1,1017 @@
-import React, { useState, useRef } from 'react';
-import { 
-  Car, 
-  Cpu, 
-  Layers, 
-  MapPin, 
-  ShieldAlert, 
-  ShieldCheck, 
-  CheckCircle,
-  Clock, 
-  FileText, 
-  Sliders,
-  DollarSign,
-  CloudUpload,
-  X,
-  Image as ImageIcon,
-  Check,
-  ChevronRight,
-  ChevronLeft,
-  Sparkles,
-  Gauge
-} from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-
-// Explicit listing structure following user's specs
-export interface ComplexListingPayload {
-  // Core Specs
-  brand: string;
-  modelName: string;
-  modelYear: number;
-  variantName: string;
-  exteriorColor: string;
-  engineCapacity: string;
-
-  // Condition Matrix
-  engineCompression: number;
-  gearboxSmoothness: number;
-  suspensionRigidity: number;
-  interiorCleanliness: number;
-  tyreTreadLife: number;
-  verifiedKmDriven: number;
-  paintBodyStatus: {
-    paintType: 'Genuine Paint' | 'Touched Panels' | 'Fully Showered';
-    touchedPanels: string[];
-    hasAccidentHistory: boolean;
-    accidentLogs: string;
-  };
-
-  // Legal Shield
-  assemblyType: 'Local Assemble' | 'Japanese Import';
-  auctionSheetScore?: string;
-  ownershipSequence: '1st Owner' | '2nd Owner' | '3rd Owner' | 'More';
-  exciseRegistryCity: string;
-  tokenTaxStatus: 'Clear Up To Date' | 'Unpaid Back Taxes';
-  clearedTaxYear: number;
-  physicalDocs: 'Original Smart Card' | 'Complete Original File' | 'Old Original Book' | 'Duplicate Pages File';
-
-  // Logistics & Biometrics
-  physicalVenueAddress: string;
-  viewingTimeframe: string;
-  fileSecurityLocation: 'Held Safely in Showroom Office Counter' | 'Available By Hand';
-  biometricInstantlyAvailable: boolean;
-  governmentTransferTurnaroundDays: number;
-  expectedPrice?: string;
-  images?: string[];
-}
+import { 
+  Check, 
+  ChevronLeft, 
+  ChevronRight, 
+  Sparkles, 
+  Upload, 
+  Camera, 
+  Image as ImageIcon, 
+  Video as VideoIcon, 
+  Trash2, 
+  User, 
+  Phone, 
+  MapPin, 
+  Info, 
+  AlertCircle,
+  Car,
+  Sliders,
+  CheckCircle,
+  HelpCircle,
+  Clock
+} from 'lucide-react';
+import { translations, Language } from '../translations';
+import { dbSaveListing } from '../lib/dbService';
+import { CarListing } from '../types';
 
 interface DetailedVehiclePostingPageProps {
-  onPostCreated?: (listing: ComplexListingPayload) => void;
+  onPostCreated?: (payload: CarListing) => void;
+  lang?: Language;
+  currentUser?: any;
 }
 
-interface CompressedPhoto {
-  id: string;
-  originalName: string;
-  originalSize: number;
-  compressedSize: number;
-  previewUrl: string;
-  file: File;
-  progress: number;
-}
+const VEHICLE_TYPES = [
+  { id: 'car', labelKey: 'car' },
+  { id: 'suv', labelKey: 'suvJeep' },
+  { id: 'van', labelKey: 'van' },
+  { id: 'motorcycle', labelKey: 'motorcycle' },
+  { id: 'truck', labelKey: 'truck' },
+  { id: 'bus', labelKey: 'bus' },
+  { id: 'commercial', labelKey: 'commercial' }
+];
 
-export const BRAND_MODELS_MAP: Record<string, string[]> = {
-  Toyota: ['Corolla', 'Yaris', 'Fortuner', 'Land Cruiser', 'Hilux', 'Aqua', 'Prius', 'Vitz'],
-  Honda: ['Civic', 'City', 'Vezel', 'Accord', 'BR-V', 'N One', 'N Box'],
-  Suzuki: ['Alto', 'Wagon R', 'Cultus', 'Swift', 'Mehran', 'Bolan', 'Jimny'],
-  Kia: ['Sportage', 'Picanto', 'Sorento', 'Carnival'],
-  Hyundai: ['Tucson', 'Elantra', 'Sonata', 'Santa Fe'],
-  Changan: ['Alsvin', 'Oshan X7', 'Karvaan'],
-  MG: ['HS', 'ZS EV', 'MG 4'],
-  Nissan: ['Dayz', 'Juke', 'Patrol', 'Note', 'X-Trail'],
-  Audi: ['e-tron', 'A4', 'A6', 'Q5', 'RS Q8'],
-  BMW: ['3 Series', '5 Series', '7 Series', 'X5', 'i4'],
+const MAKES_DICTIONARY: Record<string, string[]> = {
+  Toyota: ['Corolla', 'Yaris', 'Fortuner', 'Hilux', 'Land Cruiser', 'Prado', 'Aqua', 'Prius', 'Vitz'],
+  Honda: ['Civic', 'City', 'Vezel', 'BR-V', 'Accord', 'CR-V', 'N-Wgn'],
+  Suzuki: ['Alto', 'Cultus', 'Wagon R', 'Swift', 'Mehran', 'Bolan', 'Jimny'],
+  Hyundai: ['Elantra', 'Tucson', 'Sonata', 'Porter', 'Santa Fe'],
+  Kia: ['Sportage', 'Picanto', 'Stinger', 'Sorento', 'Carnival'],
+  Nissan: ['Dayz', 'Note', 'Juke', 'X-Trail', 'Patrol'],
+  BMW: ['3 Series', '5 Series', '7 Series', 'X1', 'X5', 'i4'],
+  'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLA', 'GLE']
 };
 
-export default function DetailedVehiclePostingPage({ onPostCreated }: DetailedVehiclePostingPageProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+export default function DetailedVehiclePostingPage({ onPostCreated, lang = 'en', currentUser }: DetailedVehiclePostingPageProps) {
+  const t = translations[lang];
 
-  // Section A states (Basics)
-  const [brand, setBrand] = useState('Toyota');
-  const [modelName, setModelName] = useState('Corolla');
-  const [customModelName, setCustomModelName] = useState('');
-  const [isOtherModel, setIsOtherModel] = useState(false);
-  const [modelYear, setModelYear] = useState(2022);
-  const [variantName, setVariantName] = useState('');
-  const [exteriorColor, setExteriorColor] = useState('');
-  const [engineCapacity, setEngineCapacity] = useState('1300cc');
-  const [expectedPrice, setExpectedPrice] = useState('');
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
 
-  // Section B & C states (Details/Specs & Condition)
-  const [engineCompression, setEngineCompression] = useState(90);
-  const [gearboxSmoothness, setGearboxSmoothness] = useState(85);
-  const [suspensionRigidity, setSuspensionRigidity] = useState(90);
-  const [interiorCleanliness, setInteriorCleanliness] = useState(95);
-  const [tyreTreadLife, setTyreTreadLife] = useState(80);
-  const [verifiedKmDriven, setVerifiedKmDriven] = useState('');
-  
-  const [paintType, setPaintType] = useState<'Genuine Paint' | 'Touched Panels' | 'Fully Showered'>('Genuine Paint');
-  const [selectedTouchedPanels, setSelectedTouchedPanels] = useState<string[]>([]);
-  const [hasAccidentHistory, setHasAccidentHistory] = useState(false);
-  const [accidentLogs, setAccidentLogs] = useState('');
+  // STEP 1: Basic Information
+  const [vehicleType, setVehicleType] = useState('car');
+  const [make, setMake] = useState('Toyota');
+  const [model, setModel] = useState('Corolla');
+  const [customModel, setCustomModel] = useState('');
+  const [variant, setVariant] = useState('');
+  const [year, setYear] = useState<number>(2023);
 
-  const [assemblyType, setAssemblyType] = useState<'Local Assemble' | 'Japanese Import'>('Local Assemble');
-  const [auctionScore, setAuctionScore] = useState('4.5');
-  const [ownershipSequence, setOwnershipSequence] = useState<'1st Owner' | '2nd Owner' | '3rd Owner' | 'More'>('1st Owner');
-  const [exciseRegistryCity, setExciseRegistryCity] = useState('Peshawar Registered');
-  const [tokenTaxStatus, setTokenTaxStatus] = useState<'Clear Up To Date' | 'Unpaid Back Taxes'>('Clear Up To Date');
-  const [clearedTaxYear, setClearedTaxYear] = useState(2026);
-  const [physicalDocs, setPhysicalDocs] = useState<'Original Smart Card' | 'Complete Original File' | 'Old Original Book' | 'Duplicate Pages File'>('Original Smart Card');
+  // STEP 2: Vehicle Details
+  const [price, setPrice] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [engineCC, setEngineCC] = useState('1300');
+  const [transmission, setTransmission] = useState<'Automatic' | 'Manual'>('Automatic');
+  const [fuelType, setFuelType] = useState<'Petrol' | 'Diesel' | 'Hybrid' | 'Electric'>('Petrol');
+  const [color, setColor] = useState('');
+  const [registrationCity, setRegistrationCity] = useState('');
+  const [condition, setCondition] = useState<'New' | 'Used'>('Used');
+  const [bodyCondition, setBodyCondition] = useState<'Total Genuine' | 'Minor Touch-ups' | 'Major Repaint'>('Total Genuine');
 
-  const [physicalVenueAddress, setPhysicalVenueAddress] = useState('');
-  const [viewingTimeframe, setViewingTimeframe] = useState('');
-  const [fileSecurityLocation, setFileSecurityLocation] = useState<'Held Safely in Showroom Office Counter' | 'Available By Hand'>('Held Safely in Showroom Office Counter');
-  const [biometricInstantlyAvailable, setBiometricInstantlyAvailable] = useState(true);
-  const [governmentTransferTurnaroundDays, setGovernmentTransferTurnaroundDays] = useState(7);
-
-  // Media (Step 3)
-  const [photos, setPhotos] = useState<CompressedPhoto[]>([]);
+  // STEP 3: Media Upload (State & Refs)
+  const [photos, setPhotos] = useState<Array<{ file?: File; previewUrl: string; size: number }>>([]);
+  const [videos, setVideos] = useState<Array<{ file?: File; previewUrl: string; size: number }>>([]);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
-  // Loading/Success feedback states
+  // STEP 4: Seller Details
+  const [sellerName, setSellerName] = useState(currentUser?.displayName || '');
+  const [sellerPhone, setSellerPhone] = useState(currentUser?.phoneNumber || '');
+  const [sellerWhatsApp, setSellerWhatsApp] = useState(currentUser?.phoneNumber || '');
+  const [location, setLocation] = useState(currentUser?.city || 'Peshawar, Pakistan');
+
+  // Submission / Loading Feedback
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [postedListing, setPostedListing] = useState<ComplexListingPayload | null>(null);
 
-  const panelOptions = ['Front Bumper', 'Rear Bumper', 'Left Front Door', 'Left Rear Door', 'Right Front Door', 'Right Rear Door', 'Bonnet Hood', 'Trunk Boot Lid', 'Roof'];
+  // Derived Model options
+  const modelOptions = useMemo(() => {
+    return MAKES_DICTIONARY[make] || [];
+  }, [make]);
 
-  const toggleTouchedPanel = (panel: string) => {
-    if (selectedTouchedPanels.includes(panel)) {
-      setSelectedTouchedPanels(selectedTouchedPanels.filter(p => p !== panel));
+  // Adjust model if make changes
+  React.useEffect(() => {
+    if (modelOptions.length > 0) {
+      setModel(modelOptions[0]);
     } else {
-      setSelectedTouchedPanels([...selectedTouchedPanels, panel]);
+      setModel('Other');
     }
-  };
+  }, [make, modelOptions]);
 
-  // Client-side image compression using canvas
-  const compressPhoto = (file: File): Promise<{ compressedFile: File; previewUrl: string; compressedSize: number }> => {
+  // Generate Year range
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let y = currentYear + 1; y >= 1990; y--) {
+      years.push(y);
+    }
+    return years;
+  }, []);
+
+  // Compress image on the client side using canvas
+  const compressImage = (file: File): Promise<{ previewUrl: string; size: number; file: File }> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1000;
-          const MAX_HEIGHT = 1000;
           let width = img.width;
           let height = img.height;
+          const maxDim = 1200;
 
           if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
+            if (width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
             }
           } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
+            if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
             }
           }
 
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-          }
+          if (ctx) ctx.drawImage(img, 0, 0, width, height);
 
           canvas.toBlob((blob) => {
             if (blob) {
               const compressedFile = new File([blob], file.name, {
                 type: 'image/jpeg',
-                lastModified: Date.now(),
+                lastModified: Date.now()
               });
-              const previewUrl = URL.createObjectURL(compressedFile);
               resolve({
-                compressedFile,
-                previewUrl,
-                compressedSize: compressedFile.size,
+                previewUrl: URL.createObjectURL(compressedFile),
+                size: compressedFile.size,
+                file: compressedFile
               });
             } else {
               resolve({
-                compressedFile: file,
                 previewUrl: URL.createObjectURL(file),
-                compressedSize: file.size,
+                size: file.size,
+                file
               });
             }
-          }, 'image/jpeg', 0.72); // 72% quality jpeg compression
+          }, 'image/jpeg', 0.82);
         };
-        img.src = event.target?.result as string;
+        img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const simulateProgress = (id: string) => {
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += Math.random() * 20 + 5;
-      if (currentProgress >= 100) {
-        currentProgress = 100;
-        clearInterval(interval);
+  // Media upload handlers
+  const handlePhotoFiles = async (files: FileList) => {
+    if (photos.length >= 10) {
+      alert(lang === 'ur' ? 'آپ زیادہ سے زیادہ 10 تصاویر منتخب کر سکتے ہیں۔' : 'You can upload a maximum of 10 images.');
+      return;
+    }
+    
+    setIsCompressing(true);
+    const incoming = Array.from(files).slice(0, 10 - photos.length);
+    const compressedResults = [];
+
+    for (const f of incoming) {
+      if (f.type.startsWith('image/')) {
+        try {
+          const comp = await compressImage(f);
+          compressedResults.push(comp);
+        } catch (err) {
+          compressedResults.push({
+            previewUrl: URL.createObjectURL(f),
+            size: f.size,
+            file: f
+          });
+        }
       }
-      setPhotos(prev => prev.map(p => p.id === id ? { ...p, progress: currentProgress } : p));
-    }, 150);
+    }
+
+    setPhotos((prev) => [...prev, ...compressedResults]);
+    setIsCompressing(false);
   };
 
-  const handlePhotoUpload = async (fileList: FileList | null) => {
-    if (!fileList) return;
+  const handleVideoFiles = (files: FileList) => {
+    if (videos.length >= 10) {
+      alert(lang === 'ur' ? 'آپ زیادہ سے زیادہ 10 ویڈیوز منتخب کر سکتے ہیں۔' : 'You can upload a maximum of 10 videos.');
+      return;
+    }
 
-    const newPhotosPromises = Array.from(fileList).map(async (file) => {
-      const id = Math.random().toString(36).substring(7);
-      
-      // Perform instant background compression
-      const { compressedFile, previewUrl, compressedSize } = await compressPhoto(file);
-      simulateProgress(id);
+    const incoming = Array.from(files).slice(0, 10 - videos.length);
+    const results = incoming.map((v) => ({
+      file: v,
+      previewUrl: URL.createObjectURL(v),
+      size: v.size
+    }));
 
-      return {
-        id,
-        originalName: file.name,
-        originalSize: file.size,
-        compressedSize,
-        previewUrl,
-        file: compressedFile,
-        progress: 0
-      };
-    });
-
-    const resolvedPhotos = await Promise.all(newPhotosPromises);
-    setPhotos(prev => [...prev, ...resolvedPhotos]);
+    setVideos((prev) => [...prev, ...results]);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handlePhotoUpload(e.dataTransfer.files);
+  const removePhoto = (idx: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const removePhoto = (id: string) => {
-    setPhotos(prev => prev.filter(p => p.id !== id));
+  const removeVideo = (idx: number) => {
+    setVideos((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // Flow navigation buttons
-  const validateStep1 = () => {
+  // Step Validation Helpers
+  const handleNext = () => {
     setErrorMessage('');
-    if (isOtherModel && !customModelName.trim()) {
-      setErrorMessage('Please enter your custom vehicle model name.');
-      return false;
-    }
-    if (!modelName.trim()) {
-      setErrorMessage('Please enter the model name to proceed.');
-      return false;
-    }
-    if (!variantName.trim()) {
-      setErrorMessage('Please specify the variant / trim designation.');
-      return false;
-    }
-    if (!exteriorColor.trim()) {
-      setErrorMessage('Please specify the exterior paint color.');
-      return false;
-    }
-    return true;
-  };
-
-  const validateStep2 = () => {
-    setErrorMessage('');
-    if (!verifiedKmDriven.trim()) {
-      setErrorMessage('Verified odometer kilometers is a required condition metric.');
-      return false;
-    }
-    if (isNaN(Number(verifiedKmDriven))) {
-      setErrorMessage('Kilometers driven must be a valid numeric index.');
-      return false;
-    }
-    if (!physicalVenueAddress.trim()) {
-      setErrorMessage('Physical inspection address is required for dealer security.');
-      return false;
-    }
-    if (!viewingTimeframe.trim()) {
-      setErrorMessage('Preferred viewing timeframe is required.');
-      return false;
-    }
-    return true;
-  };
-
-  const handleNextStep = () => {
     if (step === 1) {
-      if (validateStep1()) setStep(2);
+      if (!vehicleType || !make || (!model && !customModel) || !year) {
+        setErrorMessage(t.pleaseFillRequired);
+        return;
+      }
+      setStep(2);
     } else if (step === 2) {
-      if (validateStep2()) setStep(3);
+      if (!price || !mileage || !engineCC || !color || !registrationCity) {
+        setErrorMessage(t.pleaseFillRequired);
+        return;
+      }
+      setStep(3);
+    } else if (step === 3) {
+      if (photos.length === 0) {
+        setErrorMessage(lang === 'ur' ? 'براہ کرم کم از کم ایک تصویر اپ لوڈ کریں۔' : 'Please upload at least one image.');
+        return;
+      }
+      setStep(4);
+    } else if (step === 4) {
+      if (!sellerName || !sellerPhone || !location) {
+        setErrorMessage(t.pleaseFillRequired);
+        return;
+      }
+      setStep(5);
     }
   };
 
-  const handlePrevStep = () => {
+  const handleBack = () => {
+    setErrorMessage('');
     if (step > 1) {
       setStep((step - 1) as any);
     }
   };
 
-  const handleFinalSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage('');
-    setPostedListing(null);
-
-    if (photos.length === 0) {
-      setErrorMessage('Please upload at least one vehicle photo for verification.');
-      return;
-    }
-
+  // Submit listing directly to Firebase (Admin approval queue)
+  const handlePublish = async () => {
     setIsSubmitting(true);
+    setErrorMessage('');
 
-    // Simulate luxury API posting with delay
-    setTimeout(() => {
-      const payload: ComplexListingPayload = {
-        brand,
-        modelName,
-        modelYear,
-        variantName,
-        exteriorColor,
-        engineCapacity,
-        engineCompression,
-        gearboxSmoothness,
-        suspensionRigidity,
-        interiorCleanliness,
-        tyreTreadLife,
-        verifiedKmDriven: Number(verifiedKmDriven),
-        paintBodyStatus: {
-          paintType,
-          touchedPanels: paintType === 'Touched Panels' ? selectedTouchedPanels : [],
-          hasAccidentHistory,
-          accidentLogs
-        },
-        assemblyType,
-        auctionSheetScore: assemblyType === 'Japanese Import' ? auctionScore : undefined,
-        ownershipSequence,
-        exciseRegistryCity,
-        tokenTaxStatus,
-        clearedTaxYear,
-        physicalDocs,
-        physicalVenueAddress,
-        viewingTimeframe,
-        fileSecurityLocation,
-        biometricInstantlyAvailable,
-        governmentTransferTurnaroundDays,
-        expectedPrice: expectedPrice ? `${expectedPrice} PKR` : undefined,
-        images: photos.map(p => p.previewUrl)
-      };
+    const resolvedModelName = model === 'Other' ? customModel : model;
+    const listingId = `listing-${Date.now()}`;
 
-      setPostedListing(payload);
+    // Map parameters to match enterprise CarListing schema perfectly
+    const payload: CarListing = {
+      id: listingId,
+      title: `${year} ${make} ${resolvedModelName} ${variant}`.trim(),
+      make,
+      model: resolvedModelName,
+      year: Number(year),
+      price: Number(price),
+      mileage: Number(mileage),
+      fuelType,
+      transmission,
+      imageUrl: photos[0]?.previewUrl || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
+      verified: false,
+      featured: false,
+      dealerId: currentUser?.uid && currentUser?.role === 'Dealer' ? currentUser.uid : 'private-seller',
+      description: `A beautifully maintained ${condition.toLowerCase()} ${make} ${resolvedModelName} ${variant} located in ${location}. Contact seller ${sellerName} via ${sellerPhone} or WhatsApp.`,
+      createdAt: new Date().toISOString(),
+      tags: [vehicleType, condition, fuelType, transmission],
+      specs: {
+        color,
+        engineSize: `${engineCC} cc`,
+        horspower: `${Math.round(Number(engineCC) * 0.08 || 100)} HP`,
+        regionalSpecs: 'Local Assembly'
+      },
+      approved: false, // Goes straight to approval queue
+      condition,
+      engineCC: Number(engineCC),
+      exteriorColor: color,
+      bodyCondition: bodyCondition,
+      registrationCity,
+      documentType: 'Smart Card',
+      tokenTaxPaid: true,
+      images: photos.map(p => p.previewUrl),
+      assemblyType: 'Local',
+      tokenTaxStatus: 'Paid'
+    };
+
+    try {
+      await dbSaveListing(payload);
+      setSuccess(true);
       setIsSubmitting(false);
+      setTimeout(() => {
+        if (onPostCreated) {
+          onPostCreated(payload);
+        }
+      }, 2500);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(lang === 'ur' ? 'اشتہار محفوظ کرتے وقت خرابی پیش آئی۔ براہ کرم دوبارہ کوشش کریں۔' : 'Error saving advertisement. Please check connection.');
+      setIsSubmitting(false);
+    }
+  };
 
-      if (onPostCreated) {
-        onPostCreated(payload);
-      }
-    }, 1200);
+  const formatPrice = (val: string) => {
+    const num = parseFloat(val.replace(/,/g, ''));
+    if (isNaN(num)) return '';
+    return num.toLocaleString();
   };
 
   return (
-    <div className="w-full bg-bg-secondary text-text-main py-8 px-5 md:px-8 rounded-3xl border border-border-main shadow-2xl transition-all max-w-4xl mx-auto" id="60s-ad-posting-wizard">
+    <div className="w-full max-w-2xl mx-auto bg-slate-950/95 border border-white/5 rounded-3xl p-5 md:p-8 relative shadow-2xl overflow-hidden text-left" id="modern-60s-posting-wizard">
       
-      {/* 3-Step Compact Timeline Header */}
-      <div className="mb-8 border-b border-border-main pb-6">
-        <div className="flex items-center gap-1.5 bg-accent-main/10 border border-accent-main/30 text-accent-main font-mono text-[9px] font-black tracking-widest px-3 py-1 rounded-full uppercase mb-3 w-fit">
-          <Sparkles size={10} className="animate-pulse" /> 60-Second Instant Post Flow
-        </div>
-        <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight text-text-main">
-          List Your Premium Asset
-        </h2>
-        <p className="text-text-muted text-xs mt-1">
-          Provide essential specs, verify mechanical conditions, and upload compressed media instantly.
-        </p>
+      {/* Background glow overlay */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-32 bg-[#38BDF8]/10 blur-3xl rounded-full pointer-events-none" />
 
-        {/* Stepper Progress Bar */}
-        <div className="flex items-center justify-between mt-6 gap-2">
-          {[
-            { num: 1, label: 'Basics' },
-            { num: 2, label: 'Specs & Condition' },
-            { num: 3, label: 'Photos & Submit' }
-          ].map((s) => (
-            <React.Fragment key={s.num}>
-              <div 
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => {
-                  if (s.num === 1) setStep(1);
-                  if (s.num === 2 && validateStep1()) setStep(2);
-                  if (s.num === 3 && validateStep1() && validateStep2()) setStep(3);
-                }}
-              >
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-black transition-all duration-300 ${
-                  step === s.num
-                    ? 'bg-accent-main text-stone-950 scale-110 shadow-lg shadow-accent-main/20'
-                    : step > s.num
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-bg-primary border border-border-main text-text-muted'
-                }`}>
-                  {step > s.num ? <Check size={12} strokeWidth={3} /> : s.num}
-                </div>
-                <span className={`text-[10px] font-mono font-black uppercase tracking-widest hidden sm:inline ${
-                  step === s.num ? 'text-accent-main' : 'text-text-muted'
-                }`}>
-                  {s.label}
-                </span>
+      {success ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="py-12 text-center space-y-6"
+        >
+          <div className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-400">
+            <CheckCircle size={44} className="animate-bounce" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-white">
+              {lang === 'ur' ? 'اشتہار کامیابی سے جمع ہو گیا!' : 'Advertisement Submitted!'}
+            </h2>
+            <p className="text-zinc-400 text-sm max-w-md mx-auto">
+              {t.adSubmittedSuccess}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 justify-center text-xs text-orange-400 font-mono font-black uppercase">
+            <Clock size={14} /> {lang === 'ur' ? 'ایڈمن کی منظوری کے لیے زیر التوا' : 'Pending Administrative Review'}
+          </div>
+        </motion.div>
+      ) : (
+        <>
+          {/* Header Progress Matrix */}
+          <div className="mb-6 border-b border-white/5 pb-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 bg-[#38BDF8]/10 text-[#38BDF8] px-3 py-1 rounded-full text-[10px] font-mono font-black uppercase tracking-widest border border-[#38BDF8]/20">
+                <Sparkles size={11} className="animate-pulse" /> {t.lessThan60Seconds}
               </div>
-              {s.num < 3 && (
-                <div className={`flex-grow h-0.5 max-w-[100px] rounded ${
-                  step > s.num ? 'bg-emerald-500/30' : 'bg-border-main'
-                }`} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
+              <span className="text-zinc-500 font-mono text-xs font-black">
+                {step} / 5
+              </span>
+            </div>
 
-      <form onSubmit={step === 3 ? handleFinalSubmit : (e) => e.preventDefault()} className="space-y-6">
-        
-        <AnimatePresence mode="wait">
-          
-          {/* STEP 1: BASICS */}
-          {step === 1 && (
-            <motion.div
-              key="step-1"
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 15 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-5"
-            >
-              <h3 className="text-xs font-mono font-black uppercase text-accent-main tracking-widest flex items-center gap-2 border-b border-border-main pb-2">
-                <Car size={14} /> Step 1: Elite Manufacture & Basics
-              </h3>
+            <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight mt-3 text-white">
+              {t.wizardTitle}
+            </h1>
+            <p className="text-zinc-400 text-xs mt-1">
+              {t.wizardSubtitle}
+            </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Manufacture Brand/Company <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={brand}
-                    onChange={(e) => {
-                      const selectedBrand = e.target.value;
-                      setBrand(selectedBrand);
-                      const defaultModel = BRAND_MODELS_MAP[selectedBrand]?.[0] || 'Other';
-                      setModelName(defaultModel);
-                      setIsOtherModel(defaultModel === 'Other');
+            {/* Step Stepper Indicator Bar */}
+            <div className="flex items-center justify-between mt-6 gap-1 relative z-10">
+              {[1, 2, 3, 4, 5].map((sNum) => (
+                <div key={sNum} className="flex-1 flex flex-col items-center">
+                  <div 
+                    onClick={() => {
+                      if (sNum < step) setStep(sNum as any);
                     }}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none"
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono font-black transition-all duration-300 cursor-pointer ${
+                      step === sNum
+                        ? 'bg-[#38BDF8] text-slate-950 scale-110 shadow-lg shadow-[#38BDF8]/20'
+                        : step > sNum
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-slate-900 border border-white/5 text-zinc-600'
+                    }`}
                   >
-                    <option value="Toyota">Toyota</option>
-                    <option value="Honda">Honda</option>
-                    <option value="Suzuki">Suzuki</option>
-                    <option value="Kia">Kia</option>
-                    <option value="Hyundai">Hyundai</option>
-                    <option value="Changan">Changan</option>
-                    <option value="MG">MG</option>
-                    <option value="Nissan">Nissan</option>
-                    <option value="Audi">Audi (Premium)</option>
-                    <option value="BMW">BMW (Premium)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Model Name <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={isOtherModel ? 'Other' : modelName}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === 'Other') {
-                        setIsOtherModel(true);
-                        setModelName(customModelName || '');
-                      } else {
-                        setIsOtherModel(false);
-                        setModelName(val);
-                      }
-                    }}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none font-bold"
-                  >
-                    {(BRAND_MODELS_MAP[brand] || []).map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                    <option value="Other">Other / Custom Model...</option>
-                  </select>
-                </div>
-
-                {isOtherModel && (
-                  <div className="space-y-1.5 md:col-span-2 animate-fade-in">
-                    <label className="text-[10px] font-mono font-black uppercase tracking-wider text-accent-main flex items-center gap-1.5">
-                      <Sparkles size={11} className="animate-spin-slow" /> Enter Custom Model Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g., Crown, Mark X, Prius Alpha, etc."
-                      value={customModelName}
-                      onChange={(e) => {
-                        setCustomModelName(e.target.value);
-                        setModelName(e.target.value);
-                      }}
-                      className="w-full bg-bg-primary border border-accent-main/40 focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none placeholder-text-muted/40 font-mono"
-                    />
+                    {step > sNum ? <Check size={12} strokeWidth={4} /> : sNum}
                   </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Model Year <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={modelYear}
-                    onChange={(e) => setModelYear(Number(e.target.value))}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none font-mono"
-                  >
-                    {Array.from({ length: 27 }, (_, i) => 2027 - i).map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
+                  <span className={`text-[8px] font-mono font-bold mt-1.5 uppercase hidden sm:block ${
+                    step === sNum ? 'text-[#38BDF8]' : 'text-zinc-600'
+                  }`}>
+                    {sNum === 1 ? t.step1 : sNum === 2 ? t.step2 : sNum === 3 ? t.step3 : sNum === 4 ? t.step4 : t.step5}
+                  </span>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Variant Spec Designation <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Grande 1.8 Altis, VTi Oriel"
-                    value={variantName}
-                    onChange={(e) => setVariantName(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none placeholder-text-muted/40"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Engine Displacement <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={engineCapacity}
-                    onChange={(e) => setEngineCapacity(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none font-mono"
-                  >
-                    <option value="660cc">660 cc (Hatchbacks)</option>
-                    <option value="1000cc">1000 cc</option>
-                    <option value="1300cc">1300 cc (Eco sedans)</option>
-                    <option value="1500cc">1500 cc</option>
-                    <option value="1800cc">1800 cc</option>
-                    <option value="2000cc">2000 cc</option>
-                    <option value="2700cc">2700 cc (SUVs)</option>
-                    <option value="4000cc">4000 cc</option>
-                    <option value="EV-Battery">Pure Electric Drive (EV)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Exterior Paint Color Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Attitude Black Pearl, Super White"
-                    value={exteriorColor}
-                    onChange={(e) => setExteriorColor(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none placeholder-text-muted/40"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Expected Asking Price (Optional)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-3 text-text-muted font-mono text-xs">PKR</span>
-                    <input
-                      type="text"
-                      placeholder="e.g., 5,800,000"
-                      value={expectedPrice}
-                      onChange={(e) => setExpectedPrice(e.target.value)}
-                      className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl pl-12 pr-3 py-3 text-xs text-text-main focus:outline-none font-mono placeholder-text-muted/40"
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {/* STEP 2: DETAILS, SPECS & CONDITION MATRIX */}
-          {step === 2 && (
-            <motion.div
-              key="step-2"
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 15 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <h3 className="text-xs font-mono font-black uppercase text-accent-main tracking-widest flex items-center gap-2 border-b border-border-main pb-2">
-                <Sliders size={14} /> Step 2: Specs & Physical Health Matrix
-              </h3>
-
-              {/* Gauges section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-bg-primary p-5 rounded-2xl border border-border-main">
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono">
-                    <span className="font-black text-text-muted">Engine Compression Gauge</span>
-                    <span className="text-accent-main font-extrabold">{engineCompression}% Rating</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={engineCompression}
-                    onChange={(e) => setEngineCompression(Number(e.target.value))}
-                    className="w-full h-1.5 bg-bg-secondary rounded-lg appearance-none cursor-pointer accent-accent-main"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono">
-                    <span className="font-black text-text-muted">Transmission/Gearbox Smoothness</span>
-                    <span className="text-accent-main font-extrabold">{gearboxSmoothness}% Smooth</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="20"
-                    max="100"
-                    step="5"
-                    value={gearboxSmoothness}
-                    onChange={(e) => setGearboxSmoothness(Number(e.target.value))}
-                    className="w-full h-1.5 bg-bg-secondary rounded-lg appearance-none cursor-pointer accent-accent-main"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono">
-                    <span className="font-black text-text-muted">Suspension Rigidity</span>
-                    <span className="text-accent-main font-extrabold">{suspensionRigidity}% Strict</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="20"
-                    max="100"
-                    step="5"
-                    value={suspensionRigidity}
-                    onChange={(e) => setSuspensionRigidity(Number(e.target.value))}
-                    className="w-full h-1.5 bg-bg-secondary rounded-lg appearance-none cursor-pointer accent-accent-main"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono">
-                    <span className="font-black text-text-muted">Interior Cleanliness</span>
-                    <span className="text-accent-main font-extrabold">{interiorCleanliness}% Clean</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={interiorCleanliness}
-                    onChange={(e) => setInteriorCleanliness(Number(e.target.value))}
-                    className="w-full h-1.5 bg-bg-secondary rounded-lg appearance-none cursor-pointer accent-accent-main"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px] uppercase font-mono">
-                    <span className="font-black text-text-muted">Tyre Tread Remaining</span>
-                    <span className="text-accent-main font-extrabold">{tyreTreadLife}% Left</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    value={tyreTreadLife}
-                    onChange={(e) => setTyreTreadLife(Number(e.target.value))}
-                    className="w-full h-1.5 bg-bg-secondary rounded-lg appearance-none cursor-pointer accent-accent-main"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Total Odometer Index (KM Driven) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., 42500"
-                    value={verifiedKmDriven}
-                    onChange={(e) => setVerifiedKmDriven(e.target.value.replace(/[^0-9]/g, ''))}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-2.5 text-xs text-text-main focus:outline-none font-mono placeholder-text-muted/40"
-                  />
-                </div>
-              </div>
-
-              {/* Paint & Docs specs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted block">
-                    Paint & Outer Body Status <span className="text-red-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['Genuine Paint', 'Touched Panels', 'Fully Showered'] as const).map(style => (
-                      <button
-                        type="button"
-                        key={style}
-                        onClick={() => {
-                          setPaintType(style);
-                          if (style !== 'Touched Panels') setSelectedTouchedPanels([]);
-                        }}
-                        className={`py-2 rounded-xl border text-[9px] font-black uppercase text-center transition-all ${
-                          paintType === style
-                            ? 'bg-accent-main/15 border-accent-main text-accent-main'
-                            : 'bg-bg-primary border-border-main text-text-muted hover:text-text-main'
-                        }`}
-                      >
-                        {style}
-                      </button>
-                    ))}
-                  </div>
-
-                  {paintType === 'Touched Panels' && (
-                    <div className="space-y-2 p-3 bg-bg-primary rounded-2xl border border-border-main">
-                      <span className="text-[8.5px] font-mono font-black uppercase tracking-widest text-amber-500 block">Select Touched Panels:</span>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {panelOptions.map(panel => {
-                          const selected = selectedTouchedPanels.includes(panel);
-                          return (
-                            <button
-                              type="button"
-                              key={panel}
-                              onClick={() => toggleTouchedPanel(panel)}
-                              className={`py-1.5 px-2.5 rounded-lg text-[8.5px] font-mono border transition-all text-left flex justify-between items-center ${
-                                selected
-                                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-500'
-                                  : 'bg-bg-secondary border-border-main text-text-muted hover:text-text-main'
-                              }`}
-                            >
-                              <span>{panel}</span>
-                              {selected && <CheckCircle size={10} />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                      Import Classification <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(['Local Assemble', 'Japanese Import'] as const).map(type => (
+          {/* Form Wizard Core */}
+          <div className="min-h-[280px] py-2">
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="space-y-4"
+                >
+                  {/* Vehicle Type Selection Grid */}
+                  <div className="space-y-2">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.vehicleType} *</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {VEHICLE_TYPES.map((type) => (
                         <button
+                          key={type.id}
                           type="button"
-                          key={type}
-                          onClick={() => setAssemblyType(type)}
-                          className={`py-2 px-3 rounded-xl border text-[9px] font-black uppercase text-center transition-all ${
-                            assemblyType === type
-                              ? 'bg-accent-main/15 border-accent-main text-accent-main'
-                              : 'bg-bg-primary border-border-main text-text-muted hover:text-text-main'
+                          onClick={() => setVehicleType(type.id)}
+                          className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
+                            vehicleType === type.id
+                              ? 'bg-[#38BDF8]/10 border-[#38BDF8] text-[#38BDF8] scale-[1.02]'
+                              : 'bg-slate-900/50 border-white/5 text-zinc-400 hover:border-white/10 hover:text-white'
                           }`}
                         >
-                          {type}
+                          <Car size={16} />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">{t[type.labelKey as keyof typeof t] || type.id}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {assemblyType === 'Japanese Import' && (
-                    <div className="space-y-1.5 animate-fade-in">
-                      <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                        Auction Sheet Score <span className="text-red-500">*</span>
-                      </label>
+                  {/* Make and Model Layout Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.make} *</label>
                       <select
-                        value={auctionScore}
-                        onChange={(e) => setAuctionScore(e.target.value)}
-                        className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-2.5 text-xs text-text-main focus:outline-none font-mono"
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-bold"
+                        value={make}
+                        onChange={(e) => setMake(e.target.value)}
                       >
-                        <option value="5.0">5.0 (Near Immaculate)</option>
-                        <option value="4.5">4.5 (Highly Immaculate)</option>
-                        <option value="4.0">4.0 (Good Condition)</option>
-                        <option value="3.5">3.5 (Average Panels)</option>
-                        <option value="R">R (Rebuilt / Repaired)</option>
+                        {Object.keys(MAKES_DICTIONARY).map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
                       </select>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              {/* Legal Registrations & Biometrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Excise Registry Domain City <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={exciseRegistryCity}
-                    onChange={(e) => setExciseRegistryCity(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none"
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.model} *</label>
+                      <select
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-bold"
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                      >
+                        {modelOptions.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                        <option value="Other">{lang === 'ur' ? 'دیگر ماڈل' : 'Other / Custom Model'}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Custom Model and Variant inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {model === 'Other' && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs text-zinc-400 font-mono font-black uppercase block">Enter Custom Model *</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Prius Alpha"
+                          className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-mono"
+                          value={customModel}
+                          onChange={(e) => setCustomModel(e.target.value)}
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.variant}</label>
+                      <input
+                        type="text"
+                        placeholder={t.variantPlaceholder}
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8]"
+                        value={variant}
+                        onChange={(e) => setVariant(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.year} *</label>
+                      <select
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-mono font-bold"
+                        value={year}
+                        onChange={(e) => setYear(Number(e.target.value))}
+                      >
+                        {yearOptions.map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                >
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.price} *</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder={t.pricePlaceholder}
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-mono font-black pr-12"
+                        value={price}
+                        onChange={(e) => {
+                          const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                          setPrice(sanitized);
+                        }}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] text-[#38BDF8] font-mono font-black uppercase tracking-wider">PKR</span>
+                    </div>
+                    {price && <span className="text-[10px] text-zinc-500 font-mono">Rs. {formatPrice(price)}</span>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.mileage} *</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder={t.mileagePlaceholder}
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-mono font-black pr-12"
+                        value={mileage}
+                        onChange={(e) => {
+                          const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                          setMileage(sanitized);
+                        }}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] text-zinc-400 font-mono uppercase">KM</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.engineCapacity} *</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder={t.enginePlaceholder}
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-mono font-black pr-12"
+                        value={engineCC}
+                        onChange={(e) => {
+                          const sanitized = e.target.value.replace(/[^0-9]/g, '');
+                          setEngineCC(sanitized);
+                        }}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] text-zinc-400 font-mono uppercase">CC</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.color} *</label>
+                    <input
+                      type="text"
+                      placeholder={t.colorPlaceholder}
+                      className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8]"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.regCity} *</label>
+                    <input
+                      type="text"
+                      placeholder={t.regCityPlaceholder}
+                      className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8]"
+                      value={registrationCity}
+                      onChange={(e) => setRegistrationCity(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.condition} *</label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-xl border border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setCondition('Used')}
+                        className={`py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+                          condition === 'Used' ? 'bg-[#38BDF8] text-slate-950 font-black' : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {t.used}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCondition('New')}
+                        className={`py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+                          condition === 'New' ? 'bg-[#38BDF8] text-slate-950 font-black' : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {t.new}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.transmission} *</label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-900 p-1.5 rounded-xl border border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setTransmission('Automatic')}
+                        className={`py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+                          transmission === 'Automatic' ? 'bg-orange-500 text-slate-950 font-black' : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {t.automatic}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTransmission('Manual')}
+                        className={`py-2 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer ${
+                          transmission === 'Manual' ? 'bg-orange-500 text-slate-950 font-black' : 'text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {t.manual}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.fuelType} *</label>
+                    <select
+                      className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-bold"
+                      value={fuelType}
+                      onChange={(e) => setFuelType(e.target.value as any)}
+                    >
+                      <option value="Petrol">{t.petrol}</option>
+                      <option value="Diesel">{t.diesel}</option>
+                      <option value="Hybrid">{t.hybrid}</option>
+                      <option value="Electric">{t.electric}</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.bodyCondition} *</label>
+                    <div className="grid grid-cols-3 gap-2 bg-slate-900 p-1.5 rounded-xl border border-white/5 text-[11px]">
+                      {(['Total Genuine', 'Minor Touch-ups', 'Major Repaint'] as const).map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setBodyCondition(opt)}
+                          className={`py-2 rounded-lg font-bold transition-all uppercase cursor-pointer text-center ${
+                            bodyCondition === opt ? 'bg-[#38BDF8]/20 border border-[#38BDF8] text-[#38BDF8]' : 'text-zinc-400 border border-transparent'
+                          }`}
+                        >
+                          {opt === 'Total Genuine' ? t.totalGenuine : opt === 'Minor Touch-ups' ? t.minorTouchUps : t.majorRepaint}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="space-y-5 text-left"
+                >
+                  <div className="space-y-1.5">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-1.5 uppercase font-mono">
+                      <ImageIcon size={16} className="text-[#38BDF8]" /> {t.mediaTitle}
+                    </h3>
+                    <p className="text-zinc-400 text-xs">{t.mediaSubtitle}</p>
+                  </div>
+
+                  {/* Drag & Drop Visual Box */}
+                  <div 
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      if (e.dataTransfer.files) await handlePhotoFiles(e.dataTransfer.files);
+                    }}
+                    className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all flex flex-col items-center justify-center gap-3 cursor-pointer ${
+                      isDragging ? 'border-[#38BDF8] bg-[#38BDF8]/5' : 'border-white/10 bg-slate-900/50 hover:border-white/20'
+                    }`}
+                    onClick={() => imageInputRef.current?.click()}
                   >
-                    <option value="Peshawar Registered">Peshawar Registered</option>
-                    <option value="Islamabad Registered">Islamabad Registered</option>
-                    <option value="Lahore Registered">Lahore Registered</option>
-                    <option value="Karachi Registered">Karachi Registered</option>
-                    <option value="Unregistered / Raw">Unregistered (Raw In-hand)</option>
-                  </select>
-                </div>
+                    <Upload size={32} className={`text-zinc-500 transition-colors ${isDragging ? 'text-[#38BDF8]' : ''}`} />
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-white uppercase tracking-wider">{t.dragDropText}</p>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest">{t.orBrowse}</p>
+                    </div>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Physical Spot Inspection Venue <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Almas Car Valley, Ring Road, Peshawar"
-                    value={physicalVenueAddress}
-                    onChange={(e) => setPhysicalVenueAddress(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none placeholder-text-muted/40"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Preferred Buyer Viewing Timeframe <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g., Mon-Sat (11:00 AM to 06:00 PM)"
-                    value={viewingTimeframe}
-                    onChange={(e) => setViewingTimeframe(e.target.value)}
-                    className="w-full bg-bg-primary border border-border-main focus:border-accent-main rounded-xl p-3 text-xs text-text-main focus:outline-none placeholder-text-muted/40"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono font-black uppercase tracking-wider text-text-muted">
-                    Biometric Fingerprint Transfer <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-center gap-3 p-3 bg-bg-primary rounded-xl border border-border-main h-[46px]">
+                  {/* Custom upload buttons bar for quick touch interactions */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Camera Capture Option */}
                     <button
                       type="button"
-                      onClick={() => setBiometricInstantlyAvailable(!biometricInstantlyAvailable)}
-                      className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                        biometricInstantlyAvailable ? 'bg-emerald-500' : 'bg-border-main'
-                      }`}
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="p-3 bg-slate-900/60 border border-white/5 rounded-xl hover:border-[#38BDF8] transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer text-zinc-400 hover:text-white"
                     >
-                      <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-bg-primary shadow transition duration-200 ${
-                        biometricInstantlyAvailable ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
+                      <Camera size={16} className="text-orange-400" />
+                      <span className="text-[10px] font-mono font-black uppercase tracking-widest">{t.cameraUpload}</span>
                     </button>
-                    <span className="text-[10px] font-mono font-black uppercase tracking-wider text-text-main">
-                      {biometricInstantlyAvailable ? 'Instantly Available' : 'Requires Notice'}
-                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      className="p-3 bg-slate-900/60 border border-white/5 rounded-xl hover:border-[#38BDF8] transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer text-zinc-400 hover:text-white"
+                    >
+                      <ImageIcon size={16} className="text-[#38BDF8]" />
+                      <span className="text-[10px] font-mono font-black uppercase tracking-widest">{lang === 'ur' ? 'تصاویر' : 'Gallery Images'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      className="p-3 bg-slate-900/60 border border-white/5 rounded-xl hover:border-[#38BDF8] transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer text-zinc-400 hover:text-white"
+                    >
+                      <VideoIcon size={16} className="text-emerald-400" />
+                      <span className="text-[10px] font-mono font-black uppercase tracking-widest">{lang === 'ur' ? 'ویڈیو' : 'Upload Videos'}</span>
+                    </button>
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
-          {/* STEP 3: PHOTOS & SUBMIT */}
-          {step === 3 && (
-            <motion.div
-              key="step-3"
-              initial={{ opacity: 0, x: -15 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 15 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
-              <h3 className="text-xs font-mono font-black uppercase text-accent-main tracking-widest flex items-center gap-2 border-b border-border-main pb-2">
-                <CloudUpload size={14} /> Step 3: Photos & Instant Compression
-              </h3>
+                  {/* Hidden inputs */}
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="image/*" 
+                    ref={imageInputRef} 
+                    className="hidden" 
+                    onChange={async (e) => {
+                      if (e.target.files) await handlePhotoFiles(e.target.files);
+                    }}
+                  />
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment" 
+                    ref={cameraInputRef} 
+                    className="hidden" 
+                    onChange={async (e) => {
+                      if (e.target.files) await handlePhotoFiles(e.target.files);
+                    }}
+                  />
+                  <input 
+                    type="file" 
+                    multiple 
+                    accept="video/*" 
+                    ref={videoInputRef} 
+                    className="hidden" 
+                    onChange={(e) => {
+                      if (e.target.files) handleVideoFiles(e.target.files);
+                    }}
+                  />
 
-              {/* Instant Image Compression Drag & Drop Input */}
-              <div 
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={`w-full bg-bg-primary border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all ${
-                  isDragging ? 'border-accent-main bg-accent-main/5 scale-[1.01]' : 'border-border-main hover:border-accent-main/40'
-                }`}
-              >
-                <div className="w-14 h-14 bg-bg-secondary rounded-full flex items-center justify-center mb-4 border border-border-main text-text-muted">
-                  <CloudUpload size={28} className={isDragging ? 'text-accent-main' : 'text-text-muted'} />
-                </div>
-                <h3 className="text-text-main font-black text-sm mb-1 uppercase tracking-tight">Drag & Drop Car Photos</h3>
-                <p className="text-text-muted font-mono text-[10px] uppercase tracking-wider">or Click to Browse from Files</p>
-                <span className="text-[10px] text-text-muted/60 mt-1.5 font-mono">⚡ Instant background auto-compression enabled</span>
-                <input 
-                  type="file" 
-                  multiple 
-                  accept="image/*" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={(e) => handlePhotoUpload(e.target.files)}
-                />
-              </div>
+                  {/* Loading overlay for image compression */}
+                  {isCompressing && (
+                    <div className="flex items-center gap-2.5 bg-[#38BDF8]/10 text-[#38BDF8] border border-[#38BDF8]/20 px-4 py-3 rounded-xl text-xs font-mono">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-t-transparent border-[#38BDF8]" />
+                      <span>{t.compressionProgress}</span>
+                    </div>
+                  )}
 
-              {/* Compressed Photo Previews with sizing analytics report */}
-              {photos.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-mono font-black uppercase text-text-muted tracking-widest">
-                    Media Pool & Verification Previews
-                  </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {photos.map(p => {
-                      const reduction = Math.round(((p.originalSize - p.compressedSize) / p.originalSize) * 100);
-                      return (
-                        <div key={p.id} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-bg-primary border border-border-main group">
-                          <img src={p.previewUrl} alt="compressed preview" className="w-full h-full object-cover" />
-                          
-                          {/* Close/Remove btn */}
-                          <button 
-                            type="button"
-                            onClick={() => removePhoto(p.id)}
-                            className="absolute top-2 right-2 w-6 h-6 bg-stone-950/70 hover:bg-stone-950 rounded-full flex items-center justify-center text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
-                          >
-                            <X size={11} />
-                          </button>
-
-                          {/* Compression Diagnostics overlay */}
-                          <div className="absolute bottom-0 left-0 right-0 bg-stone-950/80 backdrop-blur-[2px] p-2 text-[8.5px] font-mono text-white/90">
-                            <div className="flex justify-between font-bold text-accent-main uppercase">
-                              <span>Auto-Compressed</span>
-                              <span>-{reduction}%</span>
-                            </div>
-                            <div className="flex justify-between text-white/50 mt-0.5">
-                              <span>{(p.originalSize / 1024 / 1024).toFixed(1)}MB</span>
-                              <span>→</span>
-                              <span>{(p.compressedSize / 1024).toFixed(0)}KB</span>
-                            </div>
-                          </div>
-
-                          {/* Progress layer */}
-                          {p.progress < 100 && (
-                            <div className="absolute inset-0 bg-bg-secondary/80 backdrop-blur-[1px] flex items-center justify-center p-3">
-                              <div className="w-full">
-                                <div className="flex justify-between items-center text-[8px] font-mono text-text-muted mb-1 font-bold">
-                                  <span>Compiling...</span>
-                                  <span>{Math.round(p.progress)}%</span>
-                                </div>
-                                <div className="h-1 bg-border-main rounded-full overflow-hidden">
-                                  <div className="h-full bg-accent-main rounded-full" style={{ width: `${p.progress}%` }} />
-                                </div>
+                  {/* Previews Matrix */}
+                  <div className="space-y-4">
+                    {photos.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-[10px] text-zinc-500 font-mono font-black uppercase tracking-widest block">Images ({photos.length} / 10):</span>
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                          {photos.map((p, idx) => (
+                            <div key={idx} className="aspect-square bg-slate-900 border border-white/5 rounded-xl relative overflow-hidden group">
+                              <img src={p.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button 
+                                  type="button" 
+                                  onClick={() => removePhoto(idx)}
+                                  className="p-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/40 transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
                               </div>
+                              <span className="absolute bottom-1 right-1 text-[7px] bg-black/70 text-zinc-400 px-1 rounded font-mono">
+                                {Math.round(p.size / 1024)} KB
+                              </span>
                             </div>
-                          )}
+                          ))}
                         </div>
-                      );
-                    })}
+                      </div>
+                    )}
+
+                    {videos.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-[10px] text-zinc-500 font-mono font-black uppercase tracking-widest block">Videos ({videos.length} / 10):</span>
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                          {videos.map((v, idx) => (
+                            <div key={idx} className="aspect-square bg-slate-900 border border-white/5 rounded-xl relative overflow-hidden group flex items-center justify-center">
+                              <VideoIcon size={18} className="text-emerald-400" />
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button 
+                                  type="button" 
+                                  onClick={() => removeVideo(idx)}
+                                  className="p-1.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/40 transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                              <span className="absolute bottom-1 right-1 text-[7px] bg-black/70 text-zinc-400 px-1 rounded font-mono">
+                                {Math.round(v.size / (1024 * 1024))} MB
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
+                </motion.div>
               )}
-            </motion.div>
-          )}
 
-        </AnimatePresence>
+              {step === 4 && (
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="space-y-4 text-left"
+                >
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.sellerName} *</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"><User size={15} /></span>
+                      <input
+                        type="text"
+                        placeholder={t.sellerNamePlaceholder}
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 pl-11 text-sm text-white focus:outline-none focus:border-[#38BDF8]"
+                        value={sellerName}
+                        onChange={(e) => setSellerName(e.target.value)}
+                      />
+                    </div>
+                  </div>
 
-        {errorMessage && (
-          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center gap-2 text-red-400 text-xs font-mono">
-            <ShieldAlert size={14} className="shrink-0" />
-            <span>{errorMessage.toUpperCase()}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.sellerPhone} *</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"><Phone size={15} /></span>
+                        <input
+                          type="text"
+                          placeholder={t.sellerPhonePlaceholder}
+                          className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 pl-11 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-mono"
+                          value={sellerPhone}
+                          onChange={(e) => setSellerPhone(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.whatsappNumber} *</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"><Phone size={15} className="text-emerald-500" /></span>
+                        <input
+                          type="text"
+                          placeholder={t.whatsappPlaceholder}
+                          className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 pl-11 text-sm text-white focus:outline-none focus:border-[#38BDF8] font-mono"
+                          value={sellerWhatsApp}
+                          onChange={(e) => setSellerWhatsApp(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-zinc-400 font-mono font-black uppercase block">{t.location} *</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"><MapPin size={15} /></span>
+                      <input
+                        type="text"
+                        placeholder={t.locationPlaceholder}
+                        className="w-full bg-slate-900 border border-white/5 rounded-xl p-3 pl-11 text-sm text-white focus:outline-none focus:border-[#38BDF8]"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 5 && (
+                <motion.div
+                  key="step5"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="space-y-5 text-left"
+                >
+                  <div className="border border-white/5 rounded-2xl p-4 bg-slate-900/50 space-y-4">
+                    <h3 className="text-sm font-mono font-black uppercase text-[#38BDF8] border-b border-white/5 pb-2">
+                      {lang === 'ur' ? 'اشتہار کا خلاصہ' : 'Summary Details'}
+                    </h3>
+
+                    {/* Pre-purchase card display */}
+                    <div className="flex gap-4 items-center">
+                      <img 
+                        src={photos[0]?.previewUrl || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=300&q=80'} 
+                        alt="listing cover" 
+                        className="w-20 h-20 rounded-xl object-cover border border-white/5 shrink-0"
+                      />
+                      <div>
+                        <h4 className="text-base font-black text-white">{year} {make} {model === 'Other' ? customModel : model} {variant}</h4>
+                        <p className="text-xs text-[#38BDF8] font-mono font-black mt-0.5">Rs. {formatPrice(price)} PKR</p>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wider mt-1">{mileage.toLocaleString()} KM • {fuelType} • {transmission} • {registrationCity}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs border-t border-white/5 pt-3 divide-y divide-white/5 sm:divide-y-0">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 font-mono uppercase block">{t.condition}</span>
+                        <span className="font-bold text-white uppercase">{condition}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-500 font-mono uppercase block">{t.bodyCondition}</span>
+                        <span className="font-bold text-white uppercase">{bodyCondition}</span>
+                      </div>
+                      <div className="pt-2 sm:pt-0">
+                        <span className="text-[10px] text-zinc-500 font-mono uppercase block">{t.sellerName}</span>
+                        <span className="font-bold text-white">{sellerName}</span>
+                      </div>
+                      <div className="pt-2 sm:pt-0">
+                        <span className="text-[10px] text-zinc-500 font-mono uppercase block">{t.sellerPhone}</span>
+                        <span className="font-bold text-white font-mono">{sellerPhone}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Approval Queue notice box */}
+                  <div className="flex gap-3 bg-orange-500/10 border border-orange-500/20 p-4 rounded-2xl text-xs text-orange-400 font-sans leading-relaxed">
+                    <Info size={18} className="shrink-0 text-orange-400 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold uppercase tracking-wider font-mono">{lang === 'ur' ? 'ایڈمن اپرول نوٹس' : 'Admin Approval Queue Notice'}</p>
+                      <p className="text-zinc-400 text-[11px]">{t.approvalNotice}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        )}
 
-        {/* Wizard Controls */}
-        <div className="flex justify-between items-center pt-4 border-t border-border-main gap-3">
-          {step > 1 ? (
-            <button
-              type="button"
-              onClick={handlePrevStep}
-              className="px-5 py-3 rounded-xl border border-border-main text-text-muted hover:text-text-main font-mono text-xs uppercase font-black flex items-center gap-1.5 transition-colors cursor-pointer select-none active:scale-[0.98]"
-            >
-              <ChevronLeft size={13} strokeWidth={3} /> Prev Step
-            </button>
-          ) : (
-            <div />
+          {/* Validation Feedback */}
+          {errorMessage && (
+            <div className="flex items-center gap-2 text-red-400 text-xs font-mono bg-red-500/10 border border-red-500/20 p-3 rounded-xl mt-4">
+              <AlertCircle size={14} />
+              <span>{errorMessage}</span>
+            </div>
           )}
 
-          {step < 3 ? (
-            <button
-              type="button"
-              onClick={handleNextStep}
-              className="px-6 py-3 bg-accent-main text-stone-950 rounded-xl font-mono text-xs uppercase font-black flex items-center gap-1.5 transition-all hover:bg-accent-main/90 shadow-lg shadow-accent-main/10 cursor-pointer select-none active:scale-[0.98]"
-            >
-              Next Step <ChevronRight size={13} strokeWidth={3} />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-7 py-3 bg-accent-main hover:bg-accent-main/95 text-stone-950 rounded-xl font-mono text-xs uppercase font-black tracking-wider flex items-center gap-2 transition-all shadow-lg shadow-accent-main/10 cursor-pointer select-none disabled:opacity-40 active:scale-[0.98]"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-stone-950 border-t-transparent rounded-full animate-spin" />
-                  Publishing Listing...
-                </>
-              ) : (
-                'Publish Luxury Listing'
-              )}
-            </button>
-          )}
-        </div>
+          {/* Stepper Buttons Panel */}
+          <div className="mt-8 pt-4 border-t border-white/5 flex justify-between gap-3">
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={handleBack}
+                style={{ minHeight: '48px' }}
+                className="px-6 rounded-xl border border-white/10 text-xs font-mono font-black uppercase text-zinc-300 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+              >
+                <ChevronLeft size={14} strokeWidth={3} /> {t.back}
+              </button>
+            )}
 
-        {/* Success Output Summary Card */}
-        {postedListing && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-5.5 bg-emerald-500/5 border border-emerald-500/30 rounded-2xl space-y-4"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-5.5 h-5.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                <Check size={12} strokeWidth={3} />
-              </div>
-              <h4 className="text-xs font-mono font-black uppercase text-emerald-400 tracking-wider">
-                Asset Listed Successfully
-              </h4>
-            </div>
-            <p className="text-xs text-text-muted leading-relaxed">
-              Your high-end {postedListing.brand} {postedListing.modelName} ({postedListing.modelYear}) ad has been processed with {photos.length} compressed photos. Live mechanics maps have been registered in our central ledger.
-            </p>
-            <div className="p-3.5 bg-bg-primary border border-border-main rounded-xl text-[10px] font-mono text-accent-main/90 overflow-x-auto">
-              <div className="font-bold border-b border-border-main pb-1.5 mb-1.5 flex justify-between uppercase">
-                <span>Verification ID</span>
-                <span>BAZAR360-{Math.random().toString(36).substring(4, 9).toUpperCase()}</span>
-              </div>
-              <div>Brand: {postedListing.brand}</div>
-              <div>Model: {postedListing.modelName}</div>
-              <div>Year: {postedListing.modelYear}</div>
-              <div>Compression Score: {postedListing.engineCompression}%</div>
-              <div>Odometer KM: {postedListing.verifiedKmDriven.toLocaleString()} KM</div>
-              <div>Venue address: {postedListing.physicalVenueAddress}</div>
-            </div>
-          </motion.div>
-        )}
-
-      </form>
+            {step < 5 ? (
+              <button
+                type="button"
+                onClick={handleNext}
+                style={{ minHeight: '48px' }}
+                className="w-full bg-[#38BDF8] text-slate-950 text-xs font-mono font-black uppercase rounded-xl hover:bg-[#38BDF8]/90 transition-all flex items-center justify-center gap-2 ml-auto cursor-pointer"
+              >
+                {lang === 'ur' ? 'اگلا مرحلہ' : 'Next Step'} <ChevronRight size={14} strokeWidth={3} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handlePublish}
+                disabled={isSubmitting}
+                style={{ minHeight: '48px' }}
+                className="w-full bg-orange-500 text-slate-950 text-xs font-mono font-black uppercase rounded-xl hover:bg-orange-500/90 transition-all flex items-center justify-center gap-2 ml-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? t.loading : t.publishAd}
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

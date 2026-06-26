@@ -5,60 +5,20 @@ import {
   MapPin, 
   ShieldCheck, 
   Sparkles, 
-  Eye, 
-  SlidersHorizontal, 
-  Calendar, 
-  DollarSign, 
-  Activity, 
-  Building, 
-  Check, 
-  RotateCcw, 
   TrendingUp, 
-  Video, 
+  Zap, 
+  Star, 
+  Building2, 
+  Users, 
+  Car, 
   ChevronRight, 
-  Gauge, 
-  Compass,
-  Calculator,
-  Wrench,
-  FileText,
-  UserCheck,
-  X,
-  Lock,
-  ChevronDown,
-  ChevronUp,
-  Grid,
-  List
+  PlusCircle,
+  Quote,
+  CheckCircle2
 } from 'lucide-react';
 import { Dealer, CarListing } from '../types';
-import { useCurrencyMode } from '../lib/currency';
-import { PAKISTAN_CITIES_MATRIX, ALL_PAKISTAN_CITIES } from '../lib/cities';
-import { UserProfile, dbSaveLead } from '../lib/dbService';
+import { UserProfile } from '../lib/dbService';
 import { VehicleCard } from './VehicleCard';
-
-export const VEHICLE_DICTIONARY: Record<string, Array<{ make: string; model: string; price: number; description: string }>> = {
-  SUV: [
-    { make: 'Toyota', model: 'Fortuner Legender', price: 18500000, description: 'High performance urban diesel SUV.' },
-    { make: 'Porsche', model: 'Cayenne GTS', price: 55000000, description: 'High performance luxury SUV.' },
-    { make: 'Changan', model: 'Oshan X7', price: 8200000, description: 'Premium intelligence spacious family SUV.' }
-  ],
-  Sedan: [
-    { make: 'Honda', model: 'Civic RS Turbo', price: 9800000, description: 'Sleek sports sedan with high torque agility.' },
-    { make: 'Toyota', model: 'Corolla Altis Grande', price: 7800000, description: 'Highly reliable executive luxury sedan.' },
-    { make: 'BMW', model: '3 Series 320i', price: 21000000, description: 'German engineered high precision luxury sedan.' }
-  ],
-  Electric: [
-    { make: 'Tesla', model: 'Model S', price: 38000000, description: 'Supercharged triple-motor high Agility electric sedan.' },
-    { make: 'Audi', model: 'e-tron', price: 42000000, description: 'Luxury electric gran turismo with futuristic curves.' },
-    { make: 'Deepal', model: 'S07 EV', price: 10500000, description: 'Futuristic dynamic cabin smart EV.' },
-    { make: 'BYD', model: 'Seal Premium', price: 14500000, description: 'Sleek sports electric sedan with advanced battery cells.' }
-  ],
-  Luxury: [
-    { make: 'Porsche', model: '911 Carrera S', price: 85000000, description: 'Elite rear-engine legacy sports coupe.' },
-    { make: 'BMW', model: 'M4', price: 45000000, description: 'High power racing spec luxury coupe.' },
-    { make: 'Tesla', model: 'Model S', price: 38000000, description: 'Supercharged triple-motor electric luxury.' },
-    { make: 'Audi', model: 'e-tron', price: 42000000, description: 'Futuristic German luxury electric.' }
-  ]
-};
 
 interface HomeViewProps {
   dealers: Dealer[];
@@ -72,14 +32,148 @@ interface HomeViewProps {
   compareList?: CarListing[];
   currentCategory?: string;
   currentUser?: UserProfile | null;
+  lang: 'en' | 'ur';
 }
 
-const ELITE_WHEEL_LIST = [
-  { id: 'wheel-1', name: 'Porsche 911 GT3 RS', year: 2024, mileage: 'Total Genuine (1,200 km)', price: 'Rs. 7.6 Crore', img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600' },
-  { id: 'wheel-2', name: 'Mercedes-Benz AMG G63', year: 2023, mileage: 'Total Genuine (4,800 km)', price: 'Rs. 9.2 Crore', img: 'https://images.unsplash.com/photo-1520050206274-a1ae446cb3cc?auto=format&fit=crop&q=80&w=600' },
-  { id: 'wheel-3', name: 'BMW M4 Competition', year: 2024, mileage: 'Brand New (0 km)', price: 'Rs. 4.8 Crore', img: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600' },
-  { id: 'wheel-4', name: 'Toyota Land Cruiser ZX', year: 2024, mileage: 'Total Genuine (150 km)', price: 'Rs. 11.5 Crore', img: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=600' },
+const POPULAR_BRANDS = [
+  { name: 'Toyota', logo: '🚗' },
+  { name: 'Honda', logo: '🏎️' },
+  { name: 'Suzuki', logo: '🚙' },
+  { name: 'Hyundai', logo: '🚘' },
+  { name: 'KIA', logo: '🚐' },
+  { name: 'Nissan', logo: '🏎️' },
+  { name: 'Mitsubishi', logo: '🛻' },
+  { name: 'BMW', logo: '🏎️' },
+  { name: 'Mercedes-Benz', logo: '🚘' },
+  { name: 'Audi', logo: '🏎️' },
+  { name: 'Lexus', logo: '🚗' },
+  { name: 'Land Rover', logo: '🚙' },
+  { name: 'Mazda', logo: '🚗' },
+  { name: 'Changan', logo: '🚘' },
+  { name: 'DFSK', logo: ' SUV' },
+  { name: 'Proton', logo: '🚗' }
 ];
+
+function renderBrandLogo(name: string) {
+  switch (name) {
+    case 'Toyota':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <ellipse cx="12" cy="12" rx="10" ry="6" stroke="#EF4444" strokeWidth="2" />
+          <ellipse cx="12" cy="12" rx="6" ry="6" stroke="#EF4444" strokeWidth="1.5" />
+          <ellipse cx="12" cy="10" rx="3" ry="4" stroke="#EF4444" strokeWidth="1.5" />
+        </svg>
+      );
+    case 'Honda':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <rect x="4" y="3" width="16" height="18" rx="4" stroke="#38BDF8" strokeWidth="2" />
+          <path d="M7 6v12M17 6v12M7 12h10" stroke="#38BDF8" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Suzuki':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <path d="M17 5H9.5L7 9.5l7.5 5L17 19H7.5" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Hyundai':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <ellipse cx="12" cy="12" rx="10" ry="7" stroke="#3B82F6" strokeWidth="2" transform="rotate(-15 12 12)" />
+          <path d="M8 8v8M16 8v8M8 12h8" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" transform="rotate(-15 12 12)" />
+        </svg>
+      );
+    case 'KIA':
+      return (
+        <svg className="w-12 h-6" viewBox="0 0 60 20" fill="none">
+          <path d="M5 2l7 8-7 8M14 2v16M22 18l6-16 6 16M25 12h6" stroke="#F43F5E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Nissan':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="8" stroke="#94A3B8" strokeWidth="2.5" />
+          <rect x="2" y="10" width="20" height="4" rx="1" fill="#94A3B8" />
+        </svg>
+      );
+    case 'Mitsubishi':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2l4 7h-8zM16 9l4 7h-8zM8 9l-4 7h8z" fill="#EF4444" />
+        </svg>
+      );
+    case 'BMW':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#3B82F6" strokeWidth="2" />
+          <circle cx="12" cy="12" r="6" stroke="#94A3B8" strokeWidth="1" />
+          <path d="M12 6a6 6 0 016 6h-6zM12 12v6a6 6 0 01-6-6z" fill="#3B82F6" />
+        </svg>
+      );
+    case 'Mercedes-Benz':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#E2E8F0" strokeWidth="2" />
+          <path d="M12 3v9M12 12l7 5M12 12L5 17" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Audi':
+      return (
+        <svg className="w-14 h-8" viewBox="0 0 40 16" fill="none">
+          <circle cx="8" cy="8" r="6" stroke="#94A3B8" strokeWidth="2.5" />
+          <circle cx="16" cy="8" r="6" stroke="#94A3B8" strokeWidth="2.5" />
+          <circle cx="24" cy="8" r="6" stroke="#94A3B8" strokeWidth="2.5" />
+          <circle cx="32" cy="8" r="6" stroke="#94A3B8" strokeWidth="2.5" />
+        </svg>
+      );
+    case 'Lexus':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <ellipse cx="12" cy="12" rx="10" ry="7" stroke="#94A3B8" strokeWidth="2" />
+          <path d="M6 16V8h3s3 0 3 2.5-1.5 2.5-3 2.5h-3M9 13l5 3" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Land Rover':
+      return (
+        <svg className="w-14 h-8" viewBox="0 0 44 20" fill="none">
+          <ellipse cx="22" cy="10" rx="20" ry="9" stroke="#10B981" strokeWidth="2" />
+          <text x="22" y="13" fill="#10B981" fontSize="6" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">ROVER</text>
+        </svg>
+      );
+    case 'Mazda':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#94A3B8" strokeWidth="2" />
+          <path d="M5 10c3 2 5 5 7 5s4-3 7-5c-2 2-4 3-7 3s-5-1-7-3z" stroke="#94A3B8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Changan':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#3B82F6" strokeWidth="2" />
+          <path d="M7 9l5 6 5-6" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'DFSK':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#EF4444" strokeWidth="2" />
+          <path d="M8 8h4a3 3 0 010 6H8V8z" stroke="#EF4444" strokeWidth="2" />
+          <path d="M14 14l3 3" stroke="#EF4444" strokeWidth="2" />
+        </svg>
+      );
+    case 'Proton':
+      return (
+        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#F59E0B" strokeWidth="2" />
+          <path d="M9 15l4-6 3 4" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    default:
+      return <span className="text-2xl">🚗</span>;
+  }
+}
 
 export default function HomeView({
   dealers,
@@ -91,1581 +185,492 @@ export default function HomeView({
   onSelectListing,
   onToggleCompare,
   compareList = [],
-  currentCategory = 'auto',
-  currentUser
+  currentUser,
+  lang = 'en'
 }: HomeViewProps) {
-  const { currencyMode, renderPrice } = useCurrencyMode();
-  const [budgetInputText, setBudgetInputText] = useState('350 Lac');
-  const [dictType, setDictType] = useState<string>('All');
-  const [dictModel, setDictModel] = useState<string>('All');
-  const [selectedFutureSector, setSelectedFutureSector] = useState<{ title: string; tagline: string; desc: string; icon: string; spec: string } | null>(null);
-  const [engineView, setEngineView] = useState<'dashboard' | 'drilldown'>('dashboard');
+  const [localQuery, setLocalQuery] = useState('');
+  const [searchType, setSearchType] = useState<'all' | 'used' | 'new'>('all');
+  const [searchCity, setSearchCity] = useState<string>('All');
+  const [searchPrice, setSearchPrice] = useState<string>('All');
 
-  // VERTICAL DYNAMIC CAROUSEL CORE
-  const [wheelActiveIndex, setWheelActiveIndex] = useState(0);
-
-  const rotateWheelDown = () => {
-    setWheelActiveIndex((prev) => (prev + 1) % ELITE_WHEEL_LIST.length);
-  };
-
-  const rotateWheelUp = () => {
-    setWheelActiveIndex((prev) => (prev - 1 + ELITE_WHEEL_LIST.length) % ELITE_WHEEL_LIST.length);
-  };
-
-  const getFlankingIndex = (offset: number) => {
-    return (wheelActiveIndex + offset + ELITE_WHEEL_LIST.length) % ELITE_WHEEL_LIST.length;
-  };
-  
-  // Real-time search filters
-  const [filterSearch, setFilterSearch] = useState('');
-  const [filterMake, setFilterMake] = useState('All');
-  const [filterCity, setFilterCity] = useState('All');
-  const [filterPriceRange, setFilterPriceRange] = useState<number>(35000000); // 3.5 Crore PKR Default max
-  const [filterTransmission, setFilterTransmission] = useState('All');
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [sortBy, setSortBy] = useState('Newest');
-  const [filterYearMin, setFilterYearMin] = useState<number>(2000);
-  const [filterYearMax, setFilterYearMax] = useState<number>(2026);
-  const [cardLayout, setCardLayout] = useState<'grid' | 'list'>('grid');
-
-  // Real-time synchronization of currency switches to the budget typing input box
-  React.useEffect(() => {
-    if (currencyMode === 'USD') {
-      const usdVal = Math.round(filterPriceRange / 278);
-      setBudgetInputText(`${Math.round(usdVal / 1000)}k`);
-    } else {
-      setBudgetInputText(`${filterPriceRange / 100000} Lac`);
+  // Translations dictionary matching the exact mockups and bilingual instructions
+  const t = {
+    en: {
+      heroBadge: "★ PAKISTAN'S #1 AUTOMOTIVE MARKETPLACE",
+      heroTitle1: "Find Your",
+      heroTitle2: "Perfect Ride",
+      heroSubtitle: "Pakistan's simplest automotive marketplace. Browse, buy, and sell with complete confidence.",
+      searchPlaceholder: "Search make, model, or keyword...",
+      searchBtn: "Search",
+      stats: [
+        { label: "10K+ Vehicles", icon: Car },
+        { label: "500+ Showrooms", icon: Building2 },
+        { label: "50K+ Users", icon: Users }
+      ],
+      brandsTitle: "Popular Brands",
+      viewAll: "View All ->",
+      featuredTitle: "Featured Inventory",
+      noFeatured: "No vehicles listed yet. Be the first to post!",
+      postAdBtn: "Post Your Ad",
+      showroomsTitle: "Featured Showrooms",
+      activeListings: "Active Listings",
+      whyTitle: "Why BAZAR360?",
+      whyCards: [
+        { title: "Verified Listings", desc: "Every ad is manually verified by our specialist team to prevent scams and guarantee complete authenticity." },
+        { title: "Lightning Fast", desc: "Post your vehicle in under 60 seconds with our simplified AI mobile-first posting wizard." },
+        { title: "Best Prices", desc: "Access real-time pricing indices, excise biometrics, and market valuations at fair rates." }
+      ],
+      ctaTitle: "Ready to sell your car?",
+      ctaSubtitle: "Post your ad in minutes and reach thousands of active buyers across Pakistan. It's completely free and easy.",
+      sellBtn: "Sell Your Car",
+      browseBtn: "Browse Inventory >",
+      reviewsTitle: "Customer Reviews",
+      reviews: [
+        { name: "Ahmed Khan", city: "Lahore", text: "Posting an ad was unbelievably simple. I sold my Civic within 3 days without any hassle. Highly recommended!" },
+        { name: "Fatima Ali", city: "Islamabad", text: "The UI is incredibly clean and modern. I love the Urdu language option which makes it very accessible for everyone." },
+        { name: "Bilal Ahmed", city: "Peshawar", text: "Connecting with verified showrooms in Peshawar was a great experience. Bazar360 is the future of auto market in Pakistan." }
+      ]
+    },
+    ur: {
+      heroBadge: "★ پاکستان کا نمبر 1 آٹوموٹو مارکیٹ پلیس",
+      heroTitle1: "اپنی پسندیدہ",
+      heroTitle2: "گاڑی تلاش کریں",
+      heroSubtitle: "پاکستان کا سب سے آسان آٹوموٹو مارکیٹ پلیس۔ اعتماد کے ساتھ براؤز کریں، خریدیں اور بیچیں۔",
+      searchPlaceholder: "برانڈ، ماڈل، یا لفظ تلاش کریں...",
+      searchBtn: "تلاش کریں",
+      stats: [
+        { label: "10K+ گاڑیاں", icon: Car },
+        { label: "500+ شورومز", icon: Building2 },
+        { label: "50K+ صارفین", icon: Users }
+      ],
+      brandsTitle: "مقبول برانڈز",
+      viewAll: "سب دیکھیں ->",
+      featuredTitle: "نمایاں گاڑیاں",
+      noFeatured: "ابھی تک کوئی گاڑی لسٹ نہیں کی گئی۔ سب سے پہلے پوسٹ کریں!",
+      postAdBtn: "اشتہار لگائیں",
+      showroomsTitle: "نمایاں شورومز",
+      activeListings: "فعال اشتہارات",
+      whyTitle: "بازار360 کیوں؟",
+      whyCards: [
+        { title: "تصدیق شدہ اشتہارات", desc: "اسکامز سے بچنے اور مکمل سیکیورٹی کے لیے ہر اشتہار کی ہماری ٹیم دستی طور پر تصدیق کرتی ہے۔" },
+        { title: "انتہائی تیز رفتار", desc: "ہمارے آسان ترین اور جدید اسسٹنٹ کے ذریعے اپنی گاڑی کا اشتہار صرف 60 سیکنڈز میں لگائیں۔" },
+        { title: "بہترین قیمتیں", desc: "منصفانہ قیمتوں پر خرید و فروخت کے لیے ریئل ٹائم پرائس انڈیکیٹرز اور مارکیٹ ریٹس تک رسائی حاصل کریں۔" }
+      ],
+      ctaTitle: "اپنی گاڑی بیچنے کے لیے تیار ہیں؟",
+      ctaSubtitle: "منٹوں میں اپنا اشتہار لگائیں اور پاکستان بھر کے ہزاروں خریداروں تک پہنچیں۔ یہ بالکل مفت اور آسان ہے۔",
+      sellBtn: "گاڑی بیچیں",
+      browseBtn: "انوینٹری دیکھیں >",
+      reviewsTitle: "صارفین کی رائے",
+      reviews: [
+        { name: "احمد خان", city: "لاہور", text: "اشتہار لگانا ناقابل یقین حد تک آسان تھا۔ میں نے بغیر کسی پریشانی کے 3 دنوں میں اپنی سوک بیچ دی۔ انتہائی تجویز کردہ!" },
+        { name: "فاطمہ علی", city: "اسلام آباد", text: "انٹرفیس بہت صاف ستھرا اور جدید ہے۔ مجھے اردو زبان کا آپشن بہت پسند آیا جس کی وجہ سے یہ سب کے لیے آسان ہو گیا ہے۔" },
+        { name: "بلال احمد", city: "پشاور", text: "پشاور میں تصدیق شدہ شورومز سے رابطہ کرنا ایک بہترین تجربہ رہا۔ بازار360 پاکستان میں آٹو مارکیٹ کا مستقبل ہے۔" }
+      ]
     }
-  }, [currencyMode]);
+  }[lang];
 
-  // Interactive Bottom Sheet (Mobile Only)
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
-  const [activeSheetField, setActiveSheetField] = useState<'keywords' | 'city' | 'budget' | null>(null);
-
-  // BAZAR360 Direct Trade VIP intake overlay states
-  const [isDirectTradeOpen, setIsDirectTradeOpen] = useState(false);
-  const [directTradeForm, setDirectTradeForm] = useState({
-    requirements: '',
-    budget: '',
-    query: ''
-  });
-
-  // Appraisal Estimator State (Built-in to Auto Choice Managed Bargains)
-  const [appraisalBrand, setAppraisalBrand] = useState('Suzuki');
-  const [appraisalYear, setAppraisalYear] = useState(2021);
-  const [appraisalCondition, setAppraisalCondition] = useState(8);
-  const [appraisalResult, setAppraisalResult] = useState<number | null>(null);
-
-  // Horizontal Mesh Services State
-  const [activeMeshTool, setActiveMeshTool] = useState<string | null>(null);
-  const [meshInputs, setMeshInputs] = useState({
-    inspName: '',
-    inspPhone: '',
-    inspDate: '',
-    insCarVal: 3000000,
-    finDownPayment: 1000000,
-    finTenure: 3, // years
-    regPlate: '',
-  });
-  const [meshMessage, setMeshMessage] = useState('');
-
-  // Brand items for marquee
-  const brandList = ['Suzuki', 'Toyota', 'Honda', 'BYD', 'Changan', 'Zeekr', 'Deepal'];
-
-  const getBrandLogoSvg = (brand: string) => {
-    switch (brand.toLowerCase()) {
-      case 'suzuki':
-        return (
-          <svg className="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="4 20 20 4 20 8 8 20" />
-            <polyline points="4 16 16 4" strokeWidth="1.5" />
-          </svg>
-        );
-      case 'toyota':
-        return (
-          <svg className="w-4 h-4 text-slate-400 group-hover:text-orange-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <ellipse cx="12" cy="12" rx="10" ry="6" />
-            <ellipse cx="12" cy="11" rx="5" ry="3.5" />
-            <line x1="12" y1="6" x2="12" y2="17" />
-          </svg>
-        );
-      case 'honda':
-        return (
-          <svg className="w-4 h-4 text-slate-400 group-hover:text-[#38BDF8] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="4" y="4" width="16" height="16" rx="2" />
-            <path d="M7 7 V17 H17 V7 M7 12 H17" />
-          </svg>
-        );
-      case 'byd':
-        return (
-          <svg className="w-4 h-4 text-slate-400 group-hover:text-emerald-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M7 10 h6 a1.5 1.5 0 0 1 0 3 H7 M9 9 v5" />
-          </svg>
-        );
-      case 'changan':
-        return (
-          <svg className="w-4 h-4 text-slate-400 group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12,5 18,15 14,15 12,10 10,15 6,15" />
-            <circle cx="12" cy="12" r="9" strokeWidth="1" strokeDasharray="2,2" />
-          </svg>
-        );
-      case 'zeekr':
-        return (
-          <svg className="w-4 h-4 text-slate-400 group-hover:text-yellow-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 7 h14 L5 16 h14" />
-            <line x1="12" y1="4" x2="12" y2="20" strokeWidth="1" strokeDasharray="2,2" />
-          </svg>
-        );
-      case 'deepal':
-        return (
-          <svg className="w-4 h-4 text-slate-400 group-hover:text-purple-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="12,4 19,16 12,12 5,16" />
-          </svg>
-        );
-      default:
-        return <span>✦</span>;
-    }
-  };
-
-  // Handle category triggers
-  const handleCategoryPress = (category: string) => {
-    setActiveCategory(category);
-    setSelectedCategory(category);
-  };
-
-  // Collect and aggregate real-time activity feeds from all dealers
-  const aggregatedActivities = dealers.flatMap((dealer) => {
-    return (dealer.activityFeed || []).map((feed) => ({
-      ...feed,
-      dealerId: dealer.id,
-      dealerName: dealer.name,
-      dealerAvatar: dealer.avatarUrl,
-      dealerLetter: dealer.avatarLetter
-    }));
-  });
-
-  const uniqueMakes = ['All', ...new Set(listings.map(l => l.make))];
-  const uniqueCities = ALL_PAKISTAN_CITIES;
-
-  // Calculate Appraisal
-  const handleCalculateAppraisal = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    let basePrice = 2500000;
-    
-    // Brand multipliers
-    if (appraisalBrand === 'Toyota') basePrice = 4500000;
-    else if (appraisalBrand === 'Honda') basePrice = 3800000;
-    else if (appraisalBrand === 'BYD') basePrice = 8500000;
-    else if (appraisalBrand === 'Zeekr') basePrice = 9500000;
-    else if (appraisalBrand === 'Deepal') basePrice = 7500000;
-
-    // Age multiplier
-    const currentYear = 2026;
-    const age = Math.max(0, currentYear - appraisalYear);
-    const ageFactor = Math.max(0.4, 1 - (age * 0.05));
-
-    // Condition multiplier
-    const conditionFactor = 0.5 + (appraisalCondition * 0.05);
-
-    const result = Math.round(basePrice * ageFactor * conditionFactor);
-    setAppraisalResult(result);
+    let combined = localQuery.trim();
+    if (searchCity !== 'All') {
+      combined += ' ' + searchCity;
+    }
+    if (searchType !== 'all') {
+      combined += ' ' + searchType;
+    }
+    if (searchPrice !== 'All') {
+      combined += ' ' + searchPrice;
+    }
+    setSearchQuery(combined);
+    setTab('inventory');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle service bookings
-  const handleServiceSubmit = (e: React.FormEvent, tool: string) => {
-    e.preventDefault();
-    if (tool === 'inspection') {
-      if (!meshInputs.inspPhone || !meshInputs.inspPhone) {
-        setMeshMessage('Please fill in your name and cell number');
-        return;
-      }
-      dbSaveLead({
-        id: `lead-insp-${Date.now()}`,
-        type: 'Inspection Booking',
-        title: 'Certified Doorstep Diagnostic Audit',
-        userName: meshInputs.inspName || currentUser?.displayName || 'Guest Prospect',
-        userPhone: meshInputs.inspPhone || currentUser?.phoneNumber || 'N/A',
-        userEmail: currentUser?.email || 'N/A',
-        city: 'Lahore',
-        details: `Requested physical inspection at home. Appointment Date: ${meshInputs.inspDate || 'Tomorrow'}`,
-        createdAt: new Date().toISOString()
-      });
-      setMeshMessage(`✓ Physical Spot Inspection booked successfully! Our Auto Choice certified mechanic will visit on ${meshInputs.inspDate || 'tomorrow'}.`);
-    } else if (tool === 'reg') {
-      if (!meshInputs.regPlate) {
-        setMeshMessage('Please enter a plate chassis sequence');
-        return;
-      }
-      dbSaveLead({
-        id: `lead-reg-${Date.now()}`,
-        type: 'Excise Query Check',
-        title: 'Excise Title Verification Lookup',
-        userName: currentUser?.displayName || 'Anonymous Visitor',
-        userPhone: currentUser?.phoneNumber || 'N/A',
-        userEmail: currentUser?.email || 'N/A',
-        city: 'Federal/KPK',
-        details: `Queried Plate sequences register check: ${meshInputs.regPlate.toUpperCase()}`,
-        createdAt: new Date().toISOString()
-      });
-      setMeshMessage(`🔍 Query: Plated record ${meshInputs.regPlate.toUpperCase()} identified with KPK Excise. Verified clear. No active token liabilities.`);
-    }
+  const handleBrandClick = (brandName: string) => {
+    setSelectedCategory(brandName);
+    setSearchQuery(brandName);
+    setTab('inventory');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Reset Filters
-  const handleResetFilters = () => {
-    setFilterSearch('');
-    setFilterMake('All');
-    setFilterCity('All');
-    setFilterPriceRange(35000000);
-    setFilterTransmission('All');
-    setActiveCategory('All');
-    setSortBy('Newest');
-    setFilterYearMin(2000);
-    setFilterYearMax(2026);
-  };
-
-  // Dynamic filtering pipeline
-  const filteredListings = listings.filter((car) => {
-    if (car.approved === false) return false;
-
-    // Category filter
-    if (activeCategory !== 'All') {
-      const matchTag = car.tags && car.tags.some(t => t.toLowerCase() === activeCategory.toLowerCase());
-      const matchFuel = car.fuelType?.toLowerCase() === activeCategory.toLowerCase();
-      if (!matchTag && !matchFuel) return false;
-    }
-
-    // Keyword search
-    if (filterSearch) {
-      const q = filterSearch.toLowerCase();
-      const matchTitle = car.title.toLowerCase().includes(q);
-      const matchMake = car.make.toLowerCase().includes(q);
-      const matchModel = car.model.toLowerCase().includes(q);
-      const matchDesc = car.description?.toLowerCase().includes(q);
-      if (!matchTitle && !matchMake && !matchModel && !matchDesc) return false;
-    }
-
-    // Make dropdown filter
-    if (filterMake !== 'All' && car.make !== filterMake) return false;
-
-    // City location filter
-    if (filterCity !== 'All') {
-      const listingDealer = dealers.find(d => d.id === car.dealerId);
-      const dealerLoc = listingDealer?.location || '';
-      if (!dealerLoc.toLowerCase().includes(filterCity.toLowerCase())) return false;
-    }
-
-    // Max Price filter
-    if (car.price > filterPriceRange) return false;
-
-    // Transmission type
-    if (filterTransmission !== 'All' && car.transmission !== filterTransmission) return false;
-
-    // Year range filter
-    if (car.year && (car.year < filterYearMin || car.year > filterYearMax)) return false;
-
-    return true;
-  });
-
-  // Sort logic - "Newly Uploaded" priority
-  const sortedListings = [...filteredListings].sort((a, b) => {
-    if (sortBy === 'Newest') {
-      return new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime();
-    } else if (sortBy === 'PriceLow') {
-      return a.price - b.price;
-    } else if (sortBy === 'PriceHigh') {
-      return b.price - a.price;
-    }
-    return 0;
-  });
-
-  const openMobileSheet = (field: 'keywords' | 'city' | 'budget') => {
-    setActiveSheetField(field);
-    setIsBottomSheetOpen(true);
-  };
+  const isRtl = lang === 'ur';
 
   return (
-    <div id="bazar360-home-viewport" className="flex flex-col space-y-8 pb-16 animate-fade-in text-white font-sans">
-
-      {engineView === 'dashboard' && (
-        <>
-          {/* 1. HIGHLY VISUAL CATEGORY/BRAND ICON GRID SPLIT */}
-      <section className="bg-[#1E293B] p-5 rounded-3xl border border-white/5 space-y-4 shadow-xl order-1">
-        <div className="flex justify-between items-center border-b border-white/5 pb-2">
-          <span className="text-[10px] font-mono font-black text-[#38BDF8] uppercase tracking-wider">
-            Explore Bazar360 Portals By Group
-          </span>
-          <span className="text-[9px] text-gray-500 font-mono uppercase">Direct Entry Points</span>
-        </div>
+    <div 
+      id="bazar360-home-viewport" 
+      className={`flex flex-col space-y-16 pb-16 animate-fade-in text-white font-sans ${isRtl ? 'text-right' : 'text-left'}`}
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
+      {/* SECTION 1: LUXURY HERO SECTION */}
+      <section className="relative rounded-[28px] bg-gradient-to-b from-[#0b0f19] to-[#030712] border border-white/5 py-12 md:py-20 px-6 md:px-12 overflow-hidden shadow-2xl flex flex-col items-center justify-center text-center">
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-          {[
-            { name: 'SUV & Jeeps', icon: '🚙', tag: 'SUV', count: listings.filter(l => l.tags?.some(t => t === 'SUV')).length + ' units' },
-            { name: 'Luxury Sedans', icon: '🚘', tag: 'Sedan', count: listings.filter(l => l.tags?.some(t => t === 'Sedan')).length + ' units' },
-            { name: 'Electric Motors', icon: '⚡', tag: 'Electric', count: listings.filter(l => l.tags?.some(t => t === 'Electric')).length + ' units' },
-            { name: 'Showroom VIPs', icon: '🏬', tab: 'dealers', count: dealers.length + ' showrooms' },
-            { name: 'Market Media', icon: '📣', tab: 'media', count: 'Live feeds' },
-            { name: 'Insights Center', icon: '📈', tab: 'insights', count: 'Escrow active' },
-          ].map((item, i) => (
-            <button
-              key={`cat-grid-${i}`}
-              type="button"
-              onClick={() => {
-                if (item.tag) {
-                  handleCategoryPress(item.tag);
-                  setTab('inventory');
-                } else if (item.tab) {
-                  setTab(item.tab);
-                }
-              }}
-              className="bg-[#111827] hover:bg-[#111827]/80 border border-white/5 hover:border-orange-500/40 p-4.5 rounded-2xl flex flex-col items-center justify-center text-center gap-2 duration-150 active:scale-95 transition-all select-none cursor-pointer group"
-            >
-              <span className="text-2xl group-hover:scale-110 transition-transform duration-200">{item.icon}</span>
-              <div className="min-w-0">
-                <p className="text-[10.5px] font-bold text-white uppercase group-hover:text-orange-400 truncate tracking-tight">{item.name}</p>
-                <p className="text-[8.5px] text-gray-500 font-mono font-medium truncate mt-0.5">{item.count}</p>
+        {/* Glow backdrop decorative accent */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[350px] md:w-[600px] h-[350px] bg-gradient-to-b from-[#38bdf8]/15 to-transparent rounded-full blur-[120px] pointer-events-none z-0"></div>
+        
+        {/* Decorative Grid Lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none z-0"></div>
+
+        <div className="relative z-10 max-w-3xl flex flex-col items-center space-y-6">
+          
+          {/* Active Badge pill */}
+          <span className="bg-[#38bdf8]/10 text-[#38bdf8] text-[10px] md:text-xs font-mono font-black uppercase tracking-widest px-4 py-1.5 rounded-full border border-[#38bdf8]/20 flex items-center gap-1.5">
+            <Sparkles size={12} className="text-[#38bdf8]" />
+            {t.heroBadge}
+          </span>
+
+          {/* Luxury Large Headline */}
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-black font-sans leading-[1.1] tracking-tight uppercase">
+            {t.heroTitle1} <br className="md:hidden" />
+            <span className="bg-gradient-to-r from-[#38bdf8] to-[#0ea5e9] bg-clip-text text-transparent drop-shadow-[0_10px_20px_rgba(56,189,248,0.25)]">
+              {t.heroTitle2}
+            </span>
+          </h1>
+
+          {/* Subhead text */}
+          <p className="text-gray-400 text-sm md:text-base max-w-2xl font-sans leading-relaxed">
+            {t.heroSubtitle}
+          </p>
+
+          {/* Interactive Responsive Search bar */}
+          <div className="w-full max-w-2xl mt-4 shrink-0">
+            {/* Condition Tabs */}
+            <div className="flex items-center gap-1 mb-1.5 justify-start">
+              {(['all', 'used', 'new'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSearchType(type)}
+                  className={`px-4 py-2 rounded-t-xl text-[10px] md:text-xs font-mono font-black uppercase tracking-wider transition-all duration-150 border-b-2 ${
+                    searchType === type
+                      ? 'bg-[#030712]/90 text-[#38bdf8] border-[#38bdf8]'
+                      : 'text-slate-400 border-transparent hover:text-white'
+                  }`}
+                >
+                  {type === 'all' ? (lang === 'en' ? 'All Cars' : 'تمام گاڑیاں') : 
+                   type === 'used' ? (lang === 'en' ? 'Used Cars' : 'استعمال شدہ') : 
+                   (lang === 'en' ? 'New Cars' : 'نئی گاڑیاں')}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSearchSubmit} className="space-y-3">
+              <div className="bg-[#030712]/80 backdrop-blur-md border border-white/10 rounded-2xl p-2.5 flex items-center gap-2 shadow-[0_10px_40px_rgba(0,0,0,0.4)] hover:border-[#38bdf8]/40 transition-colors">
+                <Search className="text-gray-400 shrink-0 ml-2" size={20} />
+                <input
+                  type="text"
+                  value={localQuery}
+                  onChange={(e) => setLocalQuery(e.target.value)}
+                  placeholder={t.searchPlaceholder}
+                  className="flex-grow bg-transparent text-sm md:text-base border-none outline-none focus:ring-0 text-white placeholder-gray-500 w-full"
+                />
+                <button
+                  type="submit"
+                  className="bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-sans font-extrabold text-xs md:text-sm uppercase tracking-wider px-6 py-3 rounded-xl transition-all cursor-pointer whitespace-nowrap active:scale-95 shadow-md shadow-[#0ea5e9]/20 shrink-0"
+                  style={{ minHeight: '44px' }}
+                >
+                  {t.searchBtn}
+                </button>
               </div>
+
+              {/* Advanced filter select dropdowns underneath search input */}
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="text-left">
+                  <label className="text-[9px] font-mono uppercase text-slate-400 block mb-1">City Location</label>
+                  <select
+                    value={searchCity}
+                    onChange={(e) => setSearchCity(e.target.value)}
+                    className="w-full bg-[#030712]/90 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#38bdf8] cursor-pointer"
+                  >
+                    <option value="All">{lang === 'en' ? 'All Cities' : 'تمام شہر'}</option>
+                    <option value="Peshawar">Peshawar</option>
+                    <option value="Islamabad">Islamabad</option>
+                    <option value="Lahore">Lahore</option>
+                    <option value="Karachi">Karachi</option>
+                  </select>
+                </div>
+                <div className="text-left">
+                  <label className="text-[9px] font-mono uppercase text-slate-400 block mb-1">Budget Range</label>
+                  <select
+                    value={searchPrice}
+                    onChange={(e) => setSearchPrice(e.target.value)}
+                    className="w-full bg-[#030712]/90 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#38bdf8] cursor-pointer"
+                  >
+                    <option value="All">{lang === 'en' ? 'Any Budget' : 'کوئی بھی قیمت'}</option>
+                    <option value="Under 15 Lakhs">{lang === 'en' ? 'Under 15 Lakhs' : '15 لاکھ سے کم'}</option>
+                    <option value="15-35 Lakhs">{lang === 'en' ? '15 - 35 Lakhs' : '15 سے 35 لاکھ'}</option>
+                    <option value="35-75 Lakhs">{lang === 'en' ? '35 - 75 Lakhs' : '35 سے 75 لاکھ'}</option>
+                    <option value="75+ Lakhs">{lang === 'en' ? '75 Lakhs +' : '75 لاکھ سے زیادہ'}</option>
+                  </select>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Stats indicators underneath */}
+          <div className="grid grid-cols-3 gap-4 md:gap-12 pt-8 w-full border-t border-white/5 mt-8">
+            {t.stats.map((stat, i) => {
+              const IconComp = stat.icon;
+              return (
+                <div key={i} className="flex flex-col items-center space-y-1 group">
+                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-[#38bdf8] group-hover:scale-110 transition-transform duration-300">
+                    <IconComp size={18} />
+                  </div>
+                  <span className="text-white font-sans font-black text-xs md:text-sm tracking-tight pt-1">
+                    {stat.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 2: POPULAR BRANDS GRID (16 CARDS) */}
+      <section className="space-y-6">
+        <div className="flex justify-between items-baseline">
+          <h2 className="text-lg md:text-xl font-black uppercase tracking-wider font-sans border-l-4 border-[#38bdf8] pl-3">
+            {t.brandsTitle}
+          </h2>
+          <button
+            onClick={() => {
+              setSelectedCategory('All');
+              setSearchQuery('');
+              setTab('inventory');
+            }}
+            className="text-xs md:text-sm font-sans font-bold text-[#38bdf8] hover:text-white transition-colors cursor-pointer"
+          >
+            {t.viewAll}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+          {POPULAR_BRANDS.map((brand, i) => (
+            <button
+              key={i}
+              onClick={() => handleBrandClick(brand.name)}
+              className="bg-[#0b0f19] border border-white/5 hover:border-[#38bdf8]/40 p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-2 transition-all active:scale-95 duration-150 cursor-pointer group hover:shadow-[0_8px_20px_rgba(56,189,248,0.08)] select-none"
+              style={{ minHeight: '100px' }}
+            >
+              <div className="h-10 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                {renderBrandLogo(brand.name)}
+              </div>
+              <span className="text-xs font-sans font-black text-white group-hover:text-[#38bdf8] transition-colors uppercase tracking-tight">
+                {brand.name}
+              </span>
             </button>
           ))}
         </div>
       </section>
 
-
-      {/* 2. DUAL SELLING PIPELINE SELECTOR MATRIX */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6 order-4">
+      {/* SECTION 3: FEATURED INVENTORY & SKELETON SHOWROOMS */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Sell It Myself Module */}
-        <div className="bg-[#121a2a]/90 border border-white/5 hover:border-orange-500/30 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between shadow-xl group duration-200">
-          <div className="absolute top-0 right-0 w-44 h-44 bg-orange-500 opacity-5 rounded-full blur-[80px] pointer-events-none"></div>
-          
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[8px] font-mono font-black uppercase text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
-                Independent path
-              </span>
-              <Sparkles size={14} className="text-orange-500" />
-            </div>
-
-            <div className="space-y-1.5">
-              <h3 className="text-lg font-sans font-black text-white uppercase tracking-tight">
-                📣 Sell It Myself AI Shorthand
-              </h3>
-              <p className="text-gray-400 text-xs leading-relaxed font-sans">
-                Post your vehicle directly onto BAZAR360. Enter crude shorthand parameters or let our modern model write polished marketing descriptions, allocate keywords, and suggest optimum PKR pricing indices.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="p-3 bg-[#070c12]/80 rounded-xl border border-white/5">
-                <span className="text-base">🚀</span>
-                <p className="text-white font-mono font-bold text-[9px] mt-1 uppercase">1-Click AI Translation</p>
-              </div>
-              <div className="p-3 bg-[#070c12]/80 rounded-xl border border-white/5">
-                <span className="text-base">⚡</span>
-                <p className="text-white font-mono font-bold text-[9px] mt-1 uppercase">Direct Buyer Inboxes</p>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setTab('sell')}
-            className="mt-6 w-full bg-[#1e293b] hover:bg-orange-500 hover:text-slate-950 py-3.5 px-4.5 rounded-2xl text-[10px] font-mono font-black tracking-widest uppercase flex items-center justify-center gap-2 duration-150 active:scale-[0.98] transition-transform"
-            style={{ minHeight: '48px' }}
-          >
-            Launch Listing Wizard <ChevronRight size={14} />
-          </button>
-        </div>
-
-        {/* Auto Choice Managed Bargains (VIP Consignment with Interactive Appraisal Engine) */}
-        <div className="bg-[#121a2a]/90 border border-white/5 hover:border-[#38BDF8]/40 p-6 rounded-3xl relative overflow-hidden shadow-xl flex flex-col justify-between duration-200">
-          <div className="absolute top-0 right-0 w-44 h-44 bg-[#38BDF8] opacity-5 rounded-full blur-[80px] pointer-events-none"></div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-[8px] font-mono font-black uppercase text-[#38BDF8] bg-[#38BDF8]/10 px-2.5 py-0.5 rounded border border-[#38BDF8]/20">
-                Premium Managed Channel
-              </span>
-              <ShieldCheck size={14} className="text-[#38BDF8]" />
-            </div>
-
-            <div className="space-y-1.5">
-              <h3 className="text-lg font-sans font-black text-white uppercase tracking-tight">
-                ⭐ Auto Choice Managed VIP Bargains
-              </h3>
-              <p className="text-gray-400 text-xs font-sans leading-relaxed">
-                Delegate absolute vehicle logistics to BAZAR360's certified mechanics. Physical appraisal, excise biometrics, pricing ledger code allocation, and instant premium display coverage.
-              </p>
-            </div>
-
-            {/* Appraisal Estimator Live Tool */}
-            <form onSubmit={handleCalculateAppraisal} className="bg-[#070c12]/90 p-4 rounded-2xl border border-white/5 space-y-3.5">
-              <div className="border-b border-white/5 pb-1.5 flex justify-between items-center">
-                <span className="text-[9px] font-mono font-black text-[#38BDF8] uppercase flex items-center gap-1">
-                  <Calculator size={10} /> In-House Appraisal Estimator
-                </span>
-                <span className="text-[8px] text-gray-500 font-mono">Live calculation</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[8px] uppercase text-gray-500 font-mono font-bold block">Brand / Maker</label>
-                  <select 
-                    value={appraisalBrand}
-                    onChange={(e) => { setAppraisalBrand(e.target.value); setAppraisalResult(null); }}
-                    className="w-full bg-[#121c32]/80 border border-white/10 text-white font-mono text-[10px] rounded-lg p-1.5"
-                  >
-                    {brandList.map(b => (
-                      <option key={b} value={b}>{b}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] uppercase text-gray-500 font-mono font-bold block">Year</label>
-                  <select 
-                    value={appraisalYear}
-                    onChange={(e) => { setAppraisalYear(parseInt(e.target.value)); setAppraisalResult(null); }}
-                    className="w-full bg-[#121c32]/80 border border-white/10 text-white font-mono text-[10px] rounded-lg p-1.5"
-                  >
-                    {[2026, 2025, 2024, 2023, 2022, 2021, 2020, 2018, 2015].map(y => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] uppercase text-gray-500 font-mono font-bold block">Condition ({appraisalCondition}/10)</label>
-                  <input 
-                    type="range"
-                    min="1"
-                    max="10"
-                    value={appraisalCondition}
-                    onChange={(e) => { setAppraisalCondition(parseInt(e.target.value)); setAppraisalResult(null); }}
-                    className="w-full h-1 bg-[#121c32] rounded appearance-none cursor-pointer accent-orange-500 mt-2.5"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 pt-1">
-                {appraisalResult !== null ? (
-                  <div className="flex-grow bg-[#1a2e4c]/40 border border-[#38BDF8]/20 rounded-xl p-2.5 flex items-center justify-between">
-                    <div>
-                      <span className="text-[7.5px] font-mono text-gray-400 block uppercase">Estimate range PKR</span>
-                      <span className="text-sm font-black text-[#38BDF8]">
-                        Rs. {(appraisalResult - 250000).toLocaleString()} - {(appraisalResult + 250000).toLocaleString()}
-                      </span>
-                    </div>
-                    <a
-                      href={`https://wa.me/923159085086?text=Hi%20Auto%20Choice,%20I'd%20like%20to%20consign%20my%20${appraisalBrand}%20${appraisalYear}%20(Estimated%20Rs.%20${appraisalResult.toLocaleString()}).`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[9px] font-mono font-extrabold uppercase bg-orange-500 hover:bg-orange-600 active:scale-95 duration-100 text-slate-950 px-2.5 py-1.5 rounded-lg flex items-center gap-1"
-                    >
-                      Bargain Call
-                    </a>
-                  </div>
-                ) : (
-                  <button
-                    type="submit"
-                    className="w-full bg-[#121a2a]/95 hover:bg-white/[0.04] text-xs font-mono font-bold uppercase py-2 border border-white/10 rounded-xl tracking-wider cursor-pointer"
-                  >
-                    Run appraisal estimate
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-
-          <a
-            href="https://wa.me/923159085086?text=Hi%20Auto%20Choice%20VIP%20desk,%20I%20want%20to%20learn%20more%20about%20managed%20consignment%20bargains."
-            target="_blank"
-            rel="noreferrer"
-            className="mt-6 w-full text-center block bg-orange-500 hover:bg-orange-600 text-slate-950 py-3.5 px-4 rounded-2xl text-[10px] font-mono font-black tracking-widest uppercase duration-150 active:scale-[0.98] transition-all"
-            style={{ minHeight: '48px' }}
-          >
-            Route to managed dispatch A
-          </a>
-        </div>
-      </section>
-
-      {/* VIP DIRECT TRADE CHANNEL BANNER - MANAGED BY MUHAMMAD AMJID */}
-      <section className="bg-gradient-to-r from-slate-900 via-[#0a1120] to-slate-900 border-2 border-amber-500/30 hover:border-amber-500/60 p-6 rounded-3xl relative overflow-hidden shadow-2xl space-y-4 select-none group transition-all order-4">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <span className="text-[9px] font-mono font-black text-amber-500 bg-amber-500/15 px-3 py-1 rounded border border-amber-500/20 uppercase tracking-widest">
-              ★ Premium VIP Managed Portal
-            </span>
-            <h3 className="text-xl font-black text-white uppercase tracking-tight">
-              Direct Trade via BAZAR360 Management
-            </h3>
-            <p className="text-gray-300 text-xs max-w-2xl font-sans leading-relaxed">
-              Bypass standard listings entirely. Connect immediately with our Executive Trade Manager <strong className="text-amber-400">Muhammad Amjid</strong> to source high-end models, custom pricing contracts, or resolve emergency liquidations via private escrow channels.
-            </p>
-          </div>
-          <button
-            onClick={() => setIsDirectTradeOpen(true)}
-            className="bg-[#f97316] text-[#030712] hover:bg-orange-400 transition-colors duration-150 py-4 px-6 rounded-2xl text-xs font-mono font-black uppercase tracking-wider whitespace-nowrap active:scale-[0.98] select-none cursor-pointer flex items-center gap-2 shadow-lg shadow-orange-500/10 shrink-0"
-            style={{ minHeight: '48px' }}
-          >
-            <span>Launch Intake Form</span>
-            <span>⭐</span>
-          </button>
-        </div>
-
-        {/* Manager badge details */}
-        <div className="flex items-center gap-4 text-[10px] font-mono uppercase bg-slate-950/40 p-3 rounded-xl border border-white/5 w-fit">
-          <span className="text-gray-400">Escrow Officer: <strong className="text-white">Muhammad Amjid</strong></span>
-          <span className="text-white/20">|</span>
-          <span className="text-gray-400">Direct Secure Hotline: <a href="tel:03149198403" className="text-orange-400 underline font-black">03149198403</a></span>
-        </div>
-      </section>
-
-      {/* 3. HORIZONTAL AUTOMOTIVE SUPPORT SERVICES */}
-      <section className="space-y-3.5 order-5">
-        <div className="flex justify-between items-center">
-          <h3 className="text-white font-black text-xs uppercase tracking-widest font-mono flex items-center gap-1.5">
-            <Wrench size={14} className="text-[#38BDF8]" /> Horizontal Automotive Support Services
-          </h3>
-          <span className="text-[9px] font-mono text-gray-500 uppercase">Swipeable Tool Integrations</span>
-        </div>
-
-        {/* Touch Swipeable Horizontal List */}
-        <div className="flex items-center gap-3.5 overflow-x-auto pb-2 no-scrollbar">
-          
-          {/* Card 1: Car Inspection Booking */}
-          <button
-            onClick={() => { setActiveMeshTool('inspection'); setMeshMessage(''); }}
-            className={`min-w-[220px] max-w-[260px] p-4 rounded-2xl border text-left cursor-pointer duration-150 group shrink-0 ${
-              activeMeshTool === 'inspection' 
-                ? 'bg-[#1a293d] border-[#38BDF8]/60 shadow-xl' 
-                : 'bg-[#121a2a]/90 border-white/5 hover:border-[#38BDF8]/30 hover:bg-[#121a2a]'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 rounded-lg bg-orange-500/10 text-orange-400">
-                <Wrench size={16} />
-              </div>
-              <span className="text-[8px] font-mono font-bold text-gray-500 uppercase">Interactive</span>
-            </div>
-            <h4 className="text-xs uppercase font-black text-white group-hover:text-[#38BDF8] transition-colors">Car Inspection Booking</h4>
-            <p className="text-[10px] text-gray-400 mt-1 font-sans leading-normal">Schedule an in-house certified mechanist 180-point appraisal diagnostic at your spot.</p>
-          </button>
-
-          {/* Card 2: Insurance Calculator */}
-          <button
-            onClick={() => { setActiveMeshTool('insurance'); setMeshMessage(''); }}
-            className={`min-w-[220px] max-w-[260px] p-4 rounded-2xl border text-left cursor-pointer duration-150 group shrink-0 ${
-              activeMeshTool === 'insurance' 
-                ? 'bg-[#1a293d] border-[#38BDF8]/60 shadow-xl' 
-                : 'bg-[#121a2a]/90 border-white/5 hover:border-[#38BDF8]/30 hover:bg-[#121a2a]'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 rounded-lg bg-cyan-500/10 text-[#38BDF8]">
-                <Calculator size={16} />
-              </div>
-              <span className="text-[8px] font-mono font-bold text-gray-500 uppercase">Calculative</span>
-            </div>
-            <h4 className="text-xs uppercase font-black text-white group-hover:text-[#38BDF8] transition-colors">Insurance Estimators</h4>
-            <p className="text-[10px] text-gray-400 mt-1 font-sans leading-normal">Assess custom corporate luxury comprehensive indemnity rates for your sedan/SUV instantly.</p>
-          </button>
-
-          {/* Card 3: Finance Estimator */}
-          <button
-            onClick={() => { setActiveMeshTool('finance'); setMeshMessage(''); }}
-            className={`min-w-[220px] max-w-[260px] p-4 rounded-2xl border text-left cursor-pointer duration-150 group shrink-0 ${
-              activeMeshTool === 'finance' 
-                ? 'bg-[#1a293d] border-[#38BDF8]/60 shadow-xl' 
-                : 'bg-[#121a2a]/90 border-white/5 hover:border-[#38BDF8]/30 hover:bg-[#121a2a]'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
-                <TrendingUp size={16} />
-              </div>
-              <span className="text-[8px] font-mono font-bold text-gray-500 uppercase">Tenure check</span>
-            </div>
-            <h4 className="text-xs uppercase font-black text-white group-hover:text-[#38BDF8] transition-colors">Finance Installments</h4>
-            <p className="text-[10px] text-gray-400 mt-1 font-sans leading-normal">Est. down-payment amortization splits and standard interest indexes across local bank ties.</p>
-          </button>
-
-          {/* Card 4: Title/Registration Tracker */}
-          <button
-            onClick={() => { setActiveMeshTool('reg'); setMeshMessage(''); }}
-            className={`min-w-[220px] max-w-[260px] p-4 rounded-2xl border text-left cursor-pointer duration-150 group shrink-0 ${
-              activeMeshTool === 'reg' 
-                ? 'bg-[#1a293d] border-[#38BDF8]/60 shadow-xl' 
-                : 'bg-[#121a2a]/90 border-white/5 hover:border-[#38BDF8]/30 hover:bg-[#121a2a]'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
-                <FileText size={16} />
-              </div>
-              <span className="text-[8px] font-mono font-bold text-gray-500 uppercase">Excise</span>
-            </div>
-            <h4 className="text-xs uppercase font-black text-white group-hover:text-[#38BDF8] transition-colors">Tax & Registration Tracker</h4>
-            <p className="text-[10px] text-gray-400 mt-1 font-sans leading-normal">Verify KPK/Peshawar tax token statuses and registration plate legality records.</p>
-          </button>
-
-        </div>
-
-        {/* Dynamic Tool Content Overlay Drawer */}
-        {activeMeshTool && (
-          <div className="bg-[#0f172a] border border-[#38BDF8]/20 p-5 rounded-2xl space-y-4 shadow-xl relative animate-scale-fade">
-            
-            <button 
-              onClick={() => { setActiveMeshTool(null); setMeshMessage(''); }}
-              className="absolute top-4 right-4 text-gray-500 hover:text-white p-1 rounded-lg hover:bg-white/5 cursor-pointer"
+        {/* Left Side: Featured Vehicles (2 cols wide) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex justify-between items-baseline">
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-wider font-sans border-l-4 border-[#38bdf8] pl-3">
+              {t.featuredTitle}
+            </h2>
+            <button
+              onClick={() => setTab('inventory')}
+              className="text-xs md:text-sm font-sans font-bold text-[#38bdf8] hover:text-white transition-colors cursor-pointer"
             >
-              <X size={14} />
+              {t.viewAll}
             </button>
-
-            {/* tool headers */}
-            {activeMeshTool === 'inspection' && (
-              <form onSubmit={(e) => handleServiceSubmit(e, 'inspection')} className="space-y-4">
-                <div className="flex-col">
-                  <h4 className="text-xs font-black uppercase text-[#38BDF8]">Book an Auto Choice Certified Diagnostic Visit</h4>
-                  <p className="text-[10px] text-gray-400">Submit coordinates below. Mechanics inspect engine suspension landmarks at your doorstep.</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter your name"
-                    value={meshInputs.inspName}
-                    onChange={(e) => setMeshInputs({...meshInputs, inspName: e.target.value})}
-                    className="bg-[#121c32]/80 border border-white/10 text-[10px] rounded-lg p-2.5 font-mono text-white placeholder-gray-600 focus:outline-none"
-                  />
-                  <input
-                    type="tel"
-                    required
-                    placeholder="Enter cell number e.g. 0315..."
-                    value={meshInputs.inspPhone}
-                    onChange={(e) => setMeshInputs({...meshInputs, inspPhone: e.target.value})}
-                    className="bg-[#121c32]/80 border border-white/10 text-[10px] rounded-lg p-2.5 font-mono text-white placeholder-gray-600 focus:outline-none"
-                  />
-                  <input
-                    type="date"
-                    required
-                    value={meshInputs.inspDate}
-                    onChange={(e) => setMeshInputs({...meshInputs, inspDate: e.target.value})}
-                    className="bg-[#121c32]/80 border border-white/10 text-[10px] rounded-lg p-2.5 font-mono text-white placeholder-gray-600 focus:outline-none focus:border-orange-500"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-slate-950 font-mono font-black text-[9.5px] py-2.5 rounded-xl uppercase tracking-wider cursor-pointer"
-                >
-                  Authorize Diagnostic Dispatch
-                </button>
-              </form>
-            )}
-
-            {activeMeshTool === 'insurance' && (
-              <div className="space-y-3.5">
-                <div>
-                  <h4 className="text-xs font-black uppercase text-[#38BDF8]">Luxury Insurance Premium rate estimator</h4>
-                  <p className="text-[10px] text-gray-400">Instant comprehensive rate assessment based on standard 1.7% auto-cleared local ledger points.</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px] font-mono">
-                    <span className="text-gray-400 font-bold uppercase">Estimated Vehicle Value (PKR):</span>
-                    <span className="text-orange-400 font-black">Rs. {meshInputs.insCarVal.toLocaleString()}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1500000"
-                    max="45000000"
-                    step="500000"
-                    value={meshInputs.insCarVal}
-                    onChange={(e) => setMeshInputs({...meshInputs, insCarVal: parseInt(e.target.value)})}
-                    className="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-orange-500"
-                  />
-                </div>
-                <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl flex items-center justify-between">
-                  <div>
-                    <span className="text-[8px] font-mono text-gray-500 uppercase block">Annual Comprehensive Premium Rate</span>
-                    <span className="text-sm font-black text-emerald-400">
-                      Rs. {Math.round(meshInputs.insCarVal * 0.017).toLocaleString()} / Year
-                    </span>
-                  </div>
-                  <div className="text-right text-[8px] font-mono text-gray-400 uppercase">
-                    <span>Includes tracker locks</span>
-                    <span className="block mt-0.5 text-orange-400">Zero deductibles</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeMeshTool === 'finance' && (
-              <div className="space-y-3.5">
-                <div>
-                  <h4 className="text-xs font-black uppercase text-[#38BDF8]">Automotive Financing & Installments</h4>
-                  <p className="text-[10px] text-gray-400">Calculates fixed monthly splits with a standard 12% profit index rate markup.</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[8px] font-mono text-gray-400">
-                      <span>DOWN PAYMENT (PKR):</span>
-                      <span className="text-white font-bold">Rs. {meshInputs.finDownPayment.toLocaleString()}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="500000"
-                      max="15000000"
-                      step="250000"
-                      value={meshInputs.finDownPayment}
-                      onChange={(e) => setMeshInputs({...meshInputs, finDownPayment: parseInt(e.target.value)})}
-                      className="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer accent-orange-500"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[8px] uppercase text-gray-400 font-mono font-bold block">Tenure Plan</label>
-                    <select
-                      value={meshInputs.finTenure}
-                      onChange={(e) => setMeshInputs({...meshInputs, finTenure: parseInt(e.target.value)})}
-                      className="w-full bg-[#121c32]/80 border border-white/10 text-white font-mono text-xs rounded-lg p-2"
-                    >
-                      <option value="3">3 Years (36 Months)</option>
-                      <option value="5">5 Years (60 Months)</option>
-                      <option value="7">7 Years (84 Months)</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl flex justify-between items-center">
-                  <div>
-                    <span className="text-[8px] font-mono text-gray-500 uppercase block">Estimated Installment (Standard markup)</span>
-                    <span className="text-sm font-black text-[#38BDF8]">
-                      Rs. {Math.round(((12000000 - meshInputs.finDownPayment) * 1.36) / (meshInputs.finTenure * 12)).toLocaleString()} / Month
-                    </span>
-                  </div>
-                  <span className="text-[8px] font-mono text-orange-400 bg-orange-500/10 px-2 py-1 rounded font-bold uppercase shrink-0">
-                    Calculated on Rs. 120M SUV Index
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {activeMeshTool === 'reg' && (
-              <form onSubmit={(e) => handleServiceSubmit(e, 'reg')} className="space-y-4">
-                <div>
-                  <h4 className="text-xs font-black uppercase text-[#38BDF8]">Excise Verification Desk Query</h4>
-                  <p className="text-[10px] text-gray-400">Match active KP register tokens & title clearing records instantly.</p>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Enter registration number sequence, e.g. Peshawar AAA-451"
-                    value={meshInputs.regPlate}
-                    onChange={(e) => setMeshInputs({...meshInputs, regPlate: e.target.value})}
-                    className="flex-grow bg-[#121c32]/80 border border-white/10 text-xs font-mono rounded-xl p-3 text-white placeholder-gray-600 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-orange-500 hover:bg-orange-600 text-slate-950 px-5 rounded-xl font-mono text-xs font-extrabold uppercase active:scale-95 duration-150 shrink-0"
-                  >
-                    Run check
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {meshMessage && (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-sans text-xs rounded-xl flex items-center gap-1.5">
-                <Check size={14} /> {meshMessage}
-              </div>
-            )}
-
-          </div>
-        )}
-      </section>
-
-      {/* CORE 3-COLUMN ARCHITECTURE GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start order-3">
-        
-        {/* ========================================================= */}
-        {/* LEFT COLUMN: Community, Live Discovery & Clickable Dealers */}
-        {/* ========================================================= */}
-        <div className="lg:col-span-1 space-y-6 order-3 lg:order-1">
-          
-          {/* Card 1: Clickable verified dealerships (On Top) */}
-          <div className="bg-[#121a2a]/95 border border-[#1e293b] rounded-2xl p-4 space-y-4 shadow-xl">
-            <h3 className="text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-2.5">
-              <Building size={14} className="text-[#38BDF8]" /> Verified Showrooms
-            </h3>
-
-            <div className="space-y-2.5">
-              {dealers.map((dl) => (
-                <button
-                  key={dl.id}
-                  onClick={() => onSelectDealer(dl.id)}
-                  className="w-full text-left bg-[#080d19] border border-white/5 hover:border-[#38BDF8]/40 hover:bg-white/[0.02] p-2.5 rounded-xl flex items-center gap-3 transition-all group cursor-pointer"
-                >
-                  <div className="w-10 h-10 rounded-full bg-slate-800 border border-white/10 shrink-0 flex items-center justify-center overflow-hidden">
-                    {dl.avatarUrl ? (
-                      <img
-                        src={dl.avatarUrl}
-                        alt={dl.name}
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <span className="text-xs font-black text-white">{dl.avatarLetter}</span>
-                    )}
-                  </div>
-                  <div className="overflow-hidden flex-1">
-                    <h4 className="text-xs font-bold text-white uppercase tracking-tight truncate group-hover:text-[#38BDF8] transition-colors">
-                      {dl.name}
-                    </h4>
-                    <span className="text-[9px] text-[#22c55e] font-mono flex items-center gap-1 mt-0.5">
-                      ● Active Storefront
-                    </span>
-                  </div>
-                  <ChevronRight size={14} className="text-gray-600 group-hover:text-[#38BDF8] transition-colors shrink-0" />
-                </button>
-              ))}
-            </div>
           </div>
 
-          {/* Card 2: Live Activities feed (Beneath) */}
-          <div className="bg-[#121a2a]/95 border border-[#1e293b] rounded-2xl p-4 space-y-4 shadow-xl">
-            <h3 className="text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 border-b border-white/5 pb-2.5">
-              <Activity size={14} className="text-[#38BDF8] animate-pulse" /> Live Activity Feed
-            </h3>
-            
-            <div className="space-y-3.5 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-800">
-              {aggregatedActivities.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-[10px] text-gray-500 font-mono">No recent activity found.</p>
-                </div>
-              ) : (
-                aggregatedActivities.map((act) => (
-                  <button
-                    key={act.id}
-                    onClick={() => onSelectDealer(act.dealerId)}
-                    className="w-full text-left bg-[#080d19] border border-white/5 hover:border-orange-500/30 p-2.5 rounded-xl block transition-all group duration-200 cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between mb-1.5 gap-2">
-                      <span className="px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20 font-mono text-[8px] uppercase font-bold">
-                        {act.badge}
-                      </span>
-                      <span className="text-[8px] text-gray-500 font-mono">{act.timestamp}</span>
-                    </div>
-
-                    <h4 className="text-white font-bold text-xs truncate group-hover:text-[#38BDF8] transition-colors uppercase tracking-tight">
-                      {act.title}
-                    </h4>
-                    <p className="text-white/60 text-[10px] line-clamp-2 mt-1 leading-relaxed">
-                      {act.description}
-                    </p>
-
-                    <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-white/5 text-[9px] font-mono text-[#38BDF8]">
-                      <span className="text-gray-400 truncate max-w-[120px] font-sans">
-                        @{act.dealerName}
-                      </span>
-                      <span className="font-bold underline text-orange-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5 text-[8px] uppercase">
-                        View Store <ChevronRight size={10} />
-                      </span>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-
-        </div>
-
-        {/* ========================================================= */}
-        {/* CENTER COLUMN: Interactive Marketplace Product Feed */}
-        {/* ========================================================= */}
-        <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
-          
-          {/* Main category Selector slider with upcoming expandability slots */}
-          <div className="bg-[#121a2a]/90 border border-[#1e293b] p-2 rounded-2xl flex items-center gap-1.5 overflow-x-auto scrollbar-none shadow-lg">
-            {['All', 'SUV', 'Sedan', 'Electric', 'Luxury'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleCategoryPress(cat)}
-                className={`flex-grow px-4.5 py-3 rounded-xl text-[10px] font-mono font-extrabold uppercase tracking-widest whitespace-nowrap transition-all cursor-pointer select-none ${
-                  activeCategory === cat
-                    ? 'bg-orange-500 text-white shadow-md shadow-orange-900/30'
-                    : 'bg-[#080d19] text-gray-400 border border-white/5 hover:border-[#38BDF8] hover:text-white'
-                }`}
-                style={{ minHeight: '44px' }}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Feed Title & Sorter Control Bar */}
-          <div className="flex justify-between items-center bg-[#0a1120] border border-white/5 px-4 py-2.5 rounded-2xl">
-            <div className="flex items-center gap-1.5">
-              <Compass size={14} className="text-orange-400 animate-spin" style={{ animationDuration: '6s' }} />
-              <span className="text-[10px] font-black uppercase text-white font-mono tracking-wider">
-                {sortedListings.length} products <span className="text-[#38BDF8]">offered</span>
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Layout Switcher */}
-              <div className="flex bg-bg-primary border border-border-main p-1 rounded-xl">
-                <button
-                  onClick={() => setCardLayout('grid')}
-                  className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
-                    cardLayout === 'grid'
-                      ? 'bg-accent-main text-stone-950'
-                      : 'text-text-muted hover:text-text-main'
-                  }`}
-                  title="Grid Layout"
-                >
-                  <Grid size={13} />
-                </button>
-                <button
-                  onClick={() => setCardLayout('list')}
-                  className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
-                    cardLayout === 'list'
-                      ? 'bg-accent-main text-stone-950'
-                      : 'text-text-muted hover:text-text-main'
-                  }`}
-                  title="List Layout"
-                >
-                  <List size={13} />
-                </button>
-              </div>
-
-              <span className="text-[9px] text-gray-500 font-mono hidden sm:inline">SORT BY:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-bg-secondary border border-border-main text-text-main font-mono text-[9px] uppercase font-bold py-1.5 px-2.5 rounded-lg focus:outline-none focus:border-accent-main cursor-pointer"
-              >
-                <option value="Newest">🔥 Newly Uploaded</option>
-                <option value="PriceLow">🪙 Price: Low to High</option>
-                <option value="PriceHigh">📈 Price: High to Low</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Listings grid board */}
-          {sortedListings.length === 0 ? (
-            <div className="bg-[#121a2a] border border-[#1e293b] rounded-3xl p-12 text-center space-y-4">
-              <SlidersHorizontal className="mx-auto text-gray-600 animate-bounce" size={32} />
-              <div className="space-y-1">
-                <h4 className="text-white font-extrabold text-sm uppercase tracking-wider">No matching inventory matches</h4>
-                <p className="text-gray-500 text-[11px] max-w-sm mx-auto">Try broadening your active search parameters, resetting the price threshold slider, or changing categories.</p>
-              </div>
-              <button
-                onClick={handleResetFilters}
-                className="px-4.5 py-2 bg-orange-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer hover:bg-orange-600 shadow"
-              >
-                Refresh Filters
-              </button>
-            </div>
-          ) : (
-            <motion.div 
-              variants={{
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: { staggerChildren: 0.08 }
-                }
-              }}
-              initial="hidden"
-              animate="show"
-              className={cardLayout === 'grid' ? "grid grid-cols-1 sm:grid-cols-2 gap-6" : "flex flex-col gap-6"}
-            >
-              {sortedListings.map((car) => {
-                const carDealer = dealers.find(d => d.id === car.dealerId);
-                return (
+          {listings.filter(l => l.approved !== false).length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {listings
+                .filter(l => l.approved !== false)
+                .slice(0, 4)
+                .map((car) => (
                   <VehicleCard
                     key={car.id}
                     car={car}
-                    dealer={carDealer}
-                    variant={cardLayout}
+                    dealer={dealers.find((d) => d.id === car.dealerId)}
                     onSelect={onSelectListing}
                     onToggleCompare={onToggleCompare}
-                    isComparing={compareList.some(item => item.id === car.id)}
+                    isComparing={compareList.some((c) => c.id === car.id)}
                   />
-                );
-              })}
-            </motion.div>
-          )}
-
-        </div>
-
-        {/* ========================================================= */}
-        {/* RIGHT COLUMN: Interactive Deep Search & Sticky Refiner */}
-        {/* ========================================================= */}
-        <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-24 order-2 lg:order-3">
-          
-          <div className="bg-[#121a2a]/95 border border-[#1e293b] rounded-2xl p-4.5 space-y-5 shadow-xl">
-            
-            <div className="flex justify-between items-center border-b border-white/5 pb-2.5">
-              <h3 className="text-white font-black text-xs uppercase tracking-wider flex items-center gap-2">
-                <SlidersHorizontal size={14} className="text-[#38BDF8]" /> Search & Refine
-              </h3>
+                ))}
+            </div>
+          ) : (
+            <div className="bg-[#0b0f19] border border-white/5 rounded-2xl p-10 text-center flex flex-col items-center justify-center space-y-4">
+              <Car size={36} className="text-gray-500 animate-pulse" />
+              <p className="text-gray-400 text-sm font-sans">{t.noFeatured}</p>
               <button
-                onClick={handleResetFilters}
-                className="text-gray-500 hover:text-white transition-colors text-[9px] font-mono font-bold flex items-center gap-0.5 bg-[#080d19] px-2 py-1 rounded-lg border border-white/5 cursor-pointer"
-                title="Reset active query state"
+                onClick={() => setTab('sell')}
+                className="bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-sans font-extrabold text-xs uppercase px-5 py-2.5 rounded-xl cursor-pointer"
               >
-                <RotateCcw size={10} /> Reset
+                {t.postAdBtn}
               </button>
             </div>
-
-            {/* COMPREHENSIVE VEHICLE DICTIONARY SELECTOR MATRIX */}
-            <div className="bg-[#0c1424] border border-[#38BDF8]/30 p-3.5 rounded-xl space-y-3.5 shadow-lg shadow-sky-950/20 text-left">
-              <div className="flex items-center gap-1.5 justify-between">
-                <span className="text-[10px] uppercase font-mono font-black text-[#38BDF8] tracking-widest flex items-center gap-1">
-                  <Sparkles size={11} className="text-[#38BDF8] animate-pulse" /> Vehicle Dictionary
-                </span>
-                <span className="text-[7px] bg-[#38BDF8]/10 text-[#38BDF8] px-1.5 py-0.5 rounded font-mono font-black uppercase">
-                  Active Preset
-                </span>
-              </div>
-              <p className="text-[9px] text-gray-400 font-sans leading-normal">
-                Select a class and model to instantly synchronize filter keywords, brands, and price limits.
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                {/* Dictionary Vehicle Type Dropdown */}
-                <div className="space-y-1">
-                  <span className="text-gray-500 font-mono text-[8px] uppercase tracking-wider block">1. Vehicle Type:</span>
-                  <select
-                    value={dictType}
-                    onChange={(e) => {
-                      const typeSelected = e.target.value;
-                      setDictType(typeSelected);
-                      setDictModel('All'); // reset model selection
-                    }}
-                    className="w-full bg-[#080d19] border border-white/5 text-white font-mono text-[10px] rounded-lg p-2 focus:outline-none focus:border-[#38BDF8] cursor-pointer"
-                  >
-                    <option value="All">All Types</option>
-                    <option value="SUV">🚙 SUV</option>
-                    <option value="Sedan">🚗 Sedan</option>
-                    <option value="Electric">⚡ Electric</option>
-                    <option value="Luxury">👑 Luxury</option>
-                  </select>
-                </div>
-
-                {/* Dictionary Models Dropdown */}
-                <div className="space-y-1">
-                  <span className="text-gray-500 font-mono text-[8px] uppercase tracking-wider block">2. Model Dict:</span>
-                  <select
-                    value={dictModel}
-                    onChange={(e) => {
-                      const modelName = e.target.value;
-                      setDictModel(modelName);
-                      if (modelName !== 'All') {
-                        let foundModel = null;
-                        const pools = dictType === 'All' ? Object.keys(VEHICLE_DICTIONARY) : [dictType];
-                        for (const pool of pools) {
-                          const item = VEHICLE_DICTIONARY[pool]?.find(m => m.model === modelName);
-                          if (item) {
-                            foundModel = item;
-                            break;
-                          }
-                        }
-
-                        if (foundModel) {
-                          setFilterSearch(foundModel.model);
-                          setFilterMake(foundModel.make);
-                          setFilterPriceRange(foundModel.price);
-                          if (currencyMode === 'USD') {
-                            setBudgetInputText(`${Math.round((foundModel.price / 278) / 1000)}k`);
-                          } else {
-                            setBudgetInputText(`${foundModel.price / 100000} Lac`);
-                          }
-                        }
-                      }
-                    }}
-                    className="w-full bg-[#080d19] border border-white/5 text-white font-mono text-[10px] rounded-lg p-2 focus:outline-none focus:border-[#38BDF8] cursor-pointer"
-                  >
-                    <option value="All">Select Model...</option>
-                    {dictType === 'All' ? (
-                      Object.keys(VEHICLE_DICTIONARY).map((typeKey) => (
-                        <optgroup key={typeKey} label={typeKey} className="bg-[#080d19] text-[#38BDF8] text-[9px] font-bold">
-                          {VEHICLE_DICTIONARY[typeKey].map((m) => (
-                            <option key={`${typeKey}-${m.model}`} value={m.model} className="bg-[#080d19] text-white">
-                              {m.make} {m.model}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))
-                    ) : (
-                      VEHICLE_DICTIONARY[dictType]?.map((m) => (
-                        <option key={m.model} value={m.model} className="bg-[#080d19] text-white">
-                          {m.make} {m.model}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-              </div>
-
-              {dictModel !== 'All' && (
-                <div className="bg-[#080d19] border border-[#22c55e]/25 p-2 rounded-lg text-[9px] text-[#22c55e]/90 font-mono tracking-tight leading-relaxed animate-pulse">
-                  🎯 Auto-Apply Selected: <strong className="text-white uppercase">{dictModel}</strong>.
-                </div>
-              )}
-            </div>
-
-            {/* Selector: Custom Text query */}
-            <div className="space-y-1.5">
-              <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Keywords Input:</label>
-              <div className="bg-[#080d19] border border-[#1e293b] p-2 rounded-xl flex items-center gap-2">
-                <Search size={12} className="text-gray-600" />
-                <input
-                  type="text"
-                  placeholder="e.g. Turbo, White, Sedan..."
-                  value={filterSearch}
-                  onChange={(e) => setFilterSearch(e.target.value)}
-                  className="bg-transparent border-none text-[11px] text-white placeholder-gray-700 w-full focus:outline-none font-mono"
-                />
-              </div>
-            </div>
-
-            {/* Selector: Make Select */}
-            <div className="space-y-1.5">
-              <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Manufacturer Brand:</label>
-              <select
-                value={filterMake}
-                onChange={(e) => setFilterMake(e.target.value)}
-                className="w-full bg-[#080d19] border border-[#1e293b] text-white font-mono text-xs rounded-xl p-2.5 focus:outline-none focus:border-[#38BDF8] cursor-pointer block"
-              >
-                {uniqueMakes.map((mk) => (
-                  <option key={mk} value={mk}>
-                    {mk === 'All' ? 'All Brands / Makers' : mk.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Selector: City selector */}
-            <div className="space-y-1.5">
-              <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">City Location KPK/NWD:</label>
-              <select
-                value={filterCity}
-                onChange={(e) => setFilterCity(e.target.value)}
-                className="w-full bg-[#080d19] border border-[#1e293b] text-white font-mono text-xs rounded-xl p-2.5 focus:outline-none focus:border-[#38BDF8] cursor-pointer block"
-              >
-                <option value="All">🗺 Nationwide (All)</option>
-                {PAKISTAN_CITIES_MATRIX.map((group) => (
-                  <optgroup key={group.province} label={group.province} className="bg-[#080d19] text-[#38BDF8] font-bold">
-                    {group.cities.map((ct) => (
-                      <option key={ct} value={ct} className="bg-[#080d19] text-white font-sans font-normal">
-                        {ct}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-
-            {/* Selector: Live Price range slide */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center text-[9px] font-mono">
-                <span className="text-gray-400 font-bold uppercase tracking-wider">MAX BUDGET VALUE:</span>
-                <span className="text-orange-400 font-extrabold uppercase">Rs. {(filterPriceRange / 100000).toLocaleString()} Lac</span>
-              </div>
-              <input
-                type="range"
-                min={2000000}
-                max={50000000}
-                step={500000}
-                value={filterPriceRange}
-                onChange={(e) => setFilterPriceRange(parseInt(e.target.value))}
-                className="w-full h-1 bg-[#080d19] rounded-lg appearance-none cursor-pointer accent-orange-500"
-              />
-              <div className="flex justify-between text-[8px] font-mono text-gray-600">
-                <span>20 Lac</span>
-                <span>5 Crore PKR</span>
-              </div>
-            </div>
-
-            {/* Selector: Manual Typed PKR Budget */}
-            <div className="space-y-1.5 animate-fade-in text-left">
-              <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Enter Manual Budget (Lacs/Crores):</label>
-              <div className="flex items-center gap-2 bg-[#080d19] border border-[#1e293b] focus-within:border-[#38BDF8]/40 px-3 py-2 rounded-xl text-left relative transition-colors h-11">
-                <span className="text-[#38BDF8] font-mono text-[10px] font-black">{currencyMode === 'USD' ? 'USD $' : 'Rs. '}</span>
-                <input
-                  type="text"
-                  value={budgetInputText}
-                  placeholder={currencyMode === 'USD' ? 'e.g., 150k' : 'e.g., 350 Lac'}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setBudgetInputText(val);
-
-                    // Extract numeric content
-                    let parsedValue = parseFloat(val.replace(/[^0-9.]/g, '')) || 0;
-                    const lower = val.toLowerCase();
-
-                    if (currencyMode === 'USD') {
-                      if (lower.includes('k')) {
-                        parsedValue *= 1000;
-                      } else if (lower.includes('m')) {
-                        parsedValue *= 1000000;
-                      }
-                      const pkrEquivalent = Math.round(parsedValue * 278);
-                      setFilterPriceRange(pkrEquivalent);
-                    } else {
-                      if (lower.includes('lac') || lower.includes('lakh') || lower.includes('lacs')) {
-                        parsedValue *= 100000;
-                      } else if (lower.includes('crore') || lower.includes('crores')) {
-                        parsedValue *= 10000000;
-                      } else if (parsedValue < 1000 && parsedValue > 0) {
-                        parsedValue *= 100000;
-                      }
-                      setFilterPriceRange(parsedValue);
-                    }
-                  }}
-                  className="bg-transparent border-none text-[11px] font-sans font-extrabold text-[#38BDF8] focus:outline-none w-full p-0 font-mono tracking-tight"
-                />
-              </div>
-            </div>
-
-            {/* Selector: Transmission Switch */}
-            <div className="space-y-2">
-              <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Transmission Gearbox:</label>
-              <div className="grid grid-cols-3 bg-[#080d19] p-1 rounded-xl border border-[#1e293b] text-[9px] font-mono font-bold leading-normal">
-                {['All', 'Automatic', 'Manual'].map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setFilterTransmission(mode)}
-                    className={`py-1.5 rounded-lg text-center transition-all cursor-pointer select-none ${
-                      filterTransmission === mode
-                        ? 'bg-[#38BDF8] text-black shadow-md'
-                        : 'text-gray-500 hover:text-white'
-                    }`}
-                    style={{ minHeight: '32px' }}
-                  >
-                    {mode === 'All' ? 'ALL' : mode.substring(0, 4).toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Selector: Manufacturing Year Range Selector */}
-            <div className="space-y-1.5 animate-fade-in text-left">
-              <label className="text-gray-400 font-bold uppercase tracking-wider text-[9px] block">Manufacturing Year Range:</label>
-              <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div className="space-y-1">
-                  <span className="text-[7.5px] uppercase font-bold text-gray-500 block">Min Year:</span>
-                  <select
-                    value={filterYearMin}
-                    onChange={(e) => setFilterYearMin(parseInt(e.target.value))}
-                    className="w-full bg-[#080d19] border border-[#1e293b] text-white font-mono rounded-lg p-2 focus:outline-none focus:border-[#38BDF8] cursor-pointer"
-                  >
-                    {Array.from({ length: 27 }, (_, i) => 2000 + i).map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[7.5px] uppercase font-bold text-gray-500 block">Max Year:</span>
-                  <select
-                    value={filterYearMax}
-                    onChange={(e) => setFilterYearMax(parseInt(e.target.value))}
-                    className="w-full bg-[#080d19] border border-[#1e293b] text-white font-mono rounded-lg p-2 focus:outline-none focus:border-[#38BDF8] cursor-pointer"
-                  >
-                    {Array.from({ length: 27 }, (_, i) => 2000 + i).map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Visual reassurance stamp */}
-            <div className="bg-[#080d19] p-3 rounded-xl border border-white/5 text-center flex flex-col items-center gap-1.5 select-none">
-              <ShieldCheck size={14} className="text-[#38BDF8] animate-pulse" />
-              <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-white/80">Real-Time Sync Ready</span>
-            </div>
-
-          </div>
-
+          )}
         </div>
 
-      </div>
-
-      </>
-      )}
-
-      {/* MOBILE BOTTOM SHEET FOR GLASS PARAMETERS SELECTION */}
-      {isBottomSheetOpen && activeSheetField && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md bg-[#0f172a]/95 border-t border-white/10 rounded-t-3xl p-6 space-y-6 shadow-2xl animate-scale-fade pb-safe max-h-[85vh] overflow-y-auto">
-            
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <span className="font-mono text-[10px] font-black uppercase text-[#38BDF8] tracking-widest flex items-center gap-1.5">
-                <Compass size={12} className="text-orange-500" /> Filter parameter select
-              </span>
-              <button 
-                onClick={() => setIsBottomSheetOpen(false)}
-                className="bg-white/5 hover:bg-white/10 p-2 rounded-xl text-gray-400 hover:text-white cursor-pointer"
-                style={{ minHeight: '44px', minWidth: '44px' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {activeSheetField === 'keywords' && (
-              <div className="space-y-4">
-                <p className="text-xs text-gray-400">Match active specs from engine catalogs:</p>
-                <div className="p-3 bg-[#070c12] rounded-xl border border-white/5 flex items-center gap-2">
-                  <Search size={14} className="text-[#38BDF8]" />
-                  <input
-                    type="text"
-                    placeholder="Type brand, color, engine specs..."
-                    value={filterSearch}
-                    onChange={(e) => setFilterSearch(e.target.value)}
-                    className="bg-transparent text-xs text-white border-none focus:outline-none w-full font-mono"
-                    style={{ minHeight: '36px' }}
-                    autoFocus
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-2">
-                  {['Toyota', 'Honda', 'Suzuki', 'BYD', 'Zeekr', 'Sedan', 'SUV', 'Electric'].map((keyword) => (
-                    <button
-                      key={keyword}
-                      onClick={() => { setFilterSearch(keyword); setIsBottomSheetOpen(false); }}
-                      className="p-2.5 rounded-xl bg-white/5 hover:bg-[#38BDF8]/10 hover:text-[#38BDF8] border border-white/5 text-[10.5px] font-mono uppercase font-bold text-left cursor-pointer"
-                      style={{ minHeight: '44px' }}
-                    >
-                      ✦ {keyword}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeSheetField === 'city' && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center bg-white/5 p-2 rounded-2xl border border-white/5">
-                  <span className="text-[10px] text-gray-400 font-mono font-bold uppercase tracking-wider">PAKISTAN LOCALIZATION MATRIX</span>
-                  <button
-                    onClick={() => { setFilterCity('All'); setIsBottomSheetOpen(false); }}
-                    className={`cursor-pointer px-3 py-1.5 rounded-xl text-[9px] font-mono font-black uppercase transition-all ${
-                      filterCity === 'All'
-                        ? 'bg-orange-500 text-black shadow-md shadow-orange-500/20'
-                        : 'bg-white/5 text-gray-400 hover:text-white'
-                    }`}
-                  >
-                    Nationwide (All)
-                  </button>
-                </div>
-                
-                <div className="space-y-4 max-h-[48vh] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-800">
-                  {PAKISTAN_CITIES_MATRIX.map((group) => (
-                    <div key={group.province} className="space-y-1.5 border-b border-white/5 last:border-none pb-2.5 last:pb-0">
-                      <div className="text-[8px] font-mono font-black tracking-widest text-[#38BDF8] uppercase pl-1">
-                        {group.province}
-                      </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {group.cities.map((ct) => (
-                          <button
-                            key={ct}
-                            onClick={() => { setFilterCity(ct); setIsBottomSheetOpen(false); }}
-                            className={`p-2.5 rounded-xl text-left font-mono font-bold uppercase transition-all text-[9.5px] flex items-center justify-between cursor-pointer border ${
-                              filterCity === ct 
-                                ? 'bg-[#38BDF8]/20 text-[#38BDF8] border-[#38BDF8]/50 shadow-[0_0_12px_rgba(56,189,248,0.15)]' 
-                                : 'bg-white/[0.02] hover:bg-white/[0.05] text-slate-300 border-white/5 hover:border-white/10'
-                            }`}
-                            style={{ minHeight: '40px' }}
-                          >
-                            <span className="truncate">{ct}</span>
-                            {filterCity === ct && <Check size={10} className="shrink-0 text-[#38BDF8] ml-1" />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeSheetField === 'budget' && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-[10.5px] font-mono">
-                  <span className="text-gray-400 uppercase font-black">MAX BUDGET VALUE:</span>
-                  <span className="text-orange-400 font-extrabold uppercase">Rs. {(filterPriceRange / 100000).toLocaleString()} Lac</span>
-                </div>
-                <input
-                  type="range"
-                  min={2000000}
-                  max={50000000}
-                  step={500000}
-                  value={filterPriceRange}
-                  onChange={(e) => setFilterPriceRange(parseInt(e.target.value))}
-                  className="w-full h-2 bg-slate-800 rounded appearance-none cursor-pointer accent-orange-500 my-4"
-                />
-                <button
-                  onClick={() => setIsBottomSheetOpen(false)}
-                  className="w-full bg-[#38BDF8] text-black font-semibold uppercase text-xs tracking-wider py-3.5 rounded-xl block cursor-pointer transition-transform duration-100 active:scale-95"
-                  style={{ minHeight: '48.5px' }}
-                >
-                  Save Constraints
-                </button>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
-
-      {/* 5. BAZAR360 DIRECT VIP TRADE INTAKE DRAWER OVERLAY */}
-      {isDirectTradeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in relative">
-          <div className="relative w-full max-w-lg bg-[#0a1120] border border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl pointer-events-none"></div>
-            
-            {/* Close Button */}
+        {/* Right Side: Featured Showrooms (1 col wide) */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-baseline">
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-wider font-sans border-l-4 border-[#38bdf8] pl-3">
+              {t.showroomsTitle}
+            </h2>
             <button
-              onClick={() => setIsDirectTradeOpen(false)}
-              className="absolute top-4 right-4 bg-white/5 hover:bg-white/10 p-2.5 rounded-xl text-gray-400 hover:text-white transition-colors cursor-pointer select-none"
-              style={{ minHeight: '44px', minWidth: '44px' }}
+              onClick={() => setTab('dealers')}
+              className="text-xs md:text-sm font-sans font-bold text-[#38bdf8] hover:text-white transition-colors cursor-pointer"
             >
-              <X size={16} />
+              {t.viewAll}
             </button>
-
-            {/* Title / Brand */}
-            <div className="space-y-1">
-              <span className="text-[10px] font-mono text-[#38BDF8] font-black tracking-widest uppercase bg-[#38BDF8]/10 px-2.5 py-0.5 rounded border border-[#38BDF8]/20">
-                ★ BAZAR360 Direct VIP Trade
-              </span>
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Requirement Intake</h3>
-              <p className="text-gray-400 text-xs font-sans leading-relaxed">
-                Connect immediately with Executive Trade Manager <strong className="text-white">Muhammad Amjid</strong> (Direct Secure Hotline: <a href="tel:03149198403" className="text-orange-400 hover:underline font-bold font-mono">03149198403</a>) to source custom specs or list fast.
-              </p>
-            </div>
-
-            {/* Intake Form */}
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const textMessage = `--- BAZAR360 DIRECT TRADE VIP QUERY ---\n\nManager: Muhammad Amjid\nClient Requirements: ${directTradeForm.requirements || 'N/A'}\nBudget Threshold: ${directTradeForm.budget || 'N/A'}\nFast-Track Query: ${directTradeForm.query || 'N/A'}`;
-              
-              dbSaveLead({
-                id: `lead-trade-${Date.now()}`,
-                type: 'VIP Direct Trade',
-                title: 'High-End VIP Sourcing Query',
-                userName: currentUser?.displayName || 'Guest Prospect',
-                userPhone: currentUser?.phoneNumber || 'N/A',
-                userEmail: currentUser?.email || 'N/A',
-                city: currentUser?.city || 'Lahore',
-                details: `Requirements: ${directTradeForm.requirements || 'N/A'}\nBudget Limit: ${directTradeForm.budget || 'N/A'}\nForm Notes: ${directTradeForm.query || 'N/A'}`,
-                createdAt: new Date().toISOString()
-              });
-
-              const whatsappUrl = `https://wa.me/923149198403?text=${encodeURIComponent(textMessage)}`;
-              window.open(whatsappUrl, '_blank');
-              setIsDirectTradeOpen(false);
-            }} className="space-y-4 font-sans text-xs">
-              
-              <div className="space-y-1.5 text-left">
-                <label className="text-white/60 font-mono font-bold uppercase tracking-wider text-[9px] block">High-End Vehicle Requirements</label>
-                <textarea
-                  required
-                  placeholder="e.g., Toyota Land Cruiser ZX 2024, White, Karachi Registered..."
-                  value={directTradeForm.requirements}
-                  onChange={(e) => setDirectTradeForm({...directTradeForm, requirements: e.target.value})}
-                  className="w-full bg-[#121c32] border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 focus:outline-none focus:border-[#38BDF8]/40 h-20 resize-none font-bold text-xs"
-                />
-              </div>
-
-              <div className="space-y-1.5 text-left">
-                <label className="text-white/60 font-mono font-bold uppercase tracking-wider text-[9px] block">Budget Limit Threshold (PKR / Lac)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g., 5.5 Crore or 350 Lac"
-                  value={directTradeForm.budget}
-                  onChange={(e) => setDirectTradeForm({...directTradeForm, budget: e.target.value})}
-                  className="w-full bg-[#121c32] border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 focus:outline-none focus:border-[#38BDF8]/40 font-bold text-xs"
-                  style={{ minHeight: '44px' }}
-                />
-              </div>
-
-              <div className="space-y-1.5 text-left">
-                <label className="text-white/60 font-mono font-bold uppercase tracking-wider text-[9px] block">Fast-Track Ad Submission Queries / Special Notes</label>
-                <textarea
-                  placeholder="Notes for our senior board regarding delivery schedule, trade-ins, or files..."
-                  value={directTradeForm.query}
-                  onChange={(e) => setDirectTradeForm({...directTradeForm, query: e.target.value})}
-                  className="w-full bg-[#121c32] border border-white/10 rounded-xl p-3 text-white placeholder-gray-600 focus:outline-none focus:border-[#38BDF8]/40 h-16 resize-none font-bold text-xs"
-                />
-              </div>
-
-              <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                <button
-                  type="submit"
-                  className="flex-grow flex-[2] bg-[#f97316] text-[#030712] hover:bg-orange-400 py-3 px-4 rounded-xl font-mono text-[10.5px] font-black uppercase tracking-wider shadow-lg shadow-orange-500/10 active:scale-[0.98] transition-all cursor-pointer"
-                  style={{ minHeight: '48px' }}
-                >
-                  Submit to Management (WhatsApp)
-                </button>
-                <a
-                  href="tel:03149198403"
-                  className="flex-grow flex-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-center flex items-center justify-center font-mono text-[10.5px] font-black uppercase text-white duration-100 cursor-pointer"
-                  style={{ minHeight: '48px' }}
-                >
-                  Cellular Call
-                </a>
-              </div>
-
-            </form>
           </div>
-        </div>
-      )}
 
-      {/* Floating Custom Overlay Modal for Expansion Details */}
-      {selectedFutureSector && (
-        <div className="fixed inset-0 bg-[#02050e]/90 backdrop-blur-md flex items-center justify-center z-50 p-4 transition-all duration-200">
-          <div className="bg-[#0c1322] border border-[#38BDF8]/30 max-w-lg w-full rounded-3xl p-6.5 space-y-4 shadow-2xl relative">
-            <button 
-              onClick={() => setSelectedFutureSector(null)} 
-              className="absolute top-4 right-4 bg-white/5 hover:bg-white/10 hover:text-white text-gray-400 p-2 rounded-xl transition-all cursor-pointer"
-            >
-              <X size={16} />
-            </button>
-
-            <div className="flex items-center gap-3.5 pt-2 text-left">
-              <div className="text-3xl bg-[#38BDF8]/10 p-3 rounded-2xl border border-[#38BDF8]/20">{selectedFutureSector.icon}</div>
-              <div>
-                <h3 className="text-lg font-black uppercase text-white tracking-tight">{selectedFutureSector.title}</h3>
-                <p className="text-[#38BDF8] font-mono text-[10px] font-black uppercase tracking-widest">Active Development Channel</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-2 text-left">
-              <div className="bg-[#050912] p-4 rounded-2xl border border-white/5">
-                <span className="text-[8px] uppercase tracking-wider text-orange-400 font-mono block font-black mb-1">Target Mission Statement:</span>
-                <p className="text-white font-sans font-bold text-xs">{selectedFutureSector.tagline}</p>
-              </div>
-
-              <div className="bg-[#050912] p-4 rounded-2xl border border-white/5">
-                <span className="text-[8px] uppercase tracking-wider text-[#38BDF8] font-mono block font-black mb-1">Functional Outline:</span>
-                <p className="text-gray-300 text-xs font-sans leading-relaxed">{selectedFutureSector.desc}</p>
-              </div>
-
-              <div className="bg-[#12221b]/40 border border-[#22c55e]/20 p-3 rounded-xl text-[10px] text-green-400 font-mono">
-                🚀 {selectedFutureSector.spec}
-              </div>
-            </div>
-
-            <div className="pt-2 text-center">
-              <button 
-                onClick={() => setSelectedFutureSector(null)}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 text-slate-950 font-mono font-black py-3 px-6 rounded-xl w-full text-xs uppercase hover:from-orange-600 hover:to-orange-700 active:scale-[0.98] duration-100 cursor-pointer shadow-lg"
+          <div className="space-y-4">
+            {dealers.slice(0, 3).map((showroom) => (
+              <div
+                key={showroom.id}
+                onClick={() => onSelectDealer(showroom.id)}
+                className="bg-[#0b0f19] border border-white/5 hover:border-[#38bdf8]/40 p-4 rounded-2xl flex items-center gap-4 transition-all hover:-translate-y-0.5 cursor-pointer select-none group"
               >
-                Confirm Understanding & Return
-              </button>
-            </div>
+                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center text-black font-black text-lg shadow-md shrink-0">
+                  {showroom.avatarLetter}
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h3 className="text-xs md:text-sm font-sans font-black text-white group-hover:text-[#38bdf8] transition-colors truncate uppercase">
+                    {showroom.name}
+                  </h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-[10px] text-gray-500 font-sans flex items-center gap-0.5">
+                      <Star size={10} className="fill-amber-500 text-amber-500" />
+                      {showroom.rating}
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-sans flex items-center gap-1">
+                      <MapPin size={10} className="text-[#38bdf8]" />
+                      {showroom.location.split(',')[0]}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-gray-500 group-hover:text-white transition-colors" />
+              </div>
+            ))}
           </div>
         </div>
-      )}
+
+      </section>
+
+      {/* SECTION 4: WHY BAZAR360 & CTA POST BANNER */}
+      <section className="space-y-12">
+        
+        {/* Why Bazar360 Cards Grid */}
+        <div className="space-y-6">
+          <h2 className="text-lg md:text-xl font-black uppercase tracking-wider text-center font-sans">
+            {t.whyTitle}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {t.whyCards.map((card, i) => {
+              const icons = [ShieldCheck, Zap, TrendingUp];
+              const IconComp = icons[i];
+              return (
+                <div
+                  key={i}
+                  className="bg-[#0b0f19] border border-white/5 p-6 rounded-2xl flex flex-col items-center text-center space-y-4 hover:border-[#38bdf8]/20 transition-all shadow-md"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-[#38bdf8]/10 text-[#38bdf8] flex items-center justify-center">
+                    <IconComp size={24} />
+                  </div>
+                  <h3 className="font-sans font-extrabold text-base text-white uppercase tracking-tight">
+                    {card.title}
+                  </h3>
+                  <p className="text-gray-400 text-xs md:text-sm leading-relaxed font-sans">
+                    {card.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* CTA Selling Banner (Screen 4 version) */}
+        <div className="relative rounded-3xl bg-gradient-to-r from-[#0b1329] via-[#030712] to-[#0b1329] border border-white/5 p-8 md:p-12 overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#38bdf8]/5 rounded-full blur-[80px] pointer-events-none"></div>
+          
+          <div className="space-y-3 max-w-2xl text-center md:text-left">
+            <span className="text-[10px] font-mono font-black text-[#38bdf8] bg-[#38bdf8]/10 px-3 py-1 rounded-full border border-[#38bdf8]/20 uppercase tracking-widest">
+              ⚡ 1-Click AI Selling Sensation
+            </span>
+            <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight font-sans">
+              {t.ctaTitle}
+            </h3>
+            <p className="text-gray-400 text-xs md:text-sm font-sans leading-relaxed">
+              {t.ctaSubtitle}
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 w-full sm:w-auto">
+            <button
+              onClick={() => setTab('sell')}
+              className="w-full sm:w-auto bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-sans font-extrabold text-xs md:text-sm uppercase tracking-wider px-6 py-4 rounded-xl transition-all cursor-pointer whitespace-nowrap active:scale-95 shadow-md shadow-[#0ea5e9]/20 flex items-center justify-center gap-2"
+              style={{ minHeight: '48px' }}
+            >
+              <PlusCircle size={16} />
+              {t.sellBtn}
+            </button>
+            <button
+              onClick={() => setTab('inventory')}
+              className="w-full sm:w-auto bg-transparent hover:bg-white/5 text-gray-400 hover:text-white font-sans font-bold text-xs md:text-sm uppercase tracking-wide px-5 py-4 rounded-xl transition-all border border-white/10 flex items-center justify-center"
+              style={{ minHeight: '48px' }}
+            >
+              {t.browseBtn}
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      {/* SECTION 5: CUSTOMER REVIEWS */}
+      <section className="space-y-6">
+        <h2 className="text-lg md:text-xl font-black uppercase tracking-wider text-center font-sans">
+          {t.reviewsTitle}
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {t.reviews.map((rev, i) => (
+            <div
+              key={i}
+              className="bg-[#0b0f19] border border-white/5 p-6 rounded-2xl flex flex-col space-y-4 shadow-md relative"
+            >
+              <Quote size={24} className="text-[#38bdf8]/20 absolute top-4 right-4" />
+              
+              {/* Stars */}
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map(star => (
+                  <Star key={star} size={14} className="fill-amber-500 text-amber-500" />
+                ))}
+              </div>
+
+              {/* Text */}
+              <p className="text-gray-400 text-xs md:text-sm leading-relaxed font-sans italic">
+                "{rev.text}"
+              </p>
+
+              {/* User Identity */}
+              <div className="pt-4 border-t border-white/5 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-[#38bdf8] font-sans font-black text-xs">
+                  {rev.name[0]}
+                </div>
+                <div>
+                  <h4 className="text-xs md:text-sm font-sans font-extrabold text-white uppercase tracking-tight">
+                    {rev.name}
+                  </h4>
+                  <p className="text-[10px] text-gray-500 font-sans uppercase tracking-wider flex items-center gap-1 mt-0.5">
+                    <CheckCircle2 size={10} className="text-emerald-500" />
+                    {rev.city}
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          ))}
+        </div>
+      </section>
 
     </div>
   );
