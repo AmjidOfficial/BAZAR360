@@ -71,6 +71,20 @@ export const PRESETS = [
       accentMain: '#c5a880',
       accentHover: '#e1cdb5'
     }
+  },
+  {
+    id: 'crisp-navy-light',
+    name: 'Crisp Navy Light',
+    desc: 'Clean crisp white and light grey with elegant deep navy text.',
+    vars: {
+      bgPrimary: '#ffffff',
+      bgSecondary: '#f1f5f9',
+      textMain: '#0f172a',
+      textMuted: '#475569',
+      borderMain: '#cbd5e1',
+      accentMain: '#1e40af',
+      accentHover: '#1d4ed8'
+    }
   }
 ];
 

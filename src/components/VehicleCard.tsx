@@ -45,10 +45,10 @@ export function VehicleCard({
   return (
     <div
       onClick={() => onSelect(car)}
-      className="group bg-[#1E293B] border border-white/5 hover:border-[#2563EB] rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_10px_30px_rgba(37,99,235,0.15)] flex flex-col h-full cursor-pointer"
+      className="group bg-bg-secondary border border-border-main hover:border-accent-main rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg flex flex-col h-full cursor-pointer text-text-main"
     >
       {/* Image & Status Area */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-slate-950 shrink-0">
+      <div className="relative aspect-[16/10] overflow-hidden bg-bg-primary shrink-0">
         <img
           src={car.images?.[0] || car.imageUrl || 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&q=80&w=600'}
           alt={`${car.make} ${car.model}`}
@@ -65,7 +65,7 @@ export function VehicleCard({
             </span>
           )}
           {car.verified && (
-            <span className="bg-[#1e293b]/90 text-sky-400 border border-sky-500/30 text-[9px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-1 backdrop-blur-xs">
+            <span className="bg-bg-secondary/90 text-accent-main border border-accent-main/30 text-[9px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-1 backdrop-blur-xs">
               <ShieldCheck size={11} /> Verified
             </span>
           )}
@@ -84,7 +84,7 @@ export function VehicleCard({
             }}
             className={`absolute top-3 right-3 z-20 w-7 h-7 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
               isComparing
-                ? 'bg-[#2563EB] border-[#3B82F6] text-white'
+                ? 'bg-accent-main border-accent-main text-bg-primary'
                 : 'bg-black/60 border-white/10 text-gray-300 hover:border-white/30 hover:text-white'
             }`}
             title={isComparing ? 'Remove from compare list' : 'Add to compare list'}
@@ -113,35 +113,35 @@ export function VehicleCard({
       </div>
 
       {/* Details Box */}
-      <div className="p-4 flex flex-col flex-1 text-left">
+      <div className="p-4 flex flex-col flex-1 text-left bg-bg-secondary">
         {/* Title */}
-        <h3 className="text-sm font-sans font-extrabold text-white group-hover:text-orange-500 transition-colors line-clamp-1 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-sans font-black text-text-main group-hover:text-accent-main transition-colors line-clamp-1 flex items-center justify-between gap-2">
           <span>{car.make} {car.model}</span>
-          <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-orange-500 shrink-0" />
+          <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-accent-main shrink-0" />
         </h3>
 
         {/* Location & City Tag */}
-        <div className="flex items-center gap-1 text-[#CBD5E1] text-[10px] mt-1 uppercase font-mono tracking-wider">
-          <MapPin size={11} className="text-orange-500 shrink-0" />
+        <div className="flex items-center gap-1 text-text-muted text-[10px] mt-1 uppercase font-mono tracking-wider font-bold">
+          <MapPin size={11} className="text-accent-main shrink-0" />
           <span>{car.registrationCity || 'Unregistered'}</span>
         </div>
 
         {/* Technical Data Grid */}
-        <div className="grid grid-cols-2 gap-y-2 gap-x-4 border-y border-white/5 py-3 my-3">
-          <div className="flex items-center gap-1.5 text-[#CBD5E1] text-[11px] font-mono">
-            <Gauge size={12} className="text-slate-400 shrink-0" />
+        <div className="grid grid-cols-2 gap-y-2 gap-x-4 border-y border-border-main py-3 my-3">
+          <div className="flex items-center gap-1.5 text-text-muted text-[11px] font-mono font-medium">
+            <Gauge size={12} className="text-text-muted/60 shrink-0" />
             <span>{car.mileage.toLocaleString()} km</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[#CBD5E1] text-[11px] font-mono">
-            <Fuel size={12} className="text-slate-400 shrink-0" />
+          <div className="flex items-center gap-1.5 text-text-muted text-[11px] font-mono font-medium">
+            <Fuel size={12} className="text-text-muted/60 shrink-0" />
             <span>{car.fuelType}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[#CBD5E1] text-[11px] font-mono">
-            <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider shrink-0">TRANS</span>
+          <div className="flex items-center gap-1.5 text-text-muted text-[11px] font-mono font-medium">
+            <span className="text-[9px] font-black uppercase text-text-muted/60 tracking-wider shrink-0">TRANS</span>
             <span className="truncate">{car.transmission}</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[#CBD5E1] text-[11px] font-mono">
-            <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider shrink-0">ENGINE</span>
+          <div className="flex items-center gap-1.5 text-text-muted text-[11px] font-mono font-medium">
+            <span className="text-[9px] font-black uppercase text-text-muted/60 tracking-wider shrink-0">ENGINE</span>
             <span>{car.engineCC ? `${car.engineCC}cc` : car.specs?.engineSize || 'N/A'}</span>
           </div>
         </div>
@@ -149,8 +149,8 @@ export function VehicleCard({
         {/* Price & Primary Call to Action */}
         <div className="mt-auto pt-2 flex items-center justify-between gap-4">
           <div className="flex flex-col">
-            <span className="text-[9px] font-mono uppercase text-slate-400 tracking-wider">Asking Price</span>
-            <span className="text-sm font-sans font-black text-orange-500 tracking-tight">
+            <span className="text-[9px] font-mono uppercase text-text-muted/70 tracking-wider font-bold">Asking Price</span>
+            <span className="text-sm font-sans font-black text-accent-main tracking-tight">
               {formatPrice(car.price)}
             </span>
           </div>
@@ -158,7 +158,7 @@ export function VehicleCard({
           <div className="flex items-center gap-1">
             <button
               onClick={handleWhatsAppClick}
-              className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-xl transition-all hover:scale-105"
+              className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 border border-emerald-500/20 rounded-xl transition-all hover:scale-105 cursor-pointer"
               title="Chat on WhatsApp"
             >
               <svg className="w-4.5 h-4.5 fill-current" viewBox="0 0 24 24">
@@ -167,7 +167,7 @@ export function VehicleCard({
             </button>
             <button
               onClick={handleCallClick}
-              className="px-3.5 py-2.5 bg-[#2563EB] hover:bg-[#3B82F6] text-white font-sans font-black rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center gap-1.5"
+              className="px-3.5 py-2.5 bg-accent-main hover:bg-accent-hover text-bg-primary font-sans font-black rounded-xl transition-all text-[11px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
             >
               <Phone size={12} /> Contact
             </button>

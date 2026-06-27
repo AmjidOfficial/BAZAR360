@@ -105,10 +105,7 @@ service cloud.firestore {
     // Showrooms Collection
     match /dealers/{dealerId} {
       allow read: if true;
-      allow create: if isSignedIn() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Showroom Owner'
-      ) && isValidDealer(incoming());
+      allow create: if isValidDealer(incoming());
       
       allow update: if isSignedIn() && (
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||

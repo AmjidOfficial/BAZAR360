@@ -77,7 +77,8 @@ export default function AppWrapper() {
       <Router>
         <Routes>
           <Route path="/" element={<App />} />
-          <Route path="/dealers/:showroomSlug" element={<ShowroomProfile />} />
+          <Route path="/dealers/:showroomSlug" element={<App />} />
+          <Route path="/dealers/:showroomSlug/listings/:listingId" element={<App />} />
           <Route path="/showroom/:showroomSlug" element={<ShowroomProfile />} />
         </Routes>
       </Router>
@@ -1425,7 +1426,7 @@ function App() {
           </div>
         )}
 
-        {dbLoading ? (
+        {dbLoading && currentTab !== 'home' && currentTab !== 'inventory' && currentTab !== 'search' ? (
           <div className="flex flex-col items-center justify-center p-12 min-h-[50vh] space-y-4">
             <div className="relative">
               <Hourglass className="animate-spin text-[#38BDF8]" size={36} />
@@ -1452,6 +1453,7 @@ function App() {
               <HomeView
                 dealers={dealers}
                 listings={prioritizedListings}
+                dbLoading={dbLoading}
                 setTab={setTab}
                 setSelectedCategory={setSelectedCategory}
                 setSearchQuery={setSearchQuery}
@@ -1469,6 +1471,7 @@ function App() {
               <SearchExplorerView
                 listings={prioritizedListings}
                 dealers={dealers}
+                dbLoading={dbLoading}
                 selectedCategory={selectedCategory}
                 setSelectedCategory={setSelectedCategory}
                 searchQuery={searchQuery}

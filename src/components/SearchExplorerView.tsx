@@ -14,11 +14,13 @@ import {
 } from 'lucide-react';
 import { CarListing, Dealer } from '../types';
 import { VehicleCard } from './VehicleCard';
+import { VehicleSkeletonCard } from './VehicleSkeletonCard';
 import { motion } from 'motion/react';
 
 interface SearchExplorerViewProps {
   listings: CarListing[];
   dealers: Dealer[];
+  dbLoading?: boolean;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   searchQuery: string;
@@ -51,7 +53,8 @@ export default function SearchExplorerView({
   compareList = [],
   currentUser,
   currentCategory = 'auto',
-  lang = 'en'
+  lang = 'en',
+  dbLoading = false
 }: SearchExplorerViewProps) {
   
   // Filter States
@@ -68,6 +71,15 @@ export default function SearchExplorerView({
   const [yearMax, setYearMax] = useState<number>(2026);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [sortBy, setSortBy] = useState('Newest');
+
+  // Pagination States
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
+
+  // Reset pagination to Page 1 when filters or sorting change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [localQuery, filterMake, filterModel, filterCity, filterTransmission, filterFuel, filterCondition, priceMin, priceMax, yearMin, yearMax, sortBy]);
 
   // Synchronize category or search query updates from Home view brand clicks
   useEffect(() => {
@@ -242,6 +254,13 @@ export default function SearchExplorerView({
     }
     return list;
   }, [filteredVehicles, sortBy]);
+
+  // Derived Pagination metrics
+  const totalPages = Math.max(1, Math.ceil(sortedVehicles.length / itemsPerPage));
+  const paginatedVehicles = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedVehicles.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedVehicles, currentPage]);
 
   const formatPriceNum = (num: number) => {
     if (num >= 10000000) {
@@ -479,28 +498,111 @@ export default function SearchExplorerView({
             <span className="hidden sm:inline">Auto Choice Premium Partner</span>
           </div>
 
-          {sortedVehicles.length > 0 ? (
+          {dbLoading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {sortedVehicles.map((car, index) => (
-                <motion.div
-                  key={car.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.4,
-                    delay: Math.min(index * 0.04, 0.45),
-                    ease: [0.215, 0.610, 0.355, 1.000],
-                  }}
-                >
-                  <VehicleCard
-                    car={car}
-                    dealer={dealers.find((d) => d.id === car.dealerId)}
-                    onSelect={onSelectListing}
-                    onToggleCompare={onToggleCompare}
-                    isComparing={compareList.some((c) => c.id === car.id)}
-                  />
-                </motion.div>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <VehicleSkeletonCard key={i} />
               ))}
+            </div>
+          ) : sortedVehicles.length > 0 ? (
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {paginatedVehicles.map((car, index) => (
+                  <motion.div
+                    key={car.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.4,
+                      delay: Math.min(index * 0.04, 0.45),
+                      ease: [0.215, 0.610, 0.355, 1.000],
+                    }}
+                  >
+                    <VehicleCard
+                      car={car}
+                      dealer={dealers.find((d) => d.id === car.dealerId)}
+                      onSelect={onSelectListing}
+                      onToggleCompare={onToggleCompare}
+                      isComparing={compareList.some((c) => c.id === car.id)}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Microsoft-Style Professional Pagination Card */}
+              {totalPages > 1 && (
+                <div className="bg-bg-secondary border border-border-main rounded-3xl p-4 md:p-5 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-xl select-none text-text-main animate-fade-in" id="microsoft-style-pagination">
+                  <span className="text-xs font-mono font-bold text-text-muted uppercase">
+                    Page <strong className="text-text-main font-black">{currentPage}</strong> of <strong className="text-text-main font-black">{totalPages}</strong> ({sortedVehicles.length} total vehicles)
+                  </span>
+                  
+                  <div className="flex items-center gap-1 flex-wrap justify-center">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => {
+                        setCurrentPage(prev => Math.max(prev - 1, 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 text-xs font-extrabold uppercase rounded-xl tracking-wider transition-all duration-150 ${
+                        currentPage === 1
+                          ? 'text-text-muted/40 bg-bg-primary/50 cursor-not-allowed border border-border-main/50'
+                          : 'text-text-main hover:bg-bg-primary bg-bg-secondary border border-border-main active:scale-95 cursor-pointer'
+                      }`}
+                    >
+                      ← Previous
+                    </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }).map((_, i) => {
+                      const pageNum = i + 1;
+                      // Display rule: Show current page, previous 1, and next 1, plus bounds
+                      const isVisible = Math.abs(currentPage - pageNum) <= 1 || pageNum === 1 || pageNum === totalPages;
+                      
+                      if (!isVisible) {
+                        // Show ellipsis if needed
+                        if (pageNum === 2 || pageNum === totalPages - 1) {
+                          return <span key={pageNum} className="px-1.5 text-text-muted/60 font-extrabold">...</span>;
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => {
+                            setCurrentPage(pageNum);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className={`w-9 h-9 text-xs font-black rounded-xl transition-all duration-150 active:scale-95 cursor-pointer ${
+                            currentPage === pageNum
+                              ? 'bg-accent-main text-bg-primary shadow-md border border-accent-main'
+                              : 'text-text-main hover:bg-bg-primary bg-bg-secondary border border-border-main'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => {
+                        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 text-xs font-extrabold uppercase rounded-xl tracking-wider transition-all duration-150 ${
+                        currentPage === totalPages
+                          ? 'text-text-muted/40 bg-bg-primary/50 cursor-not-allowed border border-border-main/50'
+                          : 'text-text-main hover:bg-bg-primary bg-bg-secondary border border-border-main active:scale-95 cursor-pointer'
+                      }`}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-[#0b0f19] border border-white/5 rounded-3xl p-16 text-center flex flex-col items-center justify-center space-y-6">

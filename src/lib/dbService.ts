@@ -48,18 +48,12 @@ const USERS_COLLECTION = 'users';
 // Seed Database helper
 export async function seedDatabaseIfEmpty() {
   try {
-    if (typeof window !== 'undefined' && localStorage.getItem('bazar360_db_seeded') === 'true') {
-      console.log('BAZAR360 database already seeded on this client. Skipping check.');
-      return;
-    }
-  } catch(e) {}
-
-  try {
-    // Check sentinel document first to avoid 20+ parallel read queries
+    // Check sentinel document to avoid 20+ parallel read queries. This is extremely fast (1 document read)
+    // and ensures that if Firestore is ever reset, it auto-re-seeds on the next visit.
     const sentinelRef = doc(db, 'system', 'seeded');
     const sentinelSnap = await getDoc(sentinelRef);
     if (sentinelSnap.exists() && sentinelSnap.data()?.completed === true) {
-      console.log('Firestore backend reports database is already fully seeded. Saving Client index.');
+      console.log('Firestore backend reports database is already fully seeded.');
       if (typeof window !== 'undefined') {
         try { localStorage.setItem('bazar360_db_seeded', 'true'); } catch(e) {}
       }

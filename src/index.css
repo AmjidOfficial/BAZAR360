@@ -53,13 +53,13 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Explicit Light Mode Override class */
 .light {
-  --color-bg-primary: #fafafa;
-  --color-bg-secondary: #ffffff;
-  --color-text-main: #0c0a09;
-  --color-text-muted: #57534e;
-  --color-border-main: #e7e5e4;
-  --color-accent-main: #0284c7;
-  --color-accent-hover: #0369a1;
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f1f5f9;
+  --color-text-main: #0f172a;
+  --color-text-muted: #475569;
+  --color-border-main: #cbd5e1;
+  --color-accent-main: #1e40af;
+  --color-accent-hover: #1d4ed8;
 }
 
 /* Explicit Dark Mode Override class (Upgraded to Gateway Space Dark) */
@@ -75,13 +75,13 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Legacy theme classes for backward-compatibility */
 .theme-luxury-light {
-  --color-bg-primary: #fafafa;
-  --color-bg-secondary: #ffffff;
-  --color-text-main: #0c0a09;
-  --color-text-muted: #57534e;
-  --color-border-main: #e7e5e4;
-  --color-accent-main: #0284c7;
-  --color-accent-hover: #0369a1;
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f1f5f9;
+  --color-text-main: #0f172a;
+  --color-text-muted: #475569;
+  --color-border-main: #cbd5e1;
+  --color-accent-main: #1e40af;
+  --color-accent-hover: #1d4ed8;
 }
 
 .theme-cosmic-dark {

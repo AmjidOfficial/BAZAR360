@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MapPin, ShieldCheck, Mail, Phone, Star, Building, ArrowLeft } from 'lucide-react';
 import { Dealer, CarListing } from '../types';
-import { dbFetchDealers, dbFetchListings } from '../lib/dbService';
+import { dbFetchDealers, dbFetchListings, seedDatabaseIfEmpty } from '../lib/dbService';
 import { ShowroomThemeWrapper } from '../components/ShowroomThemeWrapper';
 import { VehicleCard } from '../components/VehicleCard';
 
@@ -18,6 +18,7 @@ export default function ShowroomProfile() {
     const loadProfile = async () => {
       setLoading(true);
       try {
+        await seedDatabaseIfEmpty();
         const allDealers = await dbFetchDealers();
         const allListings = await dbFetchListings();
         

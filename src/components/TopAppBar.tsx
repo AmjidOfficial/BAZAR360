@@ -1,6 +1,7 @@
-import { Bell, PlusCircle, User, ShieldAlert, LogOut, DollarSign, Wallet, Menu, Sun, Moon, Monitor } from 'lucide-react';
+import { Bell, PlusCircle, User, ShieldAlert, LogOut, DollarSign, Wallet, Menu, Sun, Moon, Monitor, LogOut as LogOutIcon } from 'lucide-react';
 import { UserProfile } from '../lib/dbService';
 import { useCurrencyMode } from '../lib/currency';
+import { useTheme } from './ThemeContext';
 
 interface TopAppBarProps {
   currentTab: string;
@@ -36,9 +37,10 @@ export default function TopAppBar({
   onLanguageToggle
 }: TopAppBarProps) {
   const { currencyMode, changeCurrencyMode } = useCurrencyMode();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className={`flex justify-between items-center w-full px-4 md:px-12 h-16 fixed top-0 z-50 bg-[#0F172A]/95 backdrop-blur-md border-b border-b-white/5 shadow-sm transition-all text-white`}>
+    <header className={`flex justify-between items-center w-full px-4 md:px-12 h-16 fixed top-0 z-50 bg-[#0F172A]/95 dark:bg-[#030712]/95 backdrop-blur-md border-b border-b-slate-200 dark:border-b-white/5 shadow-sm transition-all text-slate-800 dark:text-white`}>
       <div className="flex items-center gap-4">
 
         <div className="cursor-pointer active:scale-95 transition-transform" onClick={() => setTab('home')}>
@@ -158,6 +160,15 @@ export default function TopAppBar({
           {lang === 'en' ? 'اردو' : 'English'}
         </button>
 
+        {/* Desktop Theme Switcher */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 bg-[#1E293B]/80 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#38BDF8] rounded-xl border border-white/10 cursor-pointer transition-all active:scale-95 select-none"
+          title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
+
         <button
           onClick={onPostAdClick}
           className="flex bg-rose-600 hover:bg-rose-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-md shadow-rose-500/15 items-center gap-2 border border-rose-500/10 duration-150 tracking-wider uppercase cursor-pointer"
@@ -169,6 +180,16 @@ export default function TopAppBar({
 
       {/* Mobile-Only Language & Menu Container */}
       <div className="flex md:hidden items-center gap-2">
+        {/* Mobile Theme Switcher */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 bg-[#1E293B]/80 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#38BDF8] rounded-xl border border-white/10 cursor-pointer active:scale-95 select-none"
+          style={{ minHeight: '36px' }}
+          title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
+
         {/* Mobile-Only Language Switcher */}
         <button
           onClick={onLanguageToggle}
