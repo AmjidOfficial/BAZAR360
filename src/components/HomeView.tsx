@@ -588,7 +588,7 @@ export default function HomeView({
     >
       {/* SECTION 1: AUTO SLIDER HERO BANNER */}
       <section 
-        className="relative rounded-[32px] overflow-hidden border border-border-main bg-bg-secondary shadow-2xl h-[460px] md:h-[560px] flex flex-col justify-end cursor-pointer group/hero select-none"
+        className="relative rounded-[32px] overflow-hidden border border-border-main bg-bg-secondary shadow-2xl h-[380px] sm:h-[460px] md:h-[560px] flex flex-col justify-end cursor-pointer group/hero select-none"
         onClick={() => {
           if (activeSlides[currentSlide]) {
             onSelectListing(activeSlides[currentSlide]);
@@ -666,7 +666,7 @@ export default function HomeView({
 
                 {/* Title and details */}
                 <div className="space-y-2">
-                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight uppercase leading-tight text-white drop-shadow-sm">
+                  <h1 className="text-xl sm:text-3xl md:text-5xl lg:text-6xl font-black tracking-tight uppercase leading-tight text-white drop-shadow-sm">
                     {slide.title}
                   </h1>
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-300 text-xs md:text-sm font-sans font-semibold">
@@ -755,7 +755,7 @@ export default function HomeView({
       </section>
 
       {/* SECTION 2: SMART ADVANCED SEARCH PANEL */}
-      <section className="relative z-20 max-w-6xl mx-auto w-full -mt-24 px-4">
+      <section className="relative z-20 max-w-6xl mx-auto w-full -mt-8 sm:-mt-16 md:-mt-24 px-4">
         <div className="bg-bg-secondary border border-border-main rounded-3xl p-5 md:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] relative overflow-hidden">
           {/* Decorative Corner Glow */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-accent-main/5 rounded-full blur-3xl pointer-events-none"></div>

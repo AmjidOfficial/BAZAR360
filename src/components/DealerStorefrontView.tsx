@@ -1989,124 +1989,126 @@ export default function DealerStorefrontView({
             </div>
 
             {/* Specs matching Grid */}
-            <div className="grid grid-cols-3 gap-4 pt-2 font-mono text-center overflow-x-auto min-w-[550px] no-scrollbar">
-              
-              {/* Row 1: Images */}
-              <div className="text-left font-bold text-xs uppercase text-[#38BDF8] flex items-center">
-                Vehicle Spec Match
-              </div>
-              {selectedCompareList.map(car => (
-                <div key={car.id} className="relative bg-slate-950 p-1.5 rounded-2xl border border-white/5">
-                  <img
-                    src={car.imageUrl}
-                    alt={car.title}
-                    className="w-full h-24 object-cover rounded-xl"
-                  />
-                  <button
-                    onClick={() => {
-                      const newList = selectedCompareList.filter(item => item.id !== car.id);
-                      setSelectedCompareList(newList);
-                      if (newList.length < 2) {
-                        setIsComparing(false);
-                        showToast("Exited comparison board: Less than 2 vehicles chosen.");
-                      }
-                    }}
-                    className="absolute top-2.5 right-2.5 bg-red-650 bg-red-600 hover:bg-red-500 text-white rounded-full w-4.5 h-4.5 text-[8px] flex items-center justify-center font-black cursor-pointer shadow-lg border border-slate-950"
-                    title="Remove unit"
-                  >
-                    ✕
-                  </button>
-                  <h5 className="text-[10px] font-bold text-white uppercase truncate tracking-tight pt-1.5 px-1">{car.title}</h5>
+            <div className="w-full overflow-x-auto no-scrollbar">
+              <div className="grid grid-cols-3 gap-4 pt-2 font-mono text-center min-w-[550px]">
+                
+                {/* Row 1: Images */}
+                <div className="text-left font-bold text-xs uppercase text-[#38BDF8] flex items-center">
+                  Vehicle Spec Match
                 </div>
-              ))}
-              {/* Fill empty slots with placeholder cells to sustain 3 columns alignment */}
-              {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
-                <div key={i} className="bg-slate-950/20 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center h-28 text-white/10 text-[9px] font-bold uppercase">
-                  Empty Slot
-                </div>
-              ))}
+                {selectedCompareList.map(car => (
+                  <div key={car.id} className="relative bg-slate-950 p-1.5 rounded-2xl border border-white/5">
+                    <img
+                      src={car.imageUrl}
+                      alt={car.title}
+                      className="w-full h-24 object-cover rounded-xl"
+                    />
+                    <button
+                      onClick={() => {
+                        const newList = selectedCompareList.filter(item => item.id !== car.id);
+                        setSelectedCompareList(newList);
+                        if (newList.length < 2) {
+                          setIsComparing(false);
+                          showToast("Exited comparison board: Less than 2 vehicles chosen.");
+                        }
+                      }}
+                      className="absolute top-2.5 right-2.5 bg-red-650 bg-red-600 hover:bg-red-500 text-white rounded-full w-4.5 h-4.5 text-[8px] flex items-center justify-center font-black cursor-pointer shadow-lg border border-slate-950"
+                      title="Remove unit"
+                    >
+                      ✕
+                    </button>
+                    <h5 className="text-[10px] font-bold text-white uppercase truncate tracking-tight pt-1.5 px-1">{car.title}</h5>
+                  </div>
+                ))}
+                {/* Fill empty slots with placeholder cells to sustain 3 columns alignment */}
+                {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
+                  <div key={i} className="bg-slate-950/20 border border-dashed border-white/5 rounded-2xl flex flex-col items-center justify-center h-28 text-white/10 text-[9px] font-bold uppercase">
+                    Empty Slot
+                  </div>
+                ))}
 
-              {/* Row 2: Ex-Showroom Price Demand */}
-              <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
-                <Award size={12} className="text-[#38BDF8]" /> Ex-Showroom Ask
-              </div>
-              {selectedCompareList.map(car => (
-                <div key={car.id} className="border-b border-white/5 py-4 flex flex-col justify-center items-center">
-                  <span className={`${theme.ctaText} font-black text-xs md:text-sm`}>
-                    {renderPrice(car.price)}
-                  </span>
-                  <span className="text-[7.5px] text-white/30 uppercase mt-0.5">Customs Verified</span>
+                {/* Row 2: Ex-Showroom Price Demand */}
+                <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
+                  <Award size={12} className="text-[#38BDF8]" /> Ex-Showroom Ask
                 </div>
-              ))}
-              {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
-                <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
-              ))}
+                {selectedCompareList.map(car => (
+                  <div key={car.id} className="border-b border-white/5 py-4 flex flex-col justify-center items-center">
+                    <span className={`${theme.ctaText} font-black text-xs md:text-sm`}>
+                      {renderPrice(car.price)}
+                    </span>
+                    <span className="text-[7.5px] text-white/30 uppercase mt-0.5">Customs Verified</span>
+                  </div>
+                ))}
+                {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
+                  <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
+                ))}
 
-              {/* Row 3: Model Year */}
-              <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
-                <Sparkles size={12} className="text-[#38BDF8]" /> Model Year
-              </div>
-              {selectedCompareList.map(car => (
-                <div key={car.id} className="border-b border-white/5 py-4 flex items-center justify-center font-black text-sm text-white">
-                  {car.year}
+                {/* Row 3: Model Year */}
+                <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
+                  <Sparkles size={12} className="text-[#38BDF8]" /> Model Year
                 </div>
-              ))}
-              {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
-                <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
-              ))}
+                {selectedCompareList.map(car => (
+                  <div key={car.id} className="border-b border-white/5 py-4 flex items-center justify-center font-black text-sm text-white">
+                    {car.year}
+                  </div>
+                ))}
+                {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
+                  <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
+                ))}
 
-              {/* Row 4: Engine Displacement Configuration */}
-              <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
-                <Sliders size={12} className="text-[#38BDF8]" /> Displacement
-              </div>
-              {selectedCompareList.map(car => (
-                <div key={car.id} className="border-b border-white/5 py-4 flex flex-col justify-center items-center">
-                  <span className="text-emerald-400 font-extrabold text-xs">
-                    {car.specs?.horspower || "450 HP"}
-                  </span>
-                  <span className="text-[8px] text-white/40 uppercase mt-0.5">
-                    {car.specs?.engineSize || "3.0L Turbo"}
-                  </span>
+                {/* Row 4: Engine Displacement Configuration */}
+                <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
+                  <Sliders size={12} className="text-[#38BDF8]" /> Displacement
                 </div>
-              ))}
-              {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
-                <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
-              ))}
+                {selectedCompareList.map(car => (
+                  <div key={car.id} className="border-b border-white/5 py-4 flex flex-col justify-center items-center">
+                    <span className="text-emerald-400 font-extrabold text-xs">
+                      {car.specs?.horspower || "450 HP"}
+                    </span>
+                    <span className="text-[8px] text-white/40 uppercase mt-0.5">
+                      {car.specs?.engineSize || "3.0L Turbo"}
+                    </span>
+                  </div>
+                ))}
+                {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
+                  <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
+                ))}
 
-              {/* Row 5: Chassis Classification Type */}
-              <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
-                <Globe size={12} className="text-[#38BDF8]" /> Chassis Style
-              </div>
-              {selectedCompareList.map(car => (
-                <div key={car.id} className="border-b border-white/5 py-4 flex flex-col justify-center items-center">
-                  <span className="text-white font-extrabold text-[10.5px]">
-                    {car.transmission}
-                  </span>
-                  <span className="text-[7.5px] text-[#38BDF8] uppercase tracking-wide font-black mt-0.5">
-                    {car.fuelType} Profile
-                  </span>
+                {/* Row 5: Chassis Classification Type */}
+                <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
+                  <Globe size={12} className="text-[#38BDF8]" /> Chassis Style
                 </div>
-              ))}
-              {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
-                <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
-              ))}
+                {selectedCompareList.map(car => (
+                  <div key={car.id} className="border-b border-white/5 py-4 flex flex-col justify-center items-center">
+                    <span className="text-white font-extrabold text-[10.5px]">
+                      {car.transmission}
+                    </span>
+                    <span className="text-[7.5px] text-[#38BDF8] uppercase tracking-wide font-black mt-0.5">
+                      {car.fuelType} Profile
+                    </span>
+                  </div>
+                ))}
+                {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
+                  <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
+                ))}
 
-              {/* Row 6: Verification Index */}
-              <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
-                <ShieldCheck size={12} className="text-[#38BDF8]" /> Verification Index
-              </div>
-              {selectedCompareList.map(car => (
-                <div key={car.id} className="border-b border-white/5 py-4 flex flex-col items-center justify-center">
-                  <span className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/30 px-2 py-0.5 rounded-xl text-[8.5px] font-black uppercase tracking-wider block">
-                    {car.verified ? "100% Certified" : "Approved Fleet"}
-                  </span>
-                  <span className="text-[7px] text-white/30 uppercase mt-0.5 font-mono">Bargain Approved</span>
+                {/* Row 6: Verification Index */}
+                <div className="text-left font-extrabold text-[8.5px] tracking-widest uppercase text-white/55 border-b border-white/5 py-4 flex items-center gap-1">
+                  <ShieldCheck size={12} className="text-[#38BDF8]" /> Verification Index
                 </div>
-              ))}
-              {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
-                <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
-              ))}
+                {selectedCompareList.map(car => (
+                  <div key={car.id} className="border-b border-white/5 py-4 flex flex-col items-center justify-center">
+                    <span className="bg-emerald-400/10 text-emerald-400 border border-emerald-400/30 px-2 py-0.5 rounded-xl text-[8.5px] font-black uppercase tracking-wider block">
+                      {car.verified ? "100% Certified" : "Approved Fleet"}
+                    </span>
+                    <span className="text-[7px] text-white/30 uppercase mt-0.5 font-mono">Bargain Approved</span>
+                  </div>
+                ))}
+                {Array.from({ length: 2 - selectedCompareList.length }).map((_, i) => (
+                  <div key={i} className="border-b border-white/5 py-4 flex items-center justify-center text-white/10">-</div>
+                ))}
 
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 shrink-0 pt-4">
