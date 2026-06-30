@@ -3,8 +3,52 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import admin from "firebase-admin";
+import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
+
+// Initialize Firebase Admin SDK using applet configurations
+if (admin.apps.length === 0) {
+  try {
+    admin.initializeApp({
+      projectId: firebaseConfig.projectId,
+    });
+    console.log("[App Check Shield] Firebase Admin initialized successfully.");
+  } catch (error: any) {
+    console.warn("[App Check Shield] Firebase Admin failed to initialize:", error.message || error);
+  }
+}
+
+// App Check Validation Middleware
+const appCheckVerification = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const appCheckToken = req.header("X-Firebase-AppCheck");
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (!appCheckToken) {
+    if (isProd) {
+      console.warn("[App Check Shield] Blocked production request: Missing App Check token.");
+      return res.status(401).json({ success: false, error: "Unauthorized: Missing App Check token." });
+    } else {
+      console.log("[App Check Shield] Development mode: Permitted request without App Check token.");
+      return next();
+    }
+  }
+
+  try {
+    const decodedToken = await admin.appCheck().verifyToken(appCheckToken);
+    console.log(`[App Check Shield] Decoded valid App Check token for App ID: ${decodedToken.appId}`);
+    return next();
+  } catch (err: any) {
+    console.warn("[App Check Shield] Token verification failed:", err.message || err);
+    if (isProd) {
+      return res.status(401).json({ success: false, error: "Unauthorized: Invalid/expired App Check token." });
+    } else {
+      console.log("[App Check Shield] Development mode: Permitted bypass for preview convenience.");
+      return next();
+    }
+  }
+};
 
 let aiClient: GoogleGenAI | null = null;
 
@@ -65,6 +109,9 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(express.json());
+
+  // Protect all API endpoints with Firebase App Check
+  app.use("/api", appCheckVerification);
 
   // API 1: AI Marketing Listing Engine
   app.post("/api/ai/marketing-engine", async (req, res) => {

@@ -2,6 +2,8 @@ import { Bell, PlusCircle, User, ShieldAlert, LogOut, DollarSign, Wallet, Menu, 
 import { UserProfile } from '../lib/dbService';
 import { useCurrencyMode } from '../lib/currency';
 import { useTheme } from './ThemeContext';
+import { Bazar360Logo } from './Bazar360Logo';
+import { AutoChoiceLogo } from './AutoChoiceLogo';
 
 interface TopAppBarProps {
   currentTab: string;
@@ -38,94 +40,21 @@ export default function TopAppBar({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className={`flex justify-between items-center w-full px-4 md:px-12 h-16 fixed top-0 z-50 bg-[#0F172A]/95 dark:bg-[#030712]/95 backdrop-blur-md border-b border-b-slate-200 dark:border-b-white/5 shadow-sm transition-all text-slate-800 dark:text-white`}>
+    <header className="flex justify-between items-center w-full px-4 md:px-12 h-16 fixed top-0 z-50 bg-[var(--color-bg-secondary)]/95 backdrop-blur-md border-b border-[var(--color-border-main)] shadow-sm transition-all text-[var(--color-text-main)]">
       <div className="flex items-center gap-4">
 
         <div className="cursor-pointer active:scale-95 transition-transform" onClick={() => setTab('home')}>
           {/* BAZAR360 Premium Responsive Logo Component */}
           <div className="flex items-center space-x-2 select-none">
-            {/* Real high-fidelity shopping bag "360" brand logo from guidelines */}
-            <div className="flex items-center gap-2">
-              <svg className="w-10 h-10 select-none flex-shrink-0" viewBox="0 0 160 140" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Top dark blue/white arching bracket/arrow */}
-                <path 
-                  d="M 40 50 H 60 C 75 25, 110 25, 125 50" 
-                  strokeWidth="8" 
-                  strokeLinecap="round" 
-                  fill="none" 
-                  className="stroke-[#0B2240] dark:stroke-white" 
-                />
-                {/* 2 white/blue rivets on the left of upper arc */}
-                <circle cx="46" cy="45" r="2.5" className="fill-white dark:fill-[#0F2E59]" />
-                <circle cx="54" cy="45" r="2.5" className="fill-white dark:fill-[#0F2E59]" />
-
-                {/* Bottom orange arrow arc */}
-                <path 
-                  d="M 35 95 C 45 130, 95 130, 115 105" 
-                  stroke="#FF6B00" 
-                  strokeWidth="8" 
-                  strokeLinecap="round" 
-                  fill="none" 
-                />
-                {/* Arrow head for orange arc */}
-                <path d="M 110 106 L 122 102 L 118 114 Z" fill="#FF6B00" />
-
-                {/* Number "36" of 360 */}
-                <text 
-                  x="18" 
-                  y="96" 
-                  className="font-sans font-black fill-[#0B2240] dark:fill-white" 
-                  fontSize="70" 
-                  letterSpacing="-4"
-                >
-                  36
-                </text>
-
-                {/* Orange filled circle with shopping cart icon (representing "0") */}
-                <circle cx="115" cy="75" r="24" fill="url(#orangeLogoGrad)" />
-                <circle cx="115" cy="75" r="18" fill="#FFFFFF" />
-                
-                {/* Orange shopping cart path inside the circle */}
-                <path 
-                  d="M 103 66 L 107 66 L 110 78 L 123 78 L 126 69 L 109 69" 
-                  stroke="#FF6B00" 
-                  strokeWidth="2.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  fill="none" 
-                />
-                <circle cx="113" cy="84" r="2.5" fill="#FF6B00" />
-                <circle cx="121" cy="84" r="2.5" fill="#FF6B00" />
-
-                <defs>
-                  <linearGradient id="orangeLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FF8A00" />
-                    <stop offset="100%" stopColor="#FF5200" />
-                  </linearGradient>
-                </defs>
-              </svg>
-              {/* Typography Wrapper */}
-              <div className="flex items-center">
-                <div className="flex flex-col text-left">
-                  <div className="flex items-baseline leading-none">
-                    <span className="text-[18px] font-black text-slate-900 dark:text-white tracking-tight font-sans">BAZAR<span className="text-orange-500">360</span></span>
-                    <span className="text-[11px] font-extrabold text-[#38BDF8] ml-0.5 font-sans lowercase">.online</span>
-                  </div>
-                  <span className="text-[7.5px] font-bold text-slate-500 dark:text-slate-400 tracking-[0.18em] uppercase pl-0.5 mt-0.5 font-sans">
-                    BUY <span className="text-orange-500 font-black">|</span> SELL <span className="text-orange-500 font-black">|</span> CONNECT
-                  </span>
+            <Bazar360Logo showTagline={true} />
+            {currentCategory === 'auto' && (
+              <>
+                <div className="h-6 w-px bg-[var(--color-border-main)] mx-3 hidden sm:block" id="brand-vertical-divider"></div>
+                <div className="hidden sm:block">
+                  <AutoChoiceLogo showText={true} />
                 </div>
-                {currentCategory === 'auto' && (
-                  <>
-                    <div className="h-6 w-px bg-white/10 mx-3 hidden sm:block" id="brand-vertical-divider"></div>
-                    <div className="flex flex-col text-left hidden sm:flex" id="brand-premium-tag">
-                      <span className="text-xs font-black text-white uppercase tracking-wider leading-none font-sans">AUTO CHOICE</span>
-                      <span className="text-[7.5px] font-black text-orange-500 tracking-widest uppercase mt-0.5 leading-none">PREMIUM PARTNER</span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -226,13 +155,23 @@ export default function TopAppBar({
           {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
-        <button
-          onClick={onPostAdClick}
-          className="flex bg-rose-600 hover:bg-rose-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-md shadow-rose-500/15 items-center gap-2 border border-rose-500/10 duration-150 tracking-wider uppercase cursor-pointer"
-        >
-          <PlusCircle size={15} />
-          {lang === 'en' ? 'Post Your Ad' : 'اشتہار لگائیں'}
-        </button>
+        {currentUser ? (
+          <button
+            onClick={onPostAdClick}
+            className="flex bg-rose-600 hover:bg-rose-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-md shadow-rose-500/15 items-center gap-2 border border-rose-500/10 duration-150 tracking-wider uppercase cursor-pointer"
+          >
+            <PlusCircle size={15} />
+            {lang === 'en' ? 'Post Your Ad' : 'اشتہار لگائیں'}
+          </button>
+        ) : (
+          <button
+            onClick={() => setTab('portal')}
+            className="flex bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-colors shadow-md shadow-sky-500/15 items-center gap-2 border border-sky-500/10 duration-150 tracking-wider uppercase cursor-pointer animate-pulse"
+          >
+            <User size={15} />
+            {lang === 'en' ? 'Sign In / Sign Up' : 'لاگ ان / سائن اپ'}
+          </button>
+        )}
       </div>
     </header>
   );

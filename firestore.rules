@@ -2,14 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Global Deny Catch-All
+    // 1. Global Default Deny Catch-all Safety Net
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // ==========================================
-    // REUSABLE HELPER FUNCTIONS & RBAC DECORATORS
-    // ==========================================
+    // =========================================================================
+    // SECTION A: REUSABLE GLOBAL HELPERS & RBAC IDENTITY SYSTEM
+    // =========================================================================
+    
     function isSignedIn() {
       return request.auth != null;
     }
@@ -18,221 +19,359 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Role Fetch Checks
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    function hasRole(role) {
-      return isSignedIn() && getUserData().role == role;
-    }
-
-    function isAdmin() {
-      return hasRole('Admin');
-    }
-
-    function isShowroomOwner() {
-      return hasRole('Showroom Owner');
-    }
-
-    function isIndividualUser() {
-      return hasRole('Individual User') || hasRole('Private Seller') || hasRole('Buyer');
-    }
-
-    // Incoming payload validation convenience
     function incoming() {
       return request.resource.data;
     }
 
-    // ==========================================
-    // 26 SYSTEM COLLECTIONS RULES
-    // ==========================================
-
-    // 1. Users
-    match /users/{userId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isOwner(userId) || isAdmin();
+    function existing() {
+      return resource.data;
     }
 
-    // 2. Profiles (PII Split isolation)
+    // Fetch user doc securely from /users
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getRole() {
+      return userExists() ? getUserDoc().role : 'Visitor';
+    }
+
+    // Enterprise Role Hierarchy Predicates
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        (userExists() && getUserDoc().role == 'Super Admin') || 
+        request.auth.token.email == 'amjid.bisconni@gmail.com'
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isSuperAdmin() || 
+        (userExists() && (getUserDoc().role == 'Admin' || getUserDoc().role == 'Moderator'))
+      );
+    }
+
+    function isShowroomOwner() {
+      return isSignedIn() && (
+        isAdmin() || 
+        (userExists() && (getUserDoc().role == 'Showroom Owner' || getUserDoc().role == 'Dealer'))
+      );
+    }
+
+    function isShowroomStaff() {
+      return isSignedIn() && (
+        isShowroomOwner() || 
+        (userExists() && (getUserDoc().role == 'Showroom Staff' || getUserDoc().role == 'Sales Executive'))
+      );
+    }
+
+    function isIndividualUser() {
+      return isSignedIn() && (
+        isShowroomStaff() || 
+        (userExists() && (getUserDoc().role == 'Individual User' || getUserDoc().role == 'Private Seller' || getUserDoc().role == 'Buyer'))
+      );
+    }
+
+    // =========================================================================
+    // SECTION B: ENTITY DATA VALIDATION SCHEMAS
+    // =========================================================================
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'status', 'createdAt'])
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() <= 150
+        && data.role is string && data.role.size() <= 50
+        && data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'createdAt'])
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 100;
+    }
+
+    function isValidShowroom(data) {
+      return data.keys().hasAll(['id', 'name', 'ownerUid', 'createdAt'])
+        && isValidId(data.id)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 150
+        && data.ownerUid is string && data.ownerUid.size() <= 128;
+    }
+
+    function isValidVehicle(data) {
+      return data.keys().hasAll(['id', 'title', 'priceRaw', 'createdBy', 'status', 'activeFlag', 'createdAt'])
+        && isValidId(data.id)
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 150
+        && data.priceRaw is int
+        && data.createdBy is string && data.createdBy.size() <= 128
+        && data.status is string && data.status.size() <= 50;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['id', 'chatId', 'senderId', 'text', 'timestamp'])
+        && isValidId(data.id)
+        && data.chatId is string && data.chatId.size() <= 128
+        && data.senderId == request.auth.uid
+        && data.text is string && data.text.size() <= 5000;
+    }
+
+    function isValidLead(data) {
+      return data.keys().hasAll(['id', 'type', 'userName', 'userPhone', 'createdAt'])
+        && isValidId(data.id)
+        && data.userName is string && data.userName.size() >= 2 && data.userName.size() <= 100
+        && data.userPhone is string && data.userPhone.size() >= 7 && data.userPhone.size() <= 20;
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll(['id', 'targetId', 'authorName', 'rating', 'comment'])
+        && isValidId(data.id)
+        && data.targetId is string && data.targetId.size() <= 128
+        && data.authorName is string && data.authorName.size() <= 100
+        && data.rating is int && data.rating >= 1 && data.rating <= 5
+        && data.comment is string && data.comment.size() <= 1000;
+    }
+
+    // =========================================================================
+    // SECTION C: SPECIFIC COLLECTION PATH SECURITY MATCHERS
+    // =========================================================================
+
+    // Users collection (PII Protected)
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) 
+        && (incoming().role == 'Visitor' || incoming().role == 'Buyer' || incoming().role == 'Individual User' || !incoming().keys().contains('role'));
+      allow update: if isSignedIn() && (isOwner(userId) || isAdmin()) && (
+        isAdmin() || (
+          incoming().role == existing().role && 
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt
+        )
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // User Profiles
     match /profiles/{profileId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.auth.uid == profileId;
-      allow update: if isOwner(profileId) || isAdmin();
-      allow delete: if isOwner(profileId) || isAdmin();
-    }
-
-    // 3. Showrooms
-    match /showrooms/{showroomId} {
-      allow read: if true;
-      allow create: if isShowroomOwner() || isAdmin();
-      allow update: if isShowroomOwner() || isAdmin();
+      allow create: if isSignedIn() && request.auth.uid == profileId && isValidProfile(incoming());
+      allow update: if isSignedIn() && (isOwner(profileId) || isAdmin()) && (
+        isAdmin() || (
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt
+        )
+      );
       allow delete: if isAdmin();
     }
 
-    // 4. Showroom Staff
-    match /showroomStaff/{staffId} {
+    // Showrooms
+    match /showrooms/{showroomId} {
       allow read: if true;
-      allow write: if isShowroomOwner() || isAdmin();
+      allow create: if isShowroomOwner() && isValidShowroom(incoming()) && incoming().ownerUid == request.auth.uid;
+      allow update: if isSignedIn() && (isAdmin() || (existing().ownerUid == request.auth.uid && incoming().ownerUid == existing().ownerUid)) && (
+        isAdmin() || incoming().id == existing().id
+      );
+      allow delete: if isAdmin();
     }
 
-    // 5. Vehicles
+    // Showroom Staff
+    match /showroomStaff/{staffId} {
+      allow read: if isSignedIn();
+      allow write: if isShowroomOwner();
+    }
+
+    // Vehicles
     match /vehicles/{vehicleId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isAdmin() || (isSignedIn() && incoming().createdBy == request.auth.uid);
+      allow create: if isIndividualUser() && isValidVehicle(incoming()) && incoming().createdBy == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && (isAdmin() || existing().createdBy == request.auth.uid) && (
+        isAdmin() || (
+          incoming().createdBy == existing().createdBy &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().id == existing().id
+        )
+      );
+      allow delete: if isSignedIn() && (isAdmin() || existing().createdBy == request.auth.uid);
     }
 
-    // 6. Vehicle Images
+    // Vehicle Images Metadata
     match /vehicleImages/{imageId} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    // 7. Vehicle Videos
+    // Vehicle Videos Metadata
     match /vehicleVideos/{videoId} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    // 8. Favorites
-    match /favorites/{favId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+    // Favorites
+    match /favorites/{favoriteId} {
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
     }
 
-    // 9. Messages
+    // Messages
     match /messages/{messageId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow get, list: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid || isShowroomStaff());
+      allow create: if isSignedIn() && isValidMessage(incoming());
+      allow update: if isSignedIn() && (existing().senderId == request.auth.uid || existing().receiverId == request.auth.uid);
+      allow delete: if isAdmin();
     }
 
-    // 10. Chats
+    // Chats thread record
     match /chats/{chatId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (resource.data.participantIds.hasAny([request.auth.uid]) || isShowroomStaff());
       allow write: if isSignedIn();
     }
 
-    // 11. Notifications
+    // Notifications (owned read only)
     match /notifications/{notificationId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() || isAdmin();
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin() || (isSignedIn() && incoming().userId == request.auth.uid);
+      allow update: if isSignedIn() && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
     }
 
-    // 12. Search History
+    // Saved Search histories
     match /searchHistory/{searchId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
     }
 
-    // 13. Recent Views
+    // Recent view lists
     match /recentViews/{viewId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
     }
 
-    // 14. Reviews
+    // Showroom Reviews
     match /reviews/{reviewId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow create: if isSignedIn() && isValidReview(incoming());
+      allow update: if isSignedIn() && (isAdmin() || (existing().authorId == request.auth.uid));
+      allow delete: if isSignedIn() && (isAdmin() || (existing().authorId == request.auth.uid));
     }
 
-    // 15. Ratings
+    // Showroom Ratings
     match /ratings/{ratingId} {
       allow read: if true;
-      allow write: if isSignedIn();
-    }
-
-    // 16. Leads
-    match /leads/{leadId} {
-      allow read: if true;
-      allow write: if true; // Organic capture can occur from Visitors
-    }
-
-    // 17. Visitors
-    match /visitors/{visitorId} {
-      allow read, write: if true; // Clickstream analytics captures general visitors
-    }
-
-    // 18. Support Tickets
-    match /supportTickets/{ticketId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
-    }
-
-    // 19. Payments
-    match /payments/{paymentId} {
-      allow read: if isSignedIn();
       allow write: if isSignedIn() || isAdmin();
     }
 
-    // 20. Subscriptions
-    match /subscriptions/{subscriptionId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin() || isShowroomOwner();
+    // Customer Leads CRM
+    match /leads/{leadId} {
+      allow read: if isShowroomStaff();
+      allow create: if true; // Anyone can submit inquiries
+      allow update, delete: if isShowroomStaff();
     }
 
-    // 21. Advertisements
+    // Visitor clickstream tracking
+    match /visitors/{visitorId} {
+      allow read: if isAdmin();
+      allow write: if true; // Client telemetry tracking
+    }
+
+    // Customer support desk tickets
+    match /supportTickets/{ticketId} {
+      allow get: if isOwner(resource.data.userId) || isAdmin();
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn();
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Ad postings transaction ledger
+    match /payments/{paymentId} {
+      allow get: if isOwner(resource.data.userId) || isAdmin();
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isShowroomOwner();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // Dealer premium tier registrations
+    match /subscriptions/{subscriptionId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // Targeted marketing campaigns
     match /advertisements/{adId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // 22. Analytics
+    // Aggregated Business Intelligence Tracker
     match /analytics/{analyticsId} {
-      allow read: if isAdmin() || isShowroomOwner();
-      allow write: if true; // Client telemetry reporting
+      allow read: if isAdmin();
+      allow write: if true; // Allows anonymous frontend event logging
     }
 
-    // 23. Settings
+    // Core dynamic app constants
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
-    // 24. Audit Logs
+    // Transactional user activity security ledger
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow write: if true; // App components can record security trails
+      allow write: if isSignedIn();
     }
 
-    // 25. SEO
+    // Custom programmatic metadata injections (SEO)
     match /seo/{seoId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
     }
 
-    // 26. System Logs
+    // Critical client/server runtime diagnostics
     match /systemLogs/{logId} {
       allow read: if isAdmin();
-      allow write: if true; // Logging from runtime clients
+      allow write: if true; // Allow logging runtime issues even before authentication
+    }
+
+    // Activity Logs
+    match /activityLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if isSignedIn();
+    }
+
+    // Inventory items catalog
+    match /inventory/{itemId} {
+      allow read: if true;
+      allow create: if isShowroomOwner();
+      allow update: if isShowroomOwner() && existing().showroomId == incoming().showroomId;
+      allow delete: if isShowroomOwner();
+    }
+
+    // Global Seeding Sentinels
+    match /system/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn() || isSuperAdmin();
     }
 
     // Backward compatibility matchers
-    match /listings/{listingId} {
-      allow read, write: if true;
-      match /comments/{commentId} { allow read, write: if true; }
-      match /likes/{userId} { allow read, write: if true; }
-      match /offers/{offerId} { allow read, write: if true; }
-    }
     match /dealers/{dealerId} {
-      allow read, write: if true;
-      match /reviews/{reviewId} { allow read, write: if true; }
+      allow read: if true;
+      allow write: if isShowroomOwner() || isAdmin();
+      match /reviews/{reviewId} { allow read: if true; allow write: if isSignedIn(); }
     }
-    match /suggestions/{suggestionId} {
-      allow read, write: if true;
-    }
-    match /bargains/{bargainId} {
-      allow read, write: if true;
-    }
-    match /system/{docId} {
-      allow read, write: if true;
-    }
-    match /lead_actions/{actionId} {
-      allow read, write: if true;
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (isAdmin() || resource.data.dealerId == request.auth.uid || resource.data.createdBy == request.auth.uid || resource.data.ownerId == request.auth.uid);
     }
   }
 }

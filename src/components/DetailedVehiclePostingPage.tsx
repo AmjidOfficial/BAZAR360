@@ -92,6 +92,17 @@ export default function DetailedVehiclePostingPage({ onPostCreated, lang = 'en',
   const [sellerWhatsApp, setSellerWhatsApp] = useState(currentUser?.phoneNumber || '');
   const [location, setLocation] = useState(currentUser?.city || 'Peshawar, Pakistan');
 
+  React.useEffect(() => {
+    if (currentUser) {
+      if (currentUser.displayName) setSellerName(currentUser.displayName);
+      if (currentUser.phoneNumber) {
+        setSellerPhone(currentUser.phoneNumber);
+        setSellerWhatsApp(currentUser.phoneNumber);
+      }
+      if (currentUser.city) setLocation(currentUser.city + ', Pakistan');
+    }
+  }, [currentUser]);
+
   // Submission / Loading Feedback
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -290,6 +301,7 @@ export default function DetailedVehiclePostingPage({ onPostCreated, lang = 'en',
       verified: false,
       featured: false,
       dealerId: currentUser?.uid && currentUser?.role === 'Dealer' ? currentUser.uid : 'private-seller',
+      assignedSalesRepId: currentUser?.uid || 'guest-seller',
       description: `A beautifully maintained ${condition.toLowerCase()} ${make} ${resolvedModelName} ${variant} located in ${location}. Contact seller ${sellerName} via ${sellerPhone} or WhatsApp.`,
       createdAt: new Date().toISOString(),
       tags: [vehicleType, condition, fuelType, transmission],

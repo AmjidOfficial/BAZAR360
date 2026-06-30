@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ShieldCheck, MapPin, Gauge, Fuel, Milestone, Star, Award, DollarSign, Send, Hourglass, Bell, Sparkles, Car } from 'lucide-react';
+import { X, ShieldCheck, MapPin, Gauge, Fuel, Milestone, Star, Award, DollarSign, Send, Hourglass, Bell, Sparkles, Car, MessageSquare, Headphones } from 'lucide-react';
 import { CarListing, Dealer, Review } from './types';
 import { INITIAL_DEALERS, INITIAL_LISTINGS, INITIAL_REVIEWS } from './data';
 
@@ -35,6 +35,9 @@ import DetailedVehiclePostingPage from './components/DetailedVehiclePostingPage'
 import AdminModerationDeck from './components/AdminModerationDeck';
 import AutoServicesView from './components/AutoServicesView';
 import ContactView from './components/ContactView';
+import ContactDrawer from './components/ContactDrawer';
+import { Bazar360Logo } from './components/Bazar360Logo';
+import { AutoChoiceLogo } from './components/AutoChoiceLogo';
 import { motion } from 'motion/react';
 import { initializeVisitorTracking, trackSearchQuery, trackVehicleView } from './lib/visitorTracking';
 
@@ -184,6 +187,18 @@ function App() {
   const initialState = getInitialStateFromUrl();
 
   const [currentTab, setTab] = useState<string>(initialState.tab);
+  const [prevTab, setPrevTab] = useState<string>('home');
+  const [isContactDrawerOpen, setIsContactDrawerOpen] = useState<boolean>(false);
+
+  // Direct Support Desk Drawer Interception for Contact Support tab
+  useEffect(() => {
+    if (currentTab === 'contact') {
+      setIsContactDrawerOpen(true);
+      setTab(prevTab);
+    } else {
+      setPrevTab(currentTab);
+    }
+  }, [currentTab, prevTab]);
   const [showroomSearch, setShowroomSearch] = useState<string>('');
   const [selectedDealerId, setSelectedDealerId] = useState<string>(initialState.dealerId);
   const [selectedListing, setSelectedListing] = useState<CarListing | null>(initialState.listing);
@@ -1012,18 +1027,7 @@ function App() {
                 </div>
 
                 <div className="flex items-center gap-4 shrink-0">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden flex items-center justify-center border border-sky-500/20 shadow-sm bg-slate-900/40">
-                    <img 
-                      src="/auto_choice_logo_1781509565476.png" 
-                      alt="Auto Choice Flagship Logo" 
-                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="text-left">
-                    <h2 className="text-xl font-black font-sans text-white uppercase tracking-tight">Auto Choice</h2>
-                    <p className="text-[#38BDF8] font-mono text-[10px] font-black tracking-wider uppercase mt-0.5">Automotive division</p>
-                  </div>
+                  <AutoChoiceLogo className="scale-110 origin-left" showText={true} />
                 </div>
 
                 <p className="text-gray-400 text-xs leading-relaxed font-sans text-left flex-1 min-h-0 overflow-y-auto no-scrollbar py-1">
@@ -1648,10 +1652,19 @@ function App() {
                               src={dealer.coverImage}
                               referrerPolicy="no-referrer"
                             />
-                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center z-10 shadow-lg border-4 border-[#0b0f19]">
-                              <span className="font-sans font-black text-xl text-black">
-                                {dealer.avatarLetter}
-                              </span>
+                            <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center z-10 shadow-lg border-4 border-[#0b0f19] overflow-hidden">
+                              {dealer.avatarUrl ? (
+                                <img
+                                  src={dealer.avatarUrl}
+                                  alt={dealer.name}
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <span className="font-sans font-black text-xl text-black">
+                                  {dealer.avatarLetter}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div className="p-5 space-y-4 text-left">
@@ -1700,7 +1713,7 @@ function App() {
 
             {currentTab === 'contact' && (
               <div className="max-w-7xl mx-auto pb-16 px-4 md:px-8">
-                <ContactView lang={lang} />
+                <ContactView lang={lang} onOpenSupportDrawer={() => setIsContactDrawerOpen(true)} />
               </div>
             )}
 
@@ -1752,7 +1765,11 @@ function App() {
             )}
           </>
         )}
-        <Footer />
+        <Footer 
+          lang={lang} 
+          setTab={setTab} 
+          onOpenSupportDrawer={() => setIsContactDrawerOpen(true)} 
+        />
       </main>
 
       {/* Bottom Nav Bar (Mobile Only) */}
@@ -1765,6 +1782,13 @@ function App() {
         onLanguageToggle={toggleLanguage}
         theme={theme}
         toggleTheme={toggleTheme}
+        currentUser={currentUser}
+      />
+
+      <ContactDrawer 
+        isOpen={isContactDrawerOpen} 
+        onClose={() => setIsContactDrawerOpen(false)} 
+        lang={lang} 
       />
 
       {/* DYNAMIC LISTING DETAILS FULL SCREEN MODAL */}
@@ -1905,6 +1929,7 @@ function App() {
                           const d = dealers.find((dl) => dl.id === selectedListing.dealerId);
                           if (d) {
                             setSelectedDealerId(d.id);
+                            setTab('dealer-storefront');
                             setSelectedListing(null);
                           }
                         }}

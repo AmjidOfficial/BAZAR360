@@ -17,15 +17,15 @@ import {
 import { db } from '../firebase';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 
-// Default Gateway Space Cyber Dark Theme Variables
+// Default Light Theme Variables for Bazar360 (High Contrast)
 export const DEFAULT_THEME_VARIABLES = {
-  bgPrimary: '#0F172A',
-  bgSecondary: '#111827',
-  textMain: '#FFFFFF',
-  textMuted: '#CBD5E1',
-  borderMain: 'rgba(255,255,255,0.08)',
-  accentMain: '#2563EB',
-  accentHover: '#3B82F6'
+  bgPrimary: '#FAFAFA',
+  bgSecondary: '#FFFFFF',
+  textMain: '#0F172A',
+  textMuted: '#64748B',
+  borderMain: '#E2E8F0',
+  accentMain: '#FF6B00',
+  accentHover: '#E05B00'
 };
 
 // Preset Gateway Themes

@@ -88,30 +88,30 @@ const BODY_TYPES = [
 ];
 
 const POPULAR_BRANDS = [
+  { name: 'Suzuki', logo: '🚙' },
   { name: 'Toyota', logo: '🚗' },
   { name: 'Honda', logo: '🏎️' },
-  { name: 'Suzuki', logo: '🚙' },
-  { name: 'Hyundai', logo: '🚘' },
   { name: 'Kia', logo: '精' },
+  { name: 'Hyundai', logo: '🚘' },
+  { name: 'Changan', logo: '🚘' },
   { name: 'MG', logo: '🚗' },
+  { name: 'Haval', logo: '🚙' },
   { name: 'Audi', logo: '🏎️' },
   { name: 'BMW', logo: '🏎️' },
   { name: 'Mercedes-Benz', logo: '🚘' },
   { name: 'Nissan', logo: '🏎️' },
-  { name: 'Ford', logo: '🚙' },
-  { name: 'Chevrolet', logo: '🚗' },
   { name: 'BYD', logo: '⚡' },
   { name: 'Tesla', logo: '⚡' },
   { name: 'Lexus', logo: '🚗' },
   { name: 'Porsche', logo: '🏎️' },
   { name: 'Isuzu', logo: '🛻' },
   { name: 'Mitsubishi', logo: '🛻' },
-  { name: 'Changan', logo: '🚘' },
-  { name: 'Haval', logo: '🚙' },
   { name: 'Peugeot', logo: '🚗' },
   { name: 'Volvo', logo: '🛡️' },
   { name: 'Land Rover', logo: '🚙' },
-  { name: 'Jeep', logo: '🚙' }
+  { name: 'Jeep', logo: '🚙' },
+  { name: 'Ford', logo: '🚙' },
+  { name: 'Chevrolet', logo: '🚗' }
 ];
 
 function renderInlineFallback(name: string) {
@@ -328,7 +328,7 @@ function BrandLogo({ name }: { name: string }) {
   }
 
   return (
-    <div className="relative w-12 h-12 flex items-center justify-center p-1 bg-white/5 rounded-xl border border-white/5">
+    <div className="relative w-12 h-12 flex items-center justify-center p-1 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/5">
       <img
         src={imageUrl}
         alt={`${name} official logo`}
@@ -363,6 +363,7 @@ export default function HomeView({
   const ENABLE_DOWNLOAD_APP = false;
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showAllBrands, setShowAllBrands] = useState(false);
 
   // Fallback beautiful slides if dynamic inventory is empty
   const fallbackSlides = useMemo<CarListing[]>(() => [
@@ -886,6 +887,111 @@ export default function HomeView({
         </div>
       </section>
 
+      {/* SECTION: PESHAWAR MARKET SPOTLIGHT & HIGH-CONVERTING HEADLINES */}
+      <section className="max-w-7xl mx-auto w-full px-4 space-y-6">
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 border border-white/5 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="relative z-10 space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-4">
+              <div>
+                <div className="flex items-center gap-2 text-sky-400 font-mono text-xs uppercase tracking-wider font-bold">
+                  <Sparkles size={14} className="animate-pulse" />
+                  {lang === 'en' ? 'Peshawar Lifestyle & Premium Market Edition' : 'پشاور لائف اسٹائل اور پریمیم مارکیٹ ایڈیشن'}
+                </div>
+                <h3 className="text-lg md:text-2xl font-black text-white uppercase tracking-tight mt-1">
+                  {lang === 'en' ? 'Peshawar Automotive Headline Showcase' : 'پشاور آٹوموٹو مارکیٹ ہیڈلائنز'}
+                </h3>
+                <p className="text-xs text-slate-400 max-w-2xl mt-1">
+                  {lang === 'en' 
+                    ? 'Explore our top 5 high-converting, geo-targeted headlines built to captivate buyers in Peshawar. Click any headline to instantly explore related inventory.'
+                    : 'پشاور کے خریداروں کے لیے تیار کردہ ہماری ٹاپ 5 ہیڈلائنز۔ کسی بھی ہیڈلائن پر کلک کر کے متعلقہ گاڑیاں تلاش کریں۔'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-800/40 border border-white/10 px-3 py-1.5 rounded-2xl shrink-0">
+                <MapPin size={14} className="text-sky-400" />
+                <span className="text-[10px] sm:text-xs text-white font-mono font-bold tracking-wider">PESHAWAR • KP DIVISION</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {[
+                {
+                  id: 'kp-headline-1',
+                  en: "Peshawar's Finest Wheels – Handpicked, Verified, Ready to Rule the Ring Road",
+                  ur: "پشاور کی بہترین گاڑیاں - تصدیق شدہ اور رنگ روڈ پر راج کرنے کے لیے تیار۔",
+                  query: "Ring Road Peshawar",
+                  badge: "Ring Road Dominator"
+                },
+                {
+                  id: 'kp-headline-2',
+                  en: "From Hayatabad to University Road: Find the Cleanest Verified Local Rides",
+                  ur: "حیات آباد سے یونیورسٹی روڈ تک: پشاور کی سب سے صاف اور تصدیق شدہ گاڑیاں حاصل کریں۔",
+                  query: "Hayatabad",
+                  badge: "Hayatabad Elite"
+                },
+                {
+                  id: 'kp-headline-3',
+                  en: "Elevate Your Peshawar Drive: Premium SUVs & Sedans with 200-Point Digital Verification",
+                  ur: "اپنی پشاور ڈرائیو کو شاندار بنائیں: 200 پوائنٹس ڈیجیٹل ویری فکیشن کے ساتھ بہترین گاڑیاں۔",
+                  query: "Verified SUV",
+                  badge: "200-Point Inspection"
+                },
+                {
+                  id: 'kp-headline-4',
+                  en: "The Smartest Way to Buy & Sell in KP: Zero Hassle, Live Video Inspections & WhatsApp Support",
+                  ur: "خیبر پختونخوا میں خرید و فروخت کا سب سے آسان طریقہ: واٹس ایپ سپورٹ اور لائیو ویڈیو معائنہ۔",
+                  query: "WhatsApp",
+                  badge: "KP Smart Trading"
+                },
+                {
+                  id: 'kp-headline-5',
+                  en: "Unleash Prestige on the Highway: Discover Flagship Showroom Inventory in Peshawar",
+                  ur: "موٹر وے پر وقار کا سفر: پشاور کے فلیگ شپ شورومز کا شاندار اسٹاک دریافت کریں۔",
+                  query: "Showroom Peshawar",
+                  badge: "Highway Prestige"
+                }
+              ].map((h, i) => (
+                <button
+                  key={h.id}
+                  onClick={() => {
+                    setSearchCity('Peshawar');
+                    setLocalQuery(h.query);
+                    setSearchQuery(h.query);
+                    setTab('inventory');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="bg-slate-900/60 hover:bg-slate-800/80 border border-white/5 hover:border-sky-500/30 p-4 rounded-2xl flex flex-col justify-between text-left transition-all duration-200 cursor-pointer group hover:-translate-y-0.5 shadow-md relative"
+                >
+                  <div className="absolute top-3 right-3 text-sky-500/30 group-hover:text-sky-400 font-mono text-[9px] font-bold">
+                    0{i + 1}
+                  </div>
+                  <div className="space-y-3">
+                    <span className="text-[8px] font-mono font-black uppercase text-sky-400 tracking-wider bg-sky-500/10 px-2 py-0.5 rounded-full inline-block">
+                      {h.badge}
+                    </span>
+                    <div className="space-y-1.5">
+                      <p className="text-[11px] font-bold text-white font-sans leading-snug group-hover:text-sky-400 transition-colors">
+                        {h.en}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-sans leading-snug text-right" dir="rtl">
+                        {h.ur}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-[9px] font-mono text-slate-500 group-hover:text-sky-400 font-bold mt-4 pt-2 border-t border-white/5 w-full">
+                    <span>{lang === 'en' ? 'EXPLORE VIBE' : 'اسٹاک دیکھیں'}</span>
+                    <ArrowRight size={10} className="transform group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* SECTION 3: BROWSE BY BODY TYPE */}
       <section className="space-y-6 max-w-7xl mx-auto w-full px-4">
         <div className="text-center space-y-2">
@@ -923,24 +1029,28 @@ export default function HomeView({
       {/* SECTION 4: POPULAR BRANDS GRID */}
       <section className="space-y-6 max-w-7xl mx-auto w-full px-4">
         <div className="flex justify-between items-baseline border-b border-border-main pb-3">
-          <h2 className="text-lg md:text-xl font-black uppercase tracking-wider text-text-main flex items-center gap-2">
-            <span className="h-5 w-1 bg-accent-main rounded-full"></span>
-            {lang === 'en' ? 'Popular Brands' : 'مقبول برانڈز'}
-          </h2>
+          <div className="text-left">
+            <h2 className="text-lg md:text-xl font-black uppercase tracking-wider text-text-main flex items-center gap-2">
+              <span className="h-5 w-1 bg-accent-main rounded-full"></span>
+              {lang === 'en' ? 'Popular Brands' : 'مقبول برانڈز'}
+            </h2>
+            <p className="text-[10px] text-text-muted mt-0.5 font-mono uppercase tracking-wider">
+              {lang === 'en' ? 'Certified Regional Partners & Auto Makers' : 'پاکستان کے معروف کار برانڈز'}
+            </p>
+          </div>
           <button
-            onClick={() => {
-              setSelectedCategory('All');
-              setSearchQuery('');
-              setTab('inventory');
-            }}
-            className="text-xs font-sans font-extrabold text-accent-main hover:text-accent-hover transition-colors cursor-pointer"
+            onClick={() => setShowAllBrands(!showAllBrands)}
+            className="text-xs font-sans font-black text-accent-main hover:text-accent-hover transition-colors cursor-pointer uppercase tracking-wider"
           >
-            {lang === 'en' ? 'VIEW ALL BRANDS →' : 'تمام برانڈز دیکھیں ←'}
+            {showAllBrands 
+              ? (lang === 'en' ? 'Show Less ↑' : 'کم دکھائیں ↑') 
+              : (lang === 'en' ? 'See All Brands ↓' : 'تمام برانڈز دیکھیں ↓')}
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
-          {POPULAR_BRANDS.map((brand, i) => (
+        {/* Responsive grid showing top 8 in exactly 1 line on desktop, or fully expanded list */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 transition-all duration-300">
+          {(showAllBrands ? POPULAR_BRANDS : POPULAR_BRANDS.slice(0, 8)).map((brand, i) => (
             <button
               key={i}
               onClick={() => handleBrandClick(brand.name)}
@@ -955,6 +1065,18 @@ export default function HomeView({
               </span>
             </button>
           ))}
+          {!showAllBrands && (
+            <button
+              onClick={() => setShowAllBrands(true)}
+              className="bg-bg-secondary border border-dashed border-border-main hover:border-accent-main/40 p-4 rounded-2xl flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-95 duration-150 cursor-pointer group hover:shadow-md select-none lg:hidden"
+              style={{ minHeight: '96px' }}
+            >
+              <span className="text-xl text-accent-main group-hover:scale-110 transition-transform font-bold">+</span>
+              <span className="text-[10px] font-sans font-bold text-text-muted group-hover:text-accent-main transition-colors uppercase tracking-tight">
+                {lang === 'en' ? 'More' : 'مزید'}
+              </span>
+            </button>
+          )}
         </div>
       </section>
 

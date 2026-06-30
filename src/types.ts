@@ -23,6 +23,7 @@ export interface CarListing {
   };
   approved?: boolean;
   assignedSalesRepId?: string;
+  createdBy?: string;
   region?: string;
 
   // Auto Choice Exclusive strict properties

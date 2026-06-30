@@ -642,7 +642,7 @@ export default function SearchExplorerView({
 
             <button
               onClick={() => setShowMobileFilters(false)}
-              className="mt-6 w-full bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-sans font-extrabold text-xs uppercase py-3.5 rounded-xl text-center cursor-pointer"
+              className="mt-6 mb-20 w-full bg-[#0ea5e9] hover:bg-[#38bdf8] text-white font-sans font-extrabold text-xs uppercase py-3.5 rounded-xl text-center cursor-pointer shadow-lg relative z-10"
             >
               Apply Filters
             </button>

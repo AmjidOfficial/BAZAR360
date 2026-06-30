@@ -51,6 +51,10 @@ export interface UserProfile {
   acceptedTerms?: boolean;
   preferredLanguage?: 'en' | 'ur';
   preferredTheme?: 'light' | 'dark';
+  whatsappNumber?: string;
+  cnic?: string;
+  postalCode?: string;
+  occupation?: string;
 
   notificationSettings?: {
     emailAlerts?: boolean;
@@ -166,23 +170,30 @@ export async function dbFetchDealers(): Promise<Dealer[]> {
   try {
     const snap = await getDocs(collection(db, DEALERS_COLLECTION));
     if (snap.empty) {
-      return INITIAL_DEALERS;
+      return INITIAL_DEALERS.map(d => d.id === 'auto-choice-peshawar' ? { ...d, name: 'Auto Choice', avatarUrl: '/auto_choice_logo_1781509565476.png', flagshipVerified: true } : d);
     }
+    
     const list: Dealer[] = [];
+    let autoChoiceMerged: Dealer | null = null;
+
     snap.forEach((doc) => {
       const data = doc.data();
       const rawAvatar = data.avatarUrl || '';
-      const avatarUrl = doc.id === 'auto-choice-peshawar'
+      
+      const isAutoChoice = doc.id === 'auto-choice-peshawar' || doc.id === 'auto-choice' || (data.name && data.name.toLowerCase().includes('auto choice'));
+      
+      const avatarUrl = isAutoChoice
         ? '/auto_choice_logo_1781509565476.png'
         : (rawAvatar.startsWith('.') ? rawAvatar.substring(1) : rawAvatar);
-      list.push({
+
+      const currentDealer: Dealer = {
         id: doc.id,
         name: data.name || '',
         avatarLetter: data.avatarLetter || data.name?.substring(0, 2).toUpperCase() || 'D',
         avatarUrl,
         subtitle: data.subtitle || '',
         location: data.location || '',
-        rating: typeof data.rating === 'number' ? data.rating : 4.5,
+        rating: typeof data.rating === 'number' ? data.rating : 4.9,
         vehiclesCount: typeof data.vehiclesCount === 'number' ? data.vehiclesCount : 0,
         followersCount: data.followersCount || '0',
         coverImage: data.coverImage || '',
@@ -191,12 +202,61 @@ export async function dbFetchDealers(): Promise<Dealer[]> {
         whatsapp: data.whatsapp || '',
         socials: data.socials || {},
         activityFeed: Array.isArray(data.activityFeed) ? data.activityFeed : (INITIAL_DEALERS.find((d) => d.id === doc.id)?.activityFeed || [])
-      });
+      };
+
+      if (isAutoChoice) {
+        if (!autoChoiceMerged) {
+          autoChoiceMerged = {
+            ...currentDealer,
+            id: 'auto-choice-peshawar',
+            name: 'Auto Choice',
+            avatarUrl: '/auto_choice_logo_1781509565476.png',
+            flagshipVerified: true
+          };
+        } else {
+          // Consolidate the data metrics gracefully
+          autoChoiceMerged.vehiclesCount = Math.max(autoChoiceMerged.vehiclesCount, currentDealer.vehiclesCount);
+          if (currentDealer.phone) autoChoiceMerged.phone = currentDealer.phone;
+          if (currentDealer.whatsapp) autoChoiceMerged.whatsapp = currentDealer.whatsapp;
+          if (currentDealer.location && currentDealer.location.includes('Ring Road')) {
+            autoChoiceMerged.location = currentDealer.location;
+          }
+          if (currentDealer.description && currentDealer.description.length > autoChoiceMerged.description.length) {
+            autoChoiceMerged.description = currentDealer.description;
+          }
+          if (currentDealer.activityFeed && currentDealer.activityFeed.length > 0) {
+            const existingIds = new Set(autoChoiceMerged.activityFeed.map(act => act.id));
+            currentDealer.activityFeed.forEach(act => {
+              if (!existingIds.has(act.id)) {
+                autoChoiceMerged!.activityFeed.push(act);
+              }
+            });
+          }
+        }
+      } else {
+        list.push(currentDealer);
+      }
     });
+
+    // Ensure Auto Choice is at the front of the list and verified
+    if (autoChoiceMerged) {
+      list.unshift(autoChoiceMerged);
+    } else {
+      const initialAC = INITIAL_DEALERS.find(d => d.id === 'auto-choice-peshawar');
+      if (initialAC) {
+        list.unshift({
+          ...initialAC,
+          name: 'Auto Choice',
+          avatarUrl: '/auto_choice_logo_1781509565476.png',
+          flagshipVerified: true
+        });
+      }
+    }
+
     return list;
   } catch (err) {
     console.error('dbFetchDealers Error:', err);
-    return INITIAL_DEALERS; // Fallback
+    return INITIAL_DEALERS.map(d => d.id === 'auto-choice-peshawar' ? { ...d, name: 'Auto Choice', avatarUrl: '/auto_choice_logo_1781509565476.png', flagshipVerified: true } : d);
   }
 }
 
@@ -224,7 +284,7 @@ export async function dbFetchListings(): Promise<CarListing[]> {
         verified: !!data.verified,
         featured: !!data.featured,
         approved: data.approved !== false, // Default true if not explicitly false
-        dealerId: data.dealerId || 'private',
+        dealerId: (data.dealerId === 'auto-choice' || (data.dealerId && data.dealerId.includes('auto-choice'))) ? 'auto-choice-peshawar' : (data.dealerId || 'private'),
         description: data.description || '',
         createdAt: data.createdAt || new Date().toISOString(),
         tags: Array.isArray(data.tags) ? data.tags : [],

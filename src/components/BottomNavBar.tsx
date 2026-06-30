@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Home, Plus, Menu, X, ClipboardList, TrendingUp, User, Store, Sparkles, PhoneCall, Sun, Moon } from 'lucide-react';
+import { UserProfile } from '../lib/dbService';
 
 interface BottomNavBarProps {
   currentTab: string;
@@ -11,6 +12,7 @@ interface BottomNavBarProps {
   onLanguageToggle: () => void;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
+  currentUser?: UserProfile | null;
 }
 
 export default function BottomNavBar({ 
@@ -21,7 +23,8 @@ export default function BottomNavBar({
   lang,
   onLanguageToggle,
   theme,
-  toggleTheme
+  toggleTheme,
+  currentUser
 }: BottomNavBarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -99,20 +102,36 @@ export default function BottomNavBar({
             <span className="text-[10px] font-sans font-bold tracking-wide mt-1 uppercase">{t.home}</span>
           </button>
 
-          {/* 2. Big Center Elevated Post (+) Button */}
+          {/* 2. Big Center Elevated Post (+) Button / Sign In Button */}
           <div className="relative -mt-6 flex flex-col items-center justify-center shrink-0">
-            <button
-              id="mobile-nav-post"
-              onClick={() => setTab('sell')}
-              className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#0ea5e9] text-white font-black shadow-[0_4px_20px_rgba(14,165,233,0.4)] border-4 border-[#030712] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
-                currentTab === 'sell' ? 'bg-[#38BDF8] scale-105' : ''
-              }`}
-              title="Post an Ad"
-              style={{ minHeight: '56px', minWidth: '56px' }}
-            >
-              <Plus size={26} strokeWidth={3} className="text-white" />
-            </button>
-            <span className="text-[10px] font-sans font-extrabold uppercase tracking-widest text-[#38BDF8] mt-1 block">{t.post}</span>
+            {currentUser ? (
+              <button
+                id="mobile-nav-post"
+                onClick={() => setTab('sell')}
+                className={`w-14 h-14 rounded-full flex items-center justify-center bg-[#0ea5e9] text-white font-black shadow-[0_4px_20px_rgba(14,165,233,0.4)] border-4 border-[#030712] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+                  currentTab === 'sell' ? 'bg-[#38BDF8] scale-105' : ''
+                }`}
+                title="Post an Ad"
+                style={{ minHeight: '56px', minWidth: '56px' }}
+              >
+                <Plus size={26} strokeWidth={3} className="text-white" />
+              </button>
+            ) : (
+              <button
+                id="mobile-nav-signin"
+                onClick={() => setTab('portal')}
+                className={`w-14 h-14 rounded-full flex items-center justify-center bg-emerald-600 text-white font-black shadow-[0_4px_20px_rgba(16,185,129,0.4)] border-4 border-[#030712] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer ${
+                  currentTab === 'portal' ? 'bg-[#38BDF8] scale-105' : ''
+                }`}
+                title="Sign In / Register"
+                style={{ minHeight: '56px', minWidth: '56px' }}
+              >
+                <User size={22} strokeWidth={3} className="text-white" />
+              </button>
+            )}
+            <span className="text-[10px] font-sans font-extrabold uppercase tracking-widest text-[#38BDF8] mt-1 block">
+              {currentUser ? t.post : (lang === 'en' ? 'Sign In' : 'سائن ان')}
+            </span>
           </div>
 
           {/* 3. Hamburger Menu Button (Right Side) */}

@@ -1,5 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../firebase';
+import { getToken } from 'firebase/app-check';
+import { functions, appCheck } from '../firebase';
 
 // Strong type definitions matching the Express payloads and response shapes
 export interface MarketingEngineRequest {
@@ -62,6 +63,20 @@ const isGitHubPages = window.location.hostname.includes('github.io') || window.l
 const isProduction = process.env.NODE_ENV === 'production' || isGitHubPages;
 
 /**
+ * Safely fetches the current Firebase App Check token to protect our local backend.
+ */
+async function getAppCheckHeader(): Promise<Record<string, string>> {
+  if (!appCheck) return {};
+  try {
+    const appCheckTokenResult = await getToken(appCheck, false);
+    return { 'X-Firebase-AppCheck': appCheckTokenResult.token };
+  } catch (error) {
+    console.warn('[App Check] Failed to retrieve App Check token:', error);
+    return {};
+  }
+}
+
+/**
  * AI Marketing Engine Handler
  */
 export async function callMarketingEngine(rawInput: string, tone = 'Premium'): Promise<MarketingEngineResponse> {
@@ -79,9 +94,13 @@ export async function callMarketingEngine(rawInput: string, tone = 'Premium'): P
 
   // Fallback to Express backend locally in Dev container or sandbox
   console.log('BAZAR360 V2.0: Fetching from local container dev Express API...');
+  const appCheckHeader = await getAppCheckHeader();
   const response = await fetch('/api/ai/marketing-engine', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...appCheckHeader
+    },
     body: JSON.stringify({ rawInput, tone }),
   });
   if (!response.ok) {
@@ -119,9 +138,13 @@ export async function callDealerChat(
   }
 
   // Fallback to Local Express dev server
+  const appCheckHeader = await getAppCheckHeader();
   const response = await fetch('/api/dealer/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...appCheckHeader
+    },
     body: JSON.stringify({
       dealerName,
       dealerBio,
@@ -153,9 +176,13 @@ export async function callScrapeSocials(socials: ScrapeSocialsRequest): Promise<
   }
 
   // Fallback to Local Express dev server
+  const appCheckHeader = await getAppCheckHeader();
   const response = await fetch('/api/scrape-socials', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...appCheckHeader
+    },
     body: JSON.stringify(socials),
   });
   if (!response.ok) {
@@ -197,9 +224,13 @@ export async function callAiTranslate(text: string, targetLanguage = 'Urdu'): Pr
   }
 
   // Fallback to Local Express dev server in Sandbox/Container
+  const appCheckHeader = await getAppCheckHeader();
   const response = await fetch('/api/translate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...appCheckHeader
+    },
     body: JSON.stringify({ text, targetLanguage }),
   });
   if (!response.ok) {

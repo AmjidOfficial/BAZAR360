@@ -31,15 +31,15 @@ h1, h2, h3, h4, h5, h6 {
   transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Base variables (Gateway Space Dark by default) */
+/* Base variables (Default to Crisp Light Slate Theme) */
 :root {
-  --color-bg-primary: #030712;
-  --color-bg-secondary: #0b0f19;
-  --color-text-main: #f3f4f6;
-  --color-text-muted: #9ca3af;
-  --color-border-main: rgba(56, 189, 248, 0.12);
-  --color-accent-main: #38BDF8;
-  --color-accent-hover: #0ea5e9;
+  --color-bg-primary: #FAFAFA;
+  --color-bg-secondary: #FFFFFF;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+  --color-border-main: #E2E8F0;
+  --color-accent-main: #FF6B00;
+  --color-accent-hover: #E05B00;
   
   --brand-bg: var(--color-bg-primary);
   --brand-text: var(--color-text-main);
@@ -48,18 +48,18 @@ h1, h2, h3, h4, h5, h6 {
   --brand-border: var(--color-border-main);
   --brand-accent: var(--color-accent-main);
   --brand-accent-hover: var(--color-accent-hover);
-  --brand-accent-rgb: 56, 189, 248;
+  --brand-accent-rgb: 255, 107, 0;
 }
 
 /* Explicit Light Mode Override class */
 .light {
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f1f5f9;
-  --color-text-main: #0f172a;
-  --color-text-muted: #475569;
-  --color-border-main: #cbd5e1;
-  --color-accent-main: #1e40af;
-  --color-accent-hover: #1d4ed8;
+  --color-bg-primary: #FAFAFA;
+  --color-bg-secondary: #FFFFFF;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+  --color-border-main: #E2E8F0;
+  --color-accent-main: #FF6B00;
+  --color-accent-hover: #E05B00;
 }
 
 /* Explicit Dark Mode Override class (Upgraded to Gateway Space Dark) */

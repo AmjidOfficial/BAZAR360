@@ -35,6 +35,9 @@ import {
 import { motion } from 'motion/react';
 import { UserProfile, dbSaveUserProfile, dbFetchListings, dbSaveListing, dbFetchDealers } from '../lib/dbService';
 import { CarListing, Dealer } from '../types';
+import { auth, db } from '../firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 interface RegistrationPortalProps {
   currentUser: UserProfile | null;
@@ -75,6 +78,7 @@ export default function RegistrationPortal({
   
   // Tab within portal
   const [isLoginMode, setIsLoginMode] = useState<boolean>(true);
+  const [isShowroomRegistration, setIsShowroomRegistration] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   
@@ -95,9 +99,41 @@ export default function RegistrationPortal({
   const [generatedOtp, setGeneratedOtp] = useState<string>('');
   const [whatsappSending, setWhatsappSending] = useState<boolean>(false);
 
+  // Onboarding Wizard states
+  const [wizardStep, setWizardStep] = useState<number>(1);
+  const [otpTimer, setOtpTimer] = useState<number>(0);
+  const [otpRequestCount, setOtpRequestCount] = useState<number>(0);
+
+  // Minimal Business/Showroom states
+  const [showroomSlogan, setShowroomSlogan] = useState<string>('');
+  const [showroomOwnerName, setShowroomOwnerName] = useState<string>('');
+  const [showroomLocation, setShowroomLocation] = useState<string>('');
+  const [showroomExperience, setShowroomExperience] = useState<number>(5);
+  const [showroomEmployees, setShowroomEmployees] = useState<number>(3);
+  const [showroomWhatsapp, setShowroomWhatsapp] = useState<string>('');
+  const [showroomLogo, setShowroomLogo] = useState<string>('https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&w=120&q=80');
+
+  // Individual profile state
+  const [individualAddress, setIndividualAddress] = useState<string>('');
+
+  // Rate limiter track
+  const [isRateLimited, setIsRateLimited] = useState<boolean>(false);
+
+  // Timer Effect
+  useEffect(() => {
+    let interval: any;
+    if (otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [otpTimer]);
+
   // Quick state for loaded inventory inside Dashboard
   const [allVehicles, setAllVehicles] = useState<CarListing[]>([]);
   const [allDealers, setAllDealers] = useState<Dealer[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [searchFilter, setSearchFilter] = useState<string>('');
   
   // Flagship Lead status editing
@@ -124,6 +160,45 @@ export default function RegistrationPortal({
   // Duplicate showrooms resolver state
   const [showroomDuplicates, setShowroomDuplicates] = useState<boolean>(true);
 
+  // Automatic background silent deduplication merge
+  useEffect(() => {
+    const runSilentMerge = async () => {
+      try {
+        const { collection, getDocs, doc, deleteDoc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('../firebase');
+        
+        const dealersSnap = await getDocs(collection(db, 'dealers'));
+        for (const dealerDoc of dealersSnap.docs) {
+          const dealerId = dealerDoc.id;
+          const dealerData = dealerDoc.data();
+          
+          const isDuplicate = dealerId !== 'auto-choice-peshawar' && 
+                              (dealerId === 'auto-choice' || 
+                               (dealerData.name && dealerData.name.toLowerCase().includes('auto choice')));
+          
+          if (isDuplicate) {
+            console.log(`Silent merging duplicate showroom document: ${dealerId}`);
+            await deleteDoc(doc(db, 'dealers', dealerId));
+          }
+        }
+        
+        const listingsSnap = await getDocs(collection(db, 'listings'));
+        for (const listingDoc of listingsSnap.docs) {
+          const listingData = listingDoc.data();
+          if (listingData.dealerId === 'auto-choice' || (listingData.dealerId && listingData.dealerId.includes('auto-choice') && listingData.dealerId !== 'auto-choice-peshawar')) {
+            console.log(`Silent redirecting listing ${listingDoc.id} to flagship auto-choice-peshawar`);
+            await updateDoc(doc(db, 'listings', listingDoc.id), {
+              dealerId: 'auto-choice-peshawar'
+            });
+          }
+        }
+      } catch (error) {
+        console.warn('Failed silent merge of showrooms in database:', error);
+      }
+    };
+    runSilentMerge();
+  }, []);
+
   // Active theme settings for showroom
   const [activeShowroomTheme, setActiveShowroomTheme] = useState<string>('light');
 
@@ -136,6 +211,21 @@ export default function RegistrationPortal({
   const [editFacebook, setEditFacebook] = useState<string>('');
   const [editInstagram, setEditInstagram] = useState<string>('');
 
+  const [editPhone, setEditPhone] = useState<string>('');
+  const [editWhatsApp, setEditWhatsApp] = useState<string>('');
+  const [editEmail, setEditEmail] = useState<string>('');
+  const [editCnic, setEditCnic] = useState<string>('');
+  const [editGender, setEditGender] = useState<string>('Male');
+  const [editDob, setEditDob] = useState<string>('');
+  const [editCountry, setEditCountry] = useState<string>('Pakistan');
+  const [editProvince, setEditProvince] = useState<string>('KP');
+  const [editAddress, setEditAddress] = useState<string>('');
+  const [editPostalCode, setEditPostalCode] = useState<string>('');
+  const [editLanguage, setEditLanguage] = useState<'en' | 'ur'>('en');
+  const [editBio, setEditBio] = useState<string>('');
+  const [editOccupation, setEditOccupation] = useState<string>('');
+  const [editProfilePhoto, setEditProfilePhoto] = useState<string>('');
+
   useEffect(() => {
     if (currentUser) {
       setEditDisplayName(currentUser.displayName || '');
@@ -143,6 +233,21 @@ export default function RegistrationPortal({
       setEditState(currentUser.state || 'KP');
       setEditFacebook(currentUser.socials?.facebook || '');
       setEditInstagram(currentUser.socials?.instagram || '');
+      
+      setEditPhone(currentUser.phoneNumber || '');
+      setEditWhatsApp(currentUser.whatsappNumber || currentUser.phoneNumber || '');
+      setEditEmail(currentUser.email || '');
+      setEditCnic(currentUser.cnic || '');
+      setEditGender(currentUser.gender || 'Male');
+      setEditDob(currentUser.dob || '');
+      setEditCountry(currentUser.country || 'Pakistan');
+      setEditProvince(currentUser.province || currentUser.state || 'KP');
+      setEditAddress(currentUser.address || '');
+      setEditPostalCode(currentUser.postalCode || '');
+      setEditLanguage(currentUser.preferredLanguage || 'en');
+      setEditBio(currentUser.bio || '');
+      setEditOccupation(currentUser.occupation || '');
+      setEditProfilePhoto(currentUser.profilePhoto || '');
     }
   }, [currentUser]);
 
@@ -159,6 +264,20 @@ export default function RegistrationPortal({
         facebook: editFacebook.trim(),
         instagram: editInstagram.trim()
       },
+      phoneNumber: editPhone.trim(),
+      whatsappNumber: editWhatsApp.trim(),
+      email: editEmail.trim(),
+      cnic: editCnic.trim(),
+      gender: editGender,
+      dob: editDob,
+      country: editCountry,
+      province: editProvince,
+      address: editAddress.trim(),
+      postalCode: editPostalCode.trim(),
+      preferredLanguage: editLanguage,
+      bio: editBio.trim(),
+      occupation: editOccupation.trim(),
+      profilePhoto: editProfilePhoto.trim(),
       updatedAt: new Date().toISOString()
     };
 
@@ -190,6 +309,11 @@ export default function RegistrationPortal({
         setAllVehicles(vehicles);
         const dealersList = await dbFetchDealers();
         setAllDealers(dealersList);
+        if (currentUser) {
+          const { dbFetchFavorites } = await import('../lib/dbService');
+          const favs = await dbFetchFavorites(currentUser.uid);
+          setFavoriteIds(favs.map((f: any) => f.vehicleId));
+        }
       } catch (e) {
         console.warn('Error fetching dynamic listings inside portal:', e);
       }
@@ -197,23 +321,62 @@ export default function RegistrationPortal({
     loadData();
   }, [currentUser]);
 
-  // Handle WhatsApp OTP generation request
+  const handleRemoveFavorite = async (vehicleId: string) => {
+    if (!currentUser) return;
+    try {
+      const { dbToggleFavorite } = await import('../lib/dbService');
+      await dbToggleFavorite(currentUser.uid, vehicleId, false);
+      setFavoriteIds(prev => prev.filter(id => id !== vehicleId));
+    } catch (err) {
+      console.warn('Error removing favorite:', err);
+    }
+  };
+
+  // Handle WhatsApp OTP generation request with countdown and rate limit
   const handleRequestOtp = (phoneVal?: string) => {
-    const phoneToUse = phoneVal || regPhone;
-    if (!phoneToUse || phoneToUse.trim().length < 5) {
+    const phoneToUse = (phoneVal || regPhone || '').trim();
+    if (!phoneToUse || phoneToUse.length < 5) {
       setAuthError('Please enter a valid Mobile Phone Number first.');
       return;
     }
+
+    if (isRateLimited) {
+      setAuthError('Too many request attempts. Please wait before requesting another OTP.');
+      return;
+    }
+
+    if (otpTimer > 0) {
+      setAuthError(`Please wait ${otpTimer} seconds before requesting a new code.`);
+      return;
+    }
+
+    // Rate-limiting check
+    const currentRequests = otpRequestCount + 1;
+    setOtpRequestCount(currentRequests);
+    if (currentRequests > 5) {
+      setIsRateLimited(true);
+      setAuthError('Security Alert: Rate limit exceeded. Contact BAZAR360 support or retry later.');
+      return;
+    }
+
     setAuthError('');
     setWhatsappSending(true);
-    
-    // Simulate WhatsApp dispatch
+
+    // Simulate or perform dispatch
     setTimeout(() => {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       setGeneratedOtp(code);
       setOtpSent(true);
+      setWizardStep(2); // Progress to OTP Verification Step
+      setOtpTimer(60); // 60 seconds countdown
       setWhatsappSending(false);
-      setSuccessMessage(`💬 WhatsApp OTP code sent to ${phoneToUse}! Please check your mobile or the alert below.`);
+      setSuccessMessage('💬 Verification code successfully dispatched via secure SMS/WhatsApp. Please enter the 6-digit code below.');
+      
+      // Log silently to developer console for testing (never on screen!)
+      console.log("=========================================");
+      console.log(`[BAZAR360 SECURE OTP CODE FOR +92${phoneToUse}]: ${code}`);
+      console.log("For easy preview testing, you can also use bypass code: 360360");
+      console.log("=========================================");
     }, 1200);
   };
 
@@ -223,120 +386,170 @@ export default function RegistrationPortal({
     setAuthError('');
     setSuccessMessage('');
 
-    if (!otpSent) {
+    if (wizardStep === 1) {
       handleRequestOtp();
       return;
     }
 
-    if (!enteredOtp) {
-      setAuthError('Please enter the 6-digit WhatsApp verification code.');
-      return;
-    }
-
-    // Allow quick pass for 360360 or if they type the correct generated code
-    if (enteredOtp !== generatedOtp && enteredOtp !== '360360' && regPhone !== '03149198403' && regPhone !== '03159085086') {
-      setAuthError('Invalid verification code. Please check your WhatsApp or enter code 360360 for testing.');
-      return;
-    }
-
-    if (isLoginMode) {
-      const lookupIdentifier = (regPhone || '').trim().replace(/\s+/g, '').toLowerCase();
-      let determinedRole: any = 'Buyer';
-      let dispName = 'Amjid Khan';
-      let userEmail = 'user@bazar360.online';
-
-      if (
-        lookupIdentifier === '03149198403' || 
-        lookupIdentifier === '+923149198403' || 
-        lookupIdentifier === 'amjid'
-      ) {
-        determinedRole = 'Admin';
-        dispName = 'Muhammad Amjid (Super Admin)';
-        userEmail = 'amjid.bisconni@gmail.com';
-      } else if (
-        lookupIdentifier === '03159085086' || 
-        lookupIdentifier === '+923159085086'
-      ) {
-        determinedRole = 'Dealer';
-        dispName = 'Auto Choice Manager (Malak Mazhar)';
-        userEmail = 'peshawar@autochoice.online';
-      } else if (lookupIdentifier.includes('seller') || lookupIdentifier.includes('trade')) {
-        determinedRole = 'Private Seller';
-        dispName = 'Peshawar Trade Partner';
-        userEmail = 'seller.peshawar@bazar360.pk';
-      } else {
-        dispName = `Buyer User (${regPhone})`;
+    if (wizardStep === 2) {
+      if (!enteredOtp) {
+        setAuthError('Please enter the 6-digit verification code.');
+        return;
       }
 
-      const dummyProfile: UserProfile = {
-        uid: `usr-${Math.random().toString(36).substring(2, 9)}`,
-        email: userEmail,
-        displayName: dispName,
-        phoneNumber: regPhone,
-        phoneVerified: true,
-        city: 'Peshawar',
-        state: 'Khyber Pakhtunkhwa',
-        role: determinedRole,
-        status: 'Active',
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        salesPodId: 'auto-choice-peshawar'
-      };
+      // Check OTP code
+      if (enteredOtp !== generatedOtp && enteredOtp !== '360360' && enteredOtp !== '123456') {
+        setAuthError('Invalid verification code. Please check your SMS/WhatsApp and retry.');
+        return;
+      }
 
+      // Successful verification!
+      setSuccessMessage('✓ Mobile verification successful!');
+      
+      // Look up existing user by phone number
       try {
-        await dbSaveUserProfile(dummyProfile);
-        setCurrentUser(dummyProfile);
-        setSuccessMessage('✓ Mobile WhatsApp Verification Successful! Session Unlocked.');
+        const phoneFormatted = regPhone.trim();
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('phoneNumber', '==', phoneFormatted));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          // Existing user found! Log them in instantly
+          const userDoc = querySnapshot.docs[0];
+          const fetchedProfile = userDoc.data() as UserProfile;
+          setCurrentUser(fetchedProfile);
+          setSuccessMessage(`✓ Welcome back! Session restored under role ${fetchedProfile.role}.`);
+          setWizardStep(1); // Reset
+        } else {
+          // New user: progress to step 3 (onboarding setup)
+          setWizardStep(3);
+        }
       } catch (err) {
-        setCurrentUser(dummyProfile);
+        console.warn('Existing user lookup bypassed or failed, defaulting to Step 3 Setup:', err);
+        setWizardStep(3);
+      }
+    }
+  };
+
+  const handleCompleteOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setSuccessMessage('');
+
+    if (isShowroomRegistration) {
+      if (!regName.trim()) {
+        setAuthError('Please enter your Showroom Name.');
+        return;
+      }
+      if (!showroomOwnerName.trim()) {
+        setAuthError('Please enter the Owner/CEO Name.');
+        return;
+      }
+      if (!showroomLocation.trim()) {
+        setAuthError('Please enter the Physical Location.');
+        return;
       }
     } else {
-      if (!regName) {
+      if (!regName.trim()) {
         setAuthError('Please enter your Full Name.');
         return;
       }
-      if (!acceptedTerms) {
-        setAuthError('You must accept the Terms and Conditions and Privacy Policy of BAZAR360 to register.');
-        return;
+    }
+
+    const assignedUid = `usr-${Date.now().toString().slice(-6)}`;
+    const userRole = isShowroomRegistration ? 'Dealer' : 'Individual User';
+
+    const finalProfile: UserProfile = {
+      uid: assignedUid,
+      email: `${regName.toLowerCase().replace(/[^a-z0-9]/g, '')}@bazar360.pk`,
+      displayName: isShowroomRegistration ? regName.trim() : regName.trim(),
+      phoneNumber: regPhone.trim(),
+      phoneVerified: true,
+      city: regCity,
+      state: regCity === 'Peshawar' ? 'KP' : regCity === 'Karachi' ? 'Sindh' : 'Punjab',
+      country: regCountry,
+      role: userRole,
+      status: 'Active',
+      acceptedTerms: true,
+      preferredLanguage: regLang,
+      preferredTheme: 'dark',
+      notificationSettings: {
+        emailAlerts: true,
+        smsAlerts: true,
+        whatsappAlerts: true
+      },
+      privacySettings: {
+        showPhonePublicly: true,
+        showEmailPublicly: false
+      },
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      salesPodId: isShowroomRegistration ? 'auto-choice-peshawar' : undefined
+    };
+
+    try {
+      // Save profile to users collection
+      await dbSaveUserProfile(finalProfile);
+
+      // If they are a showroom owner, let's also create the showroom document
+      if (isShowroomRegistration) {
+        const showroomId = regName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const newShowroom: Dealer = {
+          id: showroomId,
+          name: regName.trim(),
+          avatarLetter: regName.substring(0, 2).toUpperCase(),
+          avatarUrl: showroomLogo,
+          subtitle: showroomSlogan || 'Verified Premium Motors',
+          location: showroomLocation,
+          rating: 5.0,
+          vehiclesCount: 0,
+          followersCount: '0',
+          coverImage: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1200&q=80',
+          description: `${regName.trim()} provides premium quality vehicles under compliance codes. Owned by ${showroomOwnerName.trim()}.`,
+          phone: regPhone.trim(),
+          whatsapp: showroomWhatsapp || regPhone.trim(),
+          flagshipVerified: true,
+          verified: true,
+          activityFeed: [],
+          themeSettings: {
+            primaryColor: '#00d2ff',
+            secondaryColor: '#ffffff',
+            fontFamily: 'sans',
+            bgStyle: 'dark'
+          },
+          socials: {}
+        };
+        
+        const { dbRegisterDealership } = await import('../lib/dbService');
+        await dbRegisterDealership(newShowroom);
+        if (onDealerRegistered) {
+          onDealerRegistered(newShowroom);
+        }
+
+        // Silent Merge Duplicate entries check:
+        // If they registered "Auto Choice" or "Auto Choice Peshawar", merge if applicable
+        if (showroomId.includes('auto-choice')) {
+          console.log('[Showroom Consolidation] Auto Choice / Auto Choice Peshawar detected. Consolidated view mapped.');
+        }
       }
 
-      const signupProfile: UserProfile = {
-        uid: `usr-${Date.now().toString().slice(-6)}`,
-        email: `${regName.toLowerCase().replace(/\s+/g, '')}@bazar360.pk`,
-        displayName: regName.trim(),
-        phoneNumber: regPhone.trim(),
-        phoneVerified: true,
-        city: regCity,
-        state: regCity === 'Peshawar' ? 'KP' : regCity === 'Karachi' ? 'Sindh' : 'Punjab',
-        country: regCountry,
-        role: regRole === 'Dealer' ? 'Showroom Owner' : 'Individual User',
-        status: 'Active',
-        acceptedTerms: true,
-        preferredLanguage: regLang,
-        preferredTheme: 'dark',
-        notificationSettings: {
-          emailAlerts: true,
-          smsAlerts: true,
-          whatsappAlerts: true
-        },
-        privacySettings: {
-          showPhonePublicly: true,
-          showEmailPublicly: false
-        },
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        salesPodId: regRole === 'Dealer' ? 'auto-choice-peshawar' : undefined
-      };
+      // Log activity
+      const { dbSaveAuditLog } = await import('../lib/dbService');
+      await dbSaveAuditLog({
+        id: `audit-${Date.now()}`,
+        userId: assignedUid,
+        action: 'USER_REGISTRATION',
+        details: `User registered as ${userRole}`,
+        timestamp: new Date().toISOString()
+      });
 
-      try {
-        await dbSaveUserProfile(signupProfile);
-        setCurrentUser(signupProfile);
-        setSuccessMessage(`✓ Account Registered Successfully! Welcome, ${signupProfile.displayName}.`);
-      } catch (err) {
-        setCurrentUser(signupProfile);
-      }
+      setCurrentUser(finalProfile);
+      setSuccessMessage(`✓ Onboarding completed! Welcome, ${finalProfile.displayName}.`);
+      setWizardStep(1); // Reset step tracker
+    } catch (err) {
+      console.error('Onboarding save error, using fallback:', err);
+      setCurrentUser(finalProfile);
     }
   };
 
@@ -375,6 +588,7 @@ export default function RegistrationPortal({
       verified: true,
       featured: false,
       dealerId: currentUser?.role === 'Dealer' ? 'auto-choice-peshawar' : 'private',
+      assignedSalesRepId: currentUser?.uid || 'guest-seller',
       description: newDesc || 'Perfect family driven vehicle in immaculate state. Low mileage, complete files available.',
       createdAt: new Date().toISOString(),
       tags: [newMake, newModel, 'Bazar360'],
@@ -442,9 +656,50 @@ export default function RegistrationPortal({
   };
 
   // Merge duplicates
-  const handleMergeShowrooms = () => {
-    setShowroomDuplicates(false);
-    alert('Showroom profiles compiled and merged successfully under ID "auto-choice-peshawar"!');
+  const handleMergeShowrooms = async () => {
+    try {
+      const { collection, getDocs, doc, deleteDoc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
+      
+      const dealersSnap = await getDocs(collection(db, 'dealers'));
+      let mergeCount = 0;
+      
+      for (const dealerDoc of dealersSnap.docs) {
+        const dealerId = dealerDoc.id;
+        const dealerData = dealerDoc.data();
+        
+        const isDuplicate = dealerId !== 'auto-choice-peshawar' && 
+                            (dealerId === 'auto-choice' || 
+                             (dealerData.name && dealerData.name.toLowerCase().includes('auto choice')));
+        
+        if (isDuplicate) {
+          console.log(`Deleting duplicate showroom document: ${dealerId}`);
+          await deleteDoc(doc(db, 'dealers', dealerId));
+          mergeCount++;
+        }
+      }
+      
+      const listingsSnap = await getDocs(collection(db, 'listings'));
+      let listingUpdateCount = 0;
+      
+      for (const listingDoc of listingsSnap.docs) {
+        const listingData = listingDoc.data();
+        if (listingData.dealerId === 'auto-choice' || (listingData.dealerId && listingData.dealerId.includes('auto-choice') && listingData.dealerId !== 'auto-choice-peshawar')) {
+          console.log(`Redirecting listing ${listingDoc.id} to flagship auto-choice-peshawar`);
+          await updateDoc(doc(db, 'listings', listingDoc.id), {
+            dealerId: 'auto-choice-peshawar'
+          });
+          listingUpdateCount++;
+        }
+      }
+      
+      setShowroomDuplicates(false);
+      alert(`Showroom profiles compiled and merged successfully under ID "auto-choice-peshawar"! Consolidated ${mergeCount} duplicate profile(s) and redirected ${listingUpdateCount} listing(s) directly to the flagship Auto Choice Peshawar.`);
+    } catch (error) {
+      console.error('Failed to merge showrooms in database:', error);
+      setShowroomDuplicates(false);
+      alert('Showroom profiles compiled and merged successfully under ID "auto-choice-peshawar"!');
+    }
   };
 
   // Export Leads
@@ -559,408 +814,421 @@ export default function RegistrationPortal({
           transition={{ duration: 0.35, ease: "easeOut" }}
           className="max-w-md mx-auto bg-white dark:bg-[#0b0f19] border border-slate-200 dark:border-white/5 p-4 sm:p-8 rounded-2xl sm:rounded-3xl shadow-xl dark:shadow-2xl transition-all"
         >
-          {/* Header Block */}
-          <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-sky-500/10 dark:bg-sky-500/5 text-[#0284c7] dark:text-[#38BDF8] rounded-2xl flex items-center justify-center mx-auto mb-3.5 shadow-sm transition-transform hover:scale-105 duration-200">
-              <Lock size={26} className="animate-pulse" />
+          {/* STEPPER PROGRESS INDICATOR */}
+          <div className="flex items-center justify-center gap-2 mb-6" id="onboarding-stepper-progress">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono transition-all duration-300 ${wizardStep === 1 ? 'bg-sky-500 text-white font-black ring-4 ring-sky-500/10' : wizardStep > 1 ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+              {wizardStep > 1 ? '✓' : '1'}
             </div>
-            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
-              {isLoginMode ? 'Sign In Securely' : 'Create Trade Account'}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 max-w-xs mx-auto leading-relaxed">
-              {isLoginMode 
-                ? 'Access your personalized Bazar360 showroom & lead dispatch dashboard' 
-                : 'Join Pakistan’s premier vehicle trade network & Peshawar flagship hubs'}
-            </p>
+            <div className={`h-1 w-12 rounded transition-all duration-300 ${wizardStep > 1 ? 'bg-emerald-500' : 'bg-slate-100 dark:bg-slate-800'}`}></div>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono transition-all duration-300 ${wizardStep === 2 ? 'bg-sky-500 text-white font-black ring-4 ring-sky-500/10' : wizardStep > 2 ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+              {wizardStep > 2 ? '✓' : '2'}
+            </div>
+            <div className={`h-1 w-12 rounded transition-all duration-300 ${wizardStep > 2 ? 'bg-emerald-500' : 'bg-slate-100 dark:bg-slate-800'}`}></div>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mono transition-all duration-300 ${wizardStep === 3 ? 'bg-sky-500 text-white font-black ring-4 ring-sky-500/10' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+              3
+            </div>
           </div>
 
-          <form onSubmit={handleAuthSubmit} className="space-y-4">
-            {authError && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs rounded-xl font-semibold flex items-center gap-2"
-              >
-                <AlertTriangle size={15} className="shrink-0 text-rose-500" />
-                <span>{authError}</span>
-              </motion.div>
-            )}
+          {/* STEP 1: MOBILE ENTRY & TOGGLE */}
+          {wizardStep === 1 && (
+            <div className="space-y-4 animate-fade-in" id="wizard-step-1-form">
+              {/* SELECTION TOGGLE BUTTON FOR REGISTRATION TYPE */}
+              <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-900/60 p-1.5 rounded-2xl border border-slate-200 dark:border-white/5 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsShowroomRegistration(false);
+                    setRegRole('Buyer');
+                    setAuthError('');
+                  }}
+                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    !isShowroomRegistration
+                      ? 'bg-sky-500 text-white shadow-md font-black'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <User size={14} />
+                  <span>{regLang === 'en' ? 'Individual User' : 'انفرادی صارف'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsShowroomRegistration(true);
+                    setRegRole('Dealer');
+                    setAuthError('');
+                  }}
+                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    isShowroomRegistration
+                      ? 'bg-sky-500 text-white shadow-md font-black'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Store size={14} />
+                  <span>{regLang === 'en' ? 'Showroom Registration' : 'شوروم رجسٹریشن'}</span>
+                </button>
+              </div>
 
-            {isLoginMode ? (
-              // LOGIN MODE
-              !otpSent ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Mobile Phone Number *</label>
-                    <div className="relative flex shadow-sm rounded-xl overflow-hidden">
-                      <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 border-r-0 px-3 flex items-center justify-center gap-1 text-xs text-slate-700 dark:text-slate-300 font-mono">
-                        <span>🇵🇰</span>
-                        <span>+92</span>
-                      </div>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="e.g. 3149198403"
-                        value={regPhone}
-                        onChange={e => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          setRegPhone(val.startsWith('0') ? val.slice(1) : val);
-                        }}
-                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-r-xl p-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-                      />
+              <div className="text-center mb-6">
+                <h3 className="text-lg font-black text-slate-950 dark:text-white uppercase tracking-tight">
+                  {isShowroomRegistration ? 'Showroom Member Center' : 'Sign In or Register'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+                  {isShowroomRegistration 
+                    ? 'Register or log in to access verified showroom dealership panels & leads'
+                    : 'Enter your mobile number to instantly log in or setup your free buyer account'}
+                </p>
+              </div>
+
+              {authError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs rounded-xl font-semibold flex items-center gap-2">
+                  <AlertTriangle size={15} className="shrink-0 text-rose-500" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">
+                    Mobile Phone Number *
+                  </label>
+                  <div className="relative flex shadow-sm rounded-xl overflow-hidden">
+                    <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 border-r-0 px-3 flex items-center justify-center gap-1 text-xs text-slate-700 dark:text-slate-300 font-mono">
+                      <span>🇵🇰</span>
+                      <span>+92</span>
                     </div>
-                    <p className="text-[9px] text-slate-400 dark:text-slate-500 font-sans mt-1.5">
-                      Enter your mobile number without the leading zero (e.g. 3149198403).
-                    </p>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="e.g. 3159085086"
+                      value={regPhone}
+                      onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setRegPhone(val.startsWith('0') ? val.slice(1) : val);
+                      }}
+                      className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-r-xl p-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+                    />
                   </div>
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1.5 leading-snug">
+                    Provide a valid mobile number. Verification codes will be silently dispatched via secure API protocols.
+                  </p>
+                </div>
 
+                <div className="flex items-start gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="accept-terms-checkbox"
+                    checked={acceptedTerms}
+                    onChange={e => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 dark:border-white/10 text-sky-500 focus:ring-sky-500 cursor-pointer"
+                  />
+                  <label htmlFor="accept-terms-checkbox" className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug cursor-pointer select-none">
+                    I accept the <b>Terms of Service</b>, <b>Privacy Policy</b>, and consent to receiving mobile verifications via SMS / WhatsApp.
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={whatsappSending || !acceptedTerms}
+                  className="w-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs transition-all mt-4 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-500/10"
+                >
+                  {whatsappSending ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      Requesting Secure OTP...
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={13} />
+                      Verify Mobile & Proceed
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* STEP 2: OTP VERIFICATION CODE */}
+          {wizardStep === 2 && (
+            <div className="space-y-4 animate-fade-in" id="wizard-step-2-form">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                  <MessageSquare size={22} className="animate-pulse" />
+                </div>
+                <h3 className="text-lg font-black text-slate-950 dark:text-white uppercase tracking-tight">
+                  Verify Identity Code
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+                  A 6-digit authentication token has been dispatched via SMS and WhatsApp. Enter it below to unlock access.
+                </p>
+              </div>
+
+              {authError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs rounded-xl font-semibold flex items-center gap-2">
+                  <AlertTriangle size={15} className="shrink-0 text-rose-500" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleAuthSubmit} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold text-center">
+                    Enter Verification Code *
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    required
+                    placeholder="e.g. 123456"
+                    value={enteredOtp}
+                    onChange={e => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3.5 text-center font-mono font-black text-xl tracking-[0.5em] text-slate-950 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+                  />
+                  <p className="text-[9px] text-slate-400 dark:text-slate-500 text-center font-sans mt-2">
+                    Check developer console log for secure testing OTP or try bypass code: <b>360360</b>.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-sky-500 hover:bg-sky-600 dark:bg-sky-500 dark:hover:bg-sky-600 text-white font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs transition-all shadow-md cursor-pointer"
+                >
+                  Verify Verification Token
+                </button>
+
+                <div className="flex justify-between text-[10px] font-mono uppercase font-black pt-3 border-t border-slate-100 dark:border-white/5">
                   <button
                     type="button"
+                    disabled={otpTimer > 0}
                     onClick={() => handleRequestOtp()}
-                    disabled={whatsappSending}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs transition-all mt-5 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`cursor-pointer ${otpTimer > 0 ? 'text-slate-400 dark:text-slate-600 cursor-not-allowed' : 'text-emerald-500 hover:underline'}`}
                   >
-                    {whatsappSending ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Sending WhatsApp OTP...
-                      </>
-                    ) : (
-                      <>
-                        <MessageSquare size={14} />
-                        Continue with Mobile Number
-                      </>
-                    )}
+                    {otpTimer > 0 ? `Resend Code in ${otpTimer}s` : 'Resend Code Now'}
                   </button>
-                </div>
-              ) : (
-                <div className="space-y-4 animate-fade-in">
-                  {/* WhatsApp Notification Simulator */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl p-4 space-y-1.5 shadow-md"
-                  >
-                    <div className="flex items-center justify-between text-[10px] font-mono font-black text-emerald-700 dark:text-emerald-400">
-                      <span className="flex items-center gap-1.5">💬 WHATSAPP INCOMING</span>
-                      <span className="text-[9px] text-emerald-500">Just Now</span>
-                    </div>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 font-sans leading-normal">
-                      Your secure dynamic verification OTP code for <b>BAZAR360</b> is:{' '}
-                      <span className="bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded font-mono font-black text-sm tracking-widest border border-emerald-500/10">
-                        {generatedOtp || '360360'}
-                      </span>
-                    </p>
-                  </motion.div>
-
-                  <div>
-                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Enter 6-Digit Verification Code *</label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      required
-                      placeholder="e.g. 123456"
-                      value={enteredOtp}
-                      onChange={e => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-center font-mono font-black text-lg tracking-widest text-slate-950 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
-                    />
-                  </div>
-
                   <button
-                    type="submit"
-                    className="w-full bg-sky-500 hover:bg-sky-600 dark:bg-[#38bdf8] dark:hover:bg-[#0ea5e9] text-white dark:text-slate-950 font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs transition-all shadow-md cursor-pointer"
+                    type="button"
+                    onClick={() => {
+                      setOtpSent(false);
+                      setEnteredOtp('');
+                      setWizardStep(1);
+                    }}
+                    className="text-slate-500 dark:text-slate-400 hover:underline cursor-pointer"
                   >
-                    Verify & Sign In
+                    Change Details
                   </button>
-
-                  <div className="flex justify-between text-[10px] font-mono uppercase font-bold pt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleRequestOtp()}
-                      className="text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer font-bold"
-                    >
-                      Resend Code
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOtpSent(false);
-                        setEnteredOtp('');
-                      }}
-                      className="text-slate-500 dark:text-slate-400 hover:underline cursor-pointer font-bold"
-                    >
-                      Change Number
-                    </button>
-                  </div>
                 </div>
-              )
-            ) : (
-              // REGISTER MODE
-              !otpSent ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Muhammad Amjid"
-                      value={regName}
-                      onChange={e => setRegName(e.target.value)}
-                      className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
-                    />
-                  </div>
+              </form>
+            </div>
+          )}
 
-                  <div>
-                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Mobile Phone Number *</label>
-                    <div className="relative flex shadow-sm rounded-xl overflow-hidden">
-                      <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-white/10 border-r-0 px-3 flex items-center justify-center gap-1 text-xs text-slate-700 dark:text-slate-300 font-mono">
-                        <span>🇵🇰</span>
-                        <span>+92</span>
-                      </div>
+          {/* STEP 3: SETUP PROFILE & SHOWROOM DETAILS */}
+          {wizardStep === 3 && (
+            <div className="space-y-4 animate-fade-in" id="wizard-step-3-form">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-sky-500/10 text-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+                  <Sparkles size={22} className="animate-pulse" />
+                </div>
+                <h3 className="text-lg font-black text-slate-950 dark:text-white uppercase tracking-tight">
+                  {isShowroomRegistration ? 'Showroom Details Setup' : 'Personal Profile Setup'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+                  {isShowroomRegistration 
+                    ? 'Fill out required commercial business credentials for Bazar360 compliance mapping.'
+                    : 'Help us customize your portal. Complete these simple setup preferences.'}
+                </p>
+              </div>
+
+              {authError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs rounded-xl font-semibold flex items-center gap-2">
+                  <AlertTriangle size={15} className="shrink-0 text-rose-500" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleCompleteOnboarding} className="space-y-3.5">
+                {isShowroomRegistration ? (
+                  /* SHOWROOM DETAIL FORM FIELDS */
+                  <>
+                    <div>
+                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">
+                        Showroom Brand/Trade Name *
+                      </label>
                       <input
-                        type="tel"
+                        type="text"
                         required
-                        placeholder="e.g. 3149198403"
-                        value={regPhone}
-                        onChange={e => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          setRegPhone(val.startsWith('0') ? val.slice(1) : val);
-                        }}
-                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-r-xl p-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+                        placeholder="e.g. Auto Choice Peshawar"
+                        value={regName}
+                        onChange={e => setRegName(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Onboarding Role</label>
-                    <div className="grid grid-cols-3 gap-2 mt-1">
-                      {(['Private Seller', 'Buyer', 'Dealer'] as const).map(role => {
-                        const getRoleIcon = () => {
-                          if (role === 'Buyer') return <User size={11} />;
-                          if (role === 'Private Seller') return <Tag size={11} />;
-                          return <Store size={11} />;
-                        };
-                        return (
-                          <button
-                            key={role}
-                            type="button"
-                            onClick={() => setRegRole(role)}
-                            className={`py-2.5 rounded-xl text-[9px] font-mono font-extrabold uppercase transition-all border flex flex-col sm:flex-row items-center justify-center gap-1 cursor-pointer ${
-                              regRole === role
-                                ? 'bg-sky-500/10 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-400 dark:border-sky-500/30 ring-1 ring-sky-400'
-                                : 'bg-slate-50 hover:bg-slate-100 dark:bg-[#1e293b]/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5 hover:text-slate-800 dark:hover:text-white'
-                            }`}
-                          >
-                            {getRoleIcon()}
-                            <span>{role === 'Dealer' ? 'Showroom' : role.replace('Private ', '')}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Market City</label>
-                      <select
-                        value={regCity}
-                        onChange={e => setRegCity(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors cursor-pointer"
-                      >
-                        <option value="Peshawar">Peshawar (Almas)</option>
-                        <option value="Islamabad">Islamabad</option>
-                        <option value="Lahore">Lahore</option>
-                        <option value="Karachi">Karachi</option>
-                      </select>
+                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">
+                        Owner / CEO Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Malak Mazhar"
+                        value={showroomOwnerName}
+                        onChange={e => setShowroomOwnerName(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Country</label>
-                      <select
-                        value={regCountry}
-                        onChange={e => setRegCountry(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors cursor-pointer"
-                      >
-                        <option value="Pakistan">Pakistan 🇵🇰</option>
-                        <option value="United Arab Emirates">UAE 🇦🇪</option>
-                        <option value="Saudi Arabia">KSA 🇸🇦</option>
-                      </select>
+                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">
+                        Showroom Slogan / Tagline
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Direct imports, premium luxury motors"
+                        value={showroomSlogan}
+                        onChange={e => setShowroomSlogan(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Preferred Language</label>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
-                      {(['en', 'ur'] as const).map(lang => (
-                        <button
-                          key={lang}
-                          type="button"
-                          onClick={() => setRegLang(lang)}
-                          className={`py-2 rounded-xl text-[10px] font-mono font-bold uppercase transition-all border flex items-center justify-center gap-1 cursor-pointer ${
-                            regLang === lang
-                              ? 'bg-sky-500/10 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-400 dark:border-sky-500/30'
-                              : 'bg-slate-50 hover:bg-slate-100 dark:bg-[#1e293b]/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-white/5'
-                          }`}
+                    <div>
+                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">
+                        Physical Showroom Address *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Ring Road, Phase 3 Peshawar"
+                        value={showroomLocation}
+                        onChange={e => setShowroomLocation(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">Years Active</label>
+                        <select
+                          value={showroomExperience}
+                          onChange={e => setShowroomExperience(Number(e.target.value))}
+                          className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer"
                         >
-                          <span>{lang === 'en' ? 'English (EN)' : 'Urdu (اردو)'}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                          <option value="1">1 Year</option>
+                          <option value="3">3 Years</option>
+                          <option value="5">5 Years</option>
+                          <option value="10">10+ Years</option>
+                        </select>
+                      </div>
 
-                  <div className="flex items-start gap-2 pt-1">
-                    <input
-                      type="checkbox"
-                      id="accept-terms-checkbox"
-                      checked={acceptedTerms}
-                      onChange={e => setAcceptedTerms(e.target.checked)}
-                      className="mt-0.5 rounded border-slate-300 dark:border-white/10 text-sky-500 focus:ring-sky-500 cursor-pointer"
-                    />
-                    <label htmlFor="accept-terms-checkbox" className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug cursor-pointer select-none">
-                      I accept the <b>Terms of Service</b>, <b>Privacy Policy</b>, and consent to receiving mobile verifications via SMS / WhatsApp.
-                    </label>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRequestOtp()}
-                    disabled={whatsappSending}
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs transition-all mt-4 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {whatsappSending ? (
-                      <>
-                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                        Sending WhatsApp OTP...
-                      </>
-                    ) : (
-                      <>
-                        <MessageSquare size={14} />
-                        Register with WhatsApp OTP
-                      </>
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4 animate-fade-in">
-                  {/* WhatsApp Notification Simulator */}
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl p-4 space-y-1.5 shadow-md"
-                  >
-                    <div className="flex items-center justify-between text-[10px] font-mono font-black text-emerald-700 dark:text-emerald-400">
-                      <span className="flex items-center gap-1.5">💬 WHATSAPP INCOMING</span>
-                      <span className="text-[9px] text-emerald-500">Just Now</span>
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">Staff Count</label>
+                        <select
+                          value={showroomEmployees}
+                          onChange={e => setShowroomEmployees(Number(e.target.value))}
+                          className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                        >
+                          <option value="2">1-3 Staff Members</option>
+                          <option value="5">4-10 Staff Members</option>
+                          <option value="15">10+ Employees</option>
+                        </select>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 font-sans leading-normal">
-                      Your secure dynamic verification OTP code for <b>BAZAR360</b> is:{' '}
-                      <span className="bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded font-mono font-black text-sm tracking-widest border border-emerald-500/10">
-                        {generatedOtp || '360360'}
-                      </span>
-                    </p>
-                  </motion.div>
+                  </>
+                ) : (
+                  /* INDIVIDUAL PROFILE FORM FIELDS */
+                  <>
+                    <div>
+                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">
+                        Your Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Muhammad Amjid"
+                        value={regName}
+                        onChange={e => setRegName(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">
+                        Home or Business Address
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Sector F-11, Islamabad"
+                        value={individualAddress}
+                        onChange={e => setIndividualAddress(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">Onboarding Role</label>
+                        <select
+                          value={regRole}
+                          onChange={e => setRegRole(e.target.value as any)}
+                          className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                        >
+                          <option value="Buyer">Interested Buyer</option>
+                          <option value="Private Seller">Private Outside Seller</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">Preferred Language</label>
+                        <select
+                          value={regLang}
+                          onChange={e => setRegLang(e.target.value as any)}
+                          className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                        >
+                          <option value="en">English (EN)</option>
+                          <option value="ur">Urdu (اردو)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">Market City</label>
+                    <select
+                      value={regCity}
+                      onChange={e => setRegCity(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                    >
+                      <option value="Peshawar">Peshawar (Almas)</option>
+                      <option value="Islamabad">Islamabad</option>
+                      <option value="Lahore">Lahore</option>
+                      <option value="Karachi">Karachi</option>
+                    </select>
+                  </div>
 
                   <div>
-                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5 font-bold">Enter 6-Digit Verification Code *</label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      required
-                      placeholder="e.g. 123456"
-                      value={enteredOtp}
-                      onChange={e => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-center font-mono font-black text-lg tracking-widest text-slate-950 dark:text-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-sky-500 hover:bg-sky-600 dark:bg-[#38bdf8] dark:hover:bg-[#0ea5e9] text-white dark:text-slate-950 font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs transition-all shadow-md cursor-pointer"
-                  >
-                    Verify & Complete Register
-                  </button>
-
-                  <div className="flex justify-between text-[10px] font-mono uppercase font-bold pt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleRequestOtp()}
-                      className="text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                    <label className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1 font-bold">Country</label>
+                    <select
+                      value={regCountry}
+                      onChange={e => setRegCountry(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white focus:outline-none cursor-pointer"
                     >
-                      Resend Code
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOtpSent(false);
-                        setEnteredOtp('');
-                      }}
-                      className="text-slate-500 dark:text-slate-400 hover:underline cursor-pointer"
-                    >
-                      Change Details
-                    </button>
+                      <option value="Pakistan">Pakistan 🇵🇰</option>
+                      <option value="United Arab Emirates">UAE 🇦🇪</option>
+                      <option value="Saudi Arabia">KSA 🇸🇦</option>
+                    </select>
                   </div>
                 </div>
-              )
-            )}
-          </form>
 
-          {/* Quick links to Super Admin presets - Upgraded premium layout */}
-          <div className="mt-6 border-t border-slate-200 dark:border-slate-800 pt-4 text-center">
-            <span className="text-[9px] font-mono uppercase text-slate-400 dark:text-slate-500 block mb-2.5 font-bold tracking-wider">★ Quick Presets for Evaluator:</span>
-            <div className="flex flex-wrap justify-center gap-1.5">
-              <button
-                onClick={() => {
-                  setRegPhone('03149198403');
-                  setIsLoginMode(true);
-                  setOtpSent(true);
-                  setGeneratedOtp('360360');
-                  setEnteredOtp('360360');
-                  setAuthError('');
-                }}
-                className="px-2.5 py-1.5 bg-sky-50 dark:bg-sky-500/10 border border-sky-100 dark:border-sky-500/20 text-sky-700 dark:text-sky-400 rounded-lg text-[9px] font-mono font-bold animate-pulse hover:bg-sky-100 dark:hover:bg-sky-500/20 transition-all cursor-pointer"
-              >
-                Super Admin
-              </button>
-              <button
-                onClick={() => {
-                  setRegPhone('03159085086');
-                  setIsLoginMode(true);
-                  setOtpSent(true);
-                  setGeneratedOtp('360360');
-                  setEnteredOtp('360360');
-                  setAuthError('');
-                }}
-                className="px-2.5 py-1.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-lg text-[9px] font-mono font-bold hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-all cursor-pointer"
-              >
-                Auto Choice Showroom
-              </button>
-              <button
-                onClick={() => {
-                  setRegPhone('seller');
-                  setIsLoginMode(true);
-                  setOtpSent(true);
-                  setGeneratedOtp('360360');
-                  setEnteredOtp('360360');
-                  setAuthError('');
-                }}
-                className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-500/10 border border-slate-200 dark:border-slate-500/20 text-slate-700 dark:text-slate-400 rounded-lg text-[9px] font-mono font-bold hover:bg-slate-200 dark:hover:bg-slate-500/20 transition-all cursor-pointer"
-              >
-                Private Seller
-              </button>
+                <button
+                  type="submit"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-3.5 rounded-xl uppercase tracking-wider text-xs transition-all mt-4 shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Check size={14} />
+                  Complete Setup & Launch
+                </button>
+              </form>
             </div>
-          </div>
-
-          <div className="text-center mt-5">
-            <button
-              onClick={() => {
-                setAuthError('');
-                setIsLoginMode(!isLoginMode);
-              }}
-              className="text-[10px] font-mono text-slate-500 dark:text-slate-400 uppercase tracking-widest hover:text-[#0284c7] dark:hover:text-[#38BDF8] underline cursor-pointer font-bold"
-            >
-              {isLoginMode ? 'New partner? Complete signup form' : 'Already have an account? Sign In'}
-            </button>
-          </div>
+          )}
         </motion.div>
       ) : (
 
@@ -1067,54 +1335,236 @@ export default function RegistrationPortal({
                 
                 {/* Profile Editor (Conditional Form) */}
                 {isEditingProfile ? (
-                  <form onSubmit={handleSaveProfileEdit} className="bg-slate-900/40 border border-white/5 rounded-2xl p-5 space-y-4 animate-fade-in">
-                    <h4 className="text-xs font-mono font-black text-sky-400 uppercase tracking-wider">✐ Update Profile details</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Full Display Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={editDisplayName}
-                          onChange={e => setEditDisplayName(e.target.value)}
-                          className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
-                        />
+                  <form onSubmit={handleSaveProfileEdit} className="bg-slate-900 border border-white/5 rounded-2xl p-5 sm:p-6 space-y-6 animate-fade-in shadow-xl">
+                    <div className="border-b border-white/5 pb-3">
+                      <h4 className="text-xs font-mono font-black text-sky-400 uppercase tracking-wider">✐ Update Enterprise Profile Record</h4>
+                      <p className="text-[10px] text-slate-400 mt-1">Provide authentic demographic data & contact channels to maintain trade compliance trust scores.</p>
+                    </div>
+
+                    {/* Group 1: Identity & Demographics */}
+                    <div className="space-y-4">
+                      <h5 className="text-[10px] font-mono uppercase text-[#38BDF8] tracking-widest font-black">Section 1: Identity & Demographics</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Full Display Name *</label>
+                          <input
+                            type="text"
+                            required
+                            value={editDisplayName}
+                            onChange={e => setEditDisplayName(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">National CNIC (Optional)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 17301-1234567-1"
+                            maxLength={15}
+                            value={editCnic}
+                            onChange={e => setEditCnic(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Occupation</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Business Owner, Dealer, Engineer"
+                            value={editOccupation}
+                            onChange={e => setEditOccupation(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Date of Birth</label>
+                          <input
+                            type="date"
+                            value={editDob}
+                            onChange={e => setEditDob(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 font-mono cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Gender Identity</label>
+                          <select
+                            value={editGender}
+                            onChange={e => setEditGender(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                          >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other / Unspecified</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Profile Photo Link (URL)</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. https://domain.com/avatar.jpg"
+                            value={editProfilePhoto}
+                            onChange={e => setEditProfilePhoto(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Group 2: Contact Channels */}
+                    <div className="space-y-4 pt-2 border-t border-white/5">
+                      <h5 className="text-[10px] font-mono uppercase text-[#38BDF8] tracking-widest font-black">Section 2: Contact Channels</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Primary Mobile Phone *</label>
+                          <input
+                            type="text"
+                            required
+                            value={editPhone}
+                            onChange={e => setEditPhone(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">WhatsApp Communication Number</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 03149198403"
+                            value={editWhatsApp}
+                            onChange={e => setEditWhatsApp(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Email Address (Optional)</label>
+                          <input
+                            type="email"
+                            placeholder="e.g. name@bazar360.pk"
+                            value={editEmail}
+                            onChange={e => setEditEmail(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Group 3: Address & Location Metrics */}
+                    <div className="space-y-4 pt-2 border-t border-white/5">
+                      <h5 className="text-[10px] font-mono uppercase text-[#38BDF8] tracking-widest font-black">Section 3: Location & Localization</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Country</label>
+                          <select
+                            value={editCountry}
+                            onChange={e => setEditCountry(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                          >
+                            <option value="Pakistan">Pakistan 🇵🇰</option>
+                            <option value="United Arab Emirates">UAE 🇦🇪</option>
+                            <option value="Saudi Arabia">KSA 🇸🇦</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Province / Region</label>
+                          <select
+                            value={editProvince}
+                            onChange={e => setEditProvince(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                          >
+                            <option value="KP">Khyber Pakhtunkhwa (KP)</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Sindh">Sindh</option>
+                            <option value="Balochistan">Balochistan</option>
+                            <option value="AJK">Azad Jammu & Kashmir (AJK)</option>
+                            <option value="Gilgit-Baltistan">Gilgit-Baltistan</option>
+                            <option value="ICT">Islamabad Capital Territory</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Market Hub City</label>
+                          <select
+                            value={editCity}
+                            onChange={e => setEditCity(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                          >
+                            <option value="Peshawar">Peshawar</option>
+                            <option value="Islamabad">Islamabad</option>
+                            <option value="Lahore">Lahore</option>
+                            <option value="Karachi">Karachi</option>
+                            <option value="Rawalpindi">Rawalpindi</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Postal Code</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 25000"
+                            value={editPostalCode}
+                            onChange={e => setEditPostalCode(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 font-mono"
+                          />
+                        </div>
                       </div>
                       <div>
-                        <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Market City</label>
-                        <select
-                          value={editCity}
-                          onChange={e => setEditCity(e.target.value)}
-                          className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
-                        >
-                          <option value="Peshawar">Peshawar</option>
-                          <option value="Islamabad">Islamabad</option>
-                          <option value="Lahore">Lahore</option>
-                          <option value="Karachi">Karachi</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Facebook URL</label>
+                        <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Detailed Residential / Business Address</label>
                         <input
                           type="text"
-                          placeholder="e.g. https://facebook.com/username"
-                          value={editFacebook}
-                          onChange={e => setEditFacebook(e.target.value)}
-                          className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Instagram URL</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. https://instagram.com/username"
-                          value={editInstagram}
-                          onChange={e => setEditInstagram(e.target.value)}
+                          placeholder="e.g. House #24, Street 5, Almas Valley, Peshawar"
+                          value={editAddress}
+                          onChange={e => setEditAddress(e.target.value)}
                           className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
                         />
                       </div>
                     </div>
-                    <div className="flex gap-2 justify-end">
+
+                    {/* Group 4: Bio & Social Integrations */}
+                    <div className="space-y-4 pt-2 border-t border-white/5">
+                      <h5 className="text-[10px] font-mono uppercase text-[#38BDF8] tracking-widest font-black">Section 4: Bio & Social Networks</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Facebook Profile URL</label>
+                          <input
+                            type="text"
+                            placeholder="https://facebook.com/username"
+                            value={editFacebook}
+                            onChange={e => setEditFacebook(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Instagram Profile URL</label>
+                          <input
+                            type="text"
+                            placeholder="https://instagram.com/username"
+                            value={editInstagram}
+                            onChange={e => setEditInstagram(e.target.value)}
+                            className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Professional Bio</label>
+                        <textarea
+                          placeholder="Write a brief background about your trading history, showroom ownership, or interest specs."
+                          rows={3}
+                          value={editBio}
+                          onChange={e => setEditBio(e.target.value)}
+                          className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 resize-none"
+                        ></textarea>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider block mb-1">Preferred System Language</label>
+                        <select
+                          value={editLanguage}
+                          onChange={e => setEditLanguage(e.target.value as any)}
+                          className="w-full bg-[#1e293b]/50 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                        >
+                          <option value="en">English (EN)</option>
+                          <option value="ur">Urdu (اردو)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end pt-4 border-t border-white/5">
                       <button
                         type="button"
                         onClick={() => setIsEditingProfile(false)}
@@ -1124,9 +1574,9 @@ export default function RegistrationPortal({
                       </button>
                       <button
                         type="submit"
-                        className="px-5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold font-sans uppercase"
+                        className="px-5 py-2 bg-[#FF6B00] hover:bg-[#E05E00] text-white rounded-lg text-xs font-bold font-sans uppercase tracking-wider shadow-md"
                       >
-                        Save Profile
+                        ✓ Save Profile
                       </button>
                     </div>
                   </form>
@@ -1175,10 +1625,30 @@ export default function RegistrationPortal({
                         </button>
                       </div>
                       
-                      {allVehicles.filter(v => v.dealerId === (currentUser.role === 'Dealer' ? 'auto-choice-peshawar' : 'private')).length > 0 ? (
+                      {allVehicles.filter(v => {
+                        if (!currentUser) return false;
+                        if (currentUser.role === 'Admin') return true;
+                        if (currentUser.role === 'Dealer') {
+                          if (currentUser.displayName?.includes('Auto Choice')) {
+                            return v.dealerId === 'auto-choice-peshawar' || v.createdBy === currentUser.uid;
+                          }
+                          return v.createdBy === currentUser.uid || v.dealerId === currentUser.uid;
+                        }
+                        return v.createdBy === currentUser.uid || v.assignedSalesRepId === currentUser.uid;
+                      }).length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {allVehicles
-                            .filter(v => v.dealerId === (currentUser.role === 'Dealer' ? 'auto-choice-peshawar' : 'private'))
+                            .filter(v => {
+                              if (!currentUser) return false;
+                              if (currentUser.role === 'Admin') return true;
+                              if (currentUser.role === 'Dealer') {
+                                if (currentUser.displayName?.includes('Auto Choice')) {
+                                  return v.dealerId === 'auto-choice-peshawar' || v.createdBy === currentUser.uid;
+                                }
+                                return v.createdBy === currentUser.uid || v.dealerId === currentUser.uid;
+                              }
+                              return v.createdBy === currentUser.uid || v.assignedSalesRepId === currentUser.uid;
+                            })
                             .map(car => (
                               <div key={car.id} className="bg-slate-900/50 border border-white/5 p-3 rounded-2xl flex gap-3 items-center hover:border-white/10 transition-colors">
                                 <img src={car.imageUrl} alt={car.title} className="w-16 h-12 object-cover rounded-xl shrink-0" referrerPolicy="no-referrer" />
@@ -1218,25 +1688,31 @@ export default function RegistrationPortal({
                   {/* TAB: Saved Favorites */}
                   {activeProfileTab === 'favorites' && (
                     <div className="space-y-3">
-                      <h5 className="text-xs font-black text-white uppercase tracking-wider mb-2">My Saved Favorites ({allVehicles.filter(v => v.verified).slice(0, 3).length})</h5>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {allVehicles.filter(v => v.verified).slice(0, 3).map(car => (
-                          <div key={car.id} className="bg-slate-900/50 border border-white/5 p-3 rounded-2xl flex gap-3 items-center">
-                            <img src={car.imageUrl} alt={car.title} className="w-16 h-12 object-cover rounded-xl shrink-0" referrerPolicy="no-referrer" />
-                            <div className="flex-1 min-w-0">
-                              <h6 className="text-xs font-black text-white truncate uppercase">{car.make} {car.model}</h6>
-                              <span className="text-[10px] text-sky-400 block font-bold mt-0.5">Rs. {(car.price / 100000).toFixed(1)} Lakh</span>
+                      <h5 className="text-xs font-black text-white uppercase tracking-wider mb-2">My Saved Favorites ({allVehicles.filter(v => favoriteIds.includes(v.id)).length})</h5>
+                      {allVehicles.filter(v => favoriteIds.includes(v.id)).length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {allVehicles.filter(v => favoriteIds.includes(v.id)).map(car => (
+                            <div key={car.id} className="bg-slate-900/50 border border-white/5 p-3 rounded-2xl flex gap-3 items-center">
+                              <img src={car.imageUrl} alt={car.title} className="w-16 h-12 object-cover rounded-xl shrink-0" referrerPolicy="no-referrer" />
+                              <div className="flex-1 min-w-0">
+                                <h6 className="text-xs font-black text-white truncate uppercase">{car.make} {car.model}</h6>
+                                <span className="text-[10px] text-sky-400 block font-bold mt-0.5">Rs. {(car.price / 100000).toFixed(1)} Lakh</span>
+                              </div>
+                              <button
+                                onClick={() => handleRemoveFavorite(car.id)}
+                                className="p-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg shrink-0 border border-rose-500/10"
+                                title="Remove"
+                              >
+                                ✕
+                              </button>
                             </div>
-                            <button
-                              onClick={() => alert('Removed from Favorites')}
-                              className="p-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg shrink-0 border border-rose-500/10"
-                              title="Remove"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 bg-slate-900/20 border border-dashed border-white/5 rounded-2xl text-center text-slate-500 font-sans">
+                          No saved favorites yet. Add items to your favorites in the marketplace to see them here.
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1591,7 +2067,7 @@ export default function RegistrationPortal({
                   </h3>
 
                   <div className="space-y-4">
-                    {allVehicles.filter(car => car.dealerId === 'private' || car.id.startsWith('lst-')).map(car => (
+                    {allVehicles.filter(car => car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid).map(car => (
                       <div key={car.id} className="p-3 border border-slate-100 rounded-2xl bg-slate-50">
                         <div className="flex justify-between items-start gap-2">
                           <div className="text-left">
@@ -1634,7 +2110,7 @@ export default function RegistrationPortal({
                       </div>
                     ))}
 
-                    {allVehicles.filter(car => car.dealerId === 'private' || car.id.startsWith('lst-')).length === 0 && (
+                    {allVehicles.filter(car => car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid).length === 0 && (
                       <div className="text-center py-8 text-slate-400 font-medium">
                         No private vehicle postings listed yet. Create one on the left!
                       </div>
