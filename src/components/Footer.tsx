@@ -74,8 +74,13 @@ export default function Footer({ lang = 'en', setTab, onOpenSupportDrawer }: Foo
     btnSend: isUrdu ? 'ارسال کریں' : 'Submit',
     successMsg: isUrdu ? 'تجویز جمع کرانے کا شکریہ! یہ ایڈمن کو ارسال کر دی گئی ہے۔' : 'Thank you! Your feedback has been registered.',
     openTicket: isUrdu ? 'سپورٹ ٹکٹ کھولیں' : 'Open Support Ticket',
-    adminMazhar: isUrdu ? 'ملک مظہر (سروسز)' : 'Malak Mazhar (All kind of Automobile Services)',
-    adminAmjid: isUrdu ? 'محمد امجد (ڈویلپر)' : 'Muhammad Amjid (Founder & CEO)',
+    adminMazhar: isUrdu ? 'ملک مظہر (سروسز)' : 'Malak Mazhar (Head of Automotive Sales | Vehicle Sales • Negotiations • Customer Advisory
+
+)',
+    adminAmjid: isUrdu ? 'محمد امجد (ڈویلپر)' : 'Muhammad Amjid (Founder & CEO | Product Strategy • Technology • Platform Development)',
+
+    adminGhani: isUrdu ? 'غانی خان (انونٹری & میڈیا مینیجر)' : 'Ghani Khan (Media & Inventory Manager | Vehicle Listings • Media Management • Marketplace Operations)',
+
     badgeNative: isUrdu ? 'پشاور نیٹورک' : 'Peshawar Regional',
   };
 
