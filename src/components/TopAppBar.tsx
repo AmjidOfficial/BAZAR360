@@ -117,10 +117,10 @@ export default function TopAppBar({
               title="Manage profile & showroom roles"
             >
               <div className="w-5 h-5 rounded-full bg-orange-500 text-white flex items-center justify-center font-extrabold text-[9px] uppercase font-mono">
-                {(currentUser.displayName || currentUser.email || 'User').substring(0, 1).toUpperCase()}
+                {(currentUser.displayName || currentUser.email?.split('@')[0]?.split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'User').substring(0, 1).toUpperCase()}
               </div>
               <span className="text-white font-bold max-w-[90px] truncate">
-                {(currentUser.displayName || currentUser.email || 'User').split(' ')[0]}
+                {(currentUser.displayName || currentUser.email?.split('@')[0]?.split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'User').split(' ')[0]}
               </span>
               <span className="bg-amber-500/10 text-amber-400 font-bold px-1.5 py-0.5 rounded text-[8px] border border-amber-500/20 uppercase tracking-wider scale-90">
                 {currentUser.role}

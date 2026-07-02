@@ -577,15 +577,17 @@ function App() {
             setCurrentUser(fetchedProfile);
           } else {
             // First-time signup fallback: create a robust, rules-compliant profile
+            const isAmjid = firebaseUser.email === 'amjid.bisconni@gmail.com' || firebaseUser.email === 'amjid.psh@gmail.com';
+            const isGhani = firebaseUser.email === 'khattakghani94@gmail.com';
             const fallbackProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email || 'amjid.bisconni@gmail.com',
-              displayName: firebaseUser.displayName || 'Amjid B.',
-              phoneNumber: firebaseUser.phoneNumber || '+92 314 3600000',
-              phoneVerified: !!firebaseUser.phoneNumber,
-              city: 'Lahore',
-              state: 'Punjab',
-              role: firebaseUser.email === 'amjid.bisconni@gmail.com' ? 'Admin' : 'Buyer',
+              displayName: isGhani ? 'Ghani Khan' : (firebaseUser.displayName || 'Amjid B.'),
+              phoneNumber: isGhani ? '+92 355 6908995' : (firebaseUser.phoneNumber || '+92 314 3600000'),
+              phoneVerified: isGhani || !!firebaseUser.phoneNumber,
+              city: isGhani ? 'Peshawar' : 'Lahore',
+              state: isGhani ? 'Khyber Pakhtunkhwa' : 'Punjab',
+              role: isAmjid ? 'Admin' : isGhani ? 'Dealer' : 'Buyer',
               status: 'Active',
               socials: {
                 facebook: 'https://facebook.com/amjid.bazar360',
@@ -1251,7 +1253,7 @@ function App() {
 
         {/* Footer */}
         <div className="text-center text-slate-500 text-[9px] md:text-[10px] uppercase font-mono tracking-widest pb-[env(safe-area-inset-bottom)] md:pb-1 mt-1 shrink-0 relative z-10 border-t border-white/5 pt-3">
-          Built in Peshawar. Trusted Across Pakistan. 🇵🇰 &bull; Founder & CEO: Muhammad Amjid &bull; Helpline Connect: <a href="tel:03149198403" className="text-orange-500 hover:underline font-bold">03149198403</a> &bull; BAZAR360 Pakistan Enterprise &copy; 2026.
+          Built in Peshawar. Trusted Across Pakistan. 🇵🇰 &bull; Founder: Muhammad Amjid &bull; Helpline Connect: <a href="tel:03149198403" className="text-orange-500 hover:underline font-bold">03149198403</a> &bull; BAZAR360 Pakistan Enterprise &copy; 2026.
         </div>
       </div>
     );

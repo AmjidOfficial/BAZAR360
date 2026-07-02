@@ -11,7 +11,13 @@ import {
   MapPin, 
   Mail,
   HelpCircle,
-  Users
+  Users,
+  Lock,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Youtube,
+  MessageCircle
 } from 'lucide-react';
 import { dbSaveSuggestion, Suggestion } from '../lib/dbService';
 
@@ -74,17 +80,8 @@ export default function Footer({ lang = 'en', setTab, onOpenSupportDrawer }: Foo
     btnSend: isUrdu ? 'ارسال کریں' : 'Submit',
     successMsg: isUrdu ? 'تجویز جمع کرانے کا شکریہ! یہ ایڈمن کو ارسال کر دی گئی ہے۔' : 'Thank you! Your feedback has been registered.',
     openTicket: isUrdu ? 'سپورٹ ٹکٹ کھولیں' : 'Open Support Ticket',
-    adminMazhar: isUrdu ? 'ملک مظہر (سروسز)' : 'Malak Mazhar (Head of Automotive Sales | Vehicle Sales • Negotiations • Customer Advisory
-
-)',
-  // Ensure lines 75 to 83 match cleanly like this:
-  adminAmjid: isUrdu 
-    ? 'محمد امجد (ڈویلپر)' 
-    : 'Muhammad Amjid (Founder & CEO | Product Strategy • Technology • Platform Development)',
-  adminGhani: isUrdu 
-    ? 'غانی خان (انونٹری & میڈیا مینیجر)' 
-    : 'Ghani Khan (Media & Inventory Manager | Vehicle Listings • Media Management • Marketplace Operations)',
-
+    adminMazhar: isUrdu ? 'ملک مظہر (سروسز)' : 'Malak Mazhar (Services)',
+    adminAmjid: isUrdu ? 'محمد امجد (ڈویلپر)' : 'Muhammad Amjid (Developer)',
     badgeNative: isUrdu ? 'پشاور نیٹورک' : 'Peshawar Regional',
   };
 
@@ -105,152 +102,285 @@ export default function Footer({ lang = 'en', setTab, onOpenSupportDrawer }: Foo
       <footer id="bazar360-main-footer" className="w-full bg-[#0B1329] border-t border-white/5 text-slate-300 pt-10 pb-12 px-4 md:px-8 font-sans">
         <div className="max-w-7xl mx-auto">
           {/* Main Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 text-left mb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-6 text-left mb-12">
             
             {/* Column 1: Brand & Identity */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="font-sans font-extrabold text-2xl tracking-tight text-white">
+              <div className="space-y-1">
+                <span className="font-sans font-black text-2xl tracking-tight text-white uppercase block">
                   BAZAR<span className="text-[#F97316]">360</span>
                 </span>
-                <span className="text-[9px] font-semibold bg-[#F97316]/10 text-[#F97316] border border-[#F97316]/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                  {t.badgeNative}
+                <span className="text-[10px] font-mono tracking-widest uppercase font-black text-slate-400 block">
+                  AUTOMOTIVE NETWORK
                 </span>
               </div>
               
-              <p className="text-xs md:text-sm text-slate-400 leading-relaxed font-normal">
-                {t.vision}
+              <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                Pakistan's trusted automotive marketplace. Verified vehicles, trusted people, premium experience.
               </p>
 
-              <div className="pt-2 flex flex-wrap gap-3 items-center text-[10px] md:text-xs font-semibold text-slate-400">
-                <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  {t.tagline}
-                </span>
+              <div className="h-[2px] w-12 bg-[#F97316]"></div>
+
+              {/* Social Icons matching screenshot */}
+              <div className="flex items-center gap-2.5 pt-2">
+                <a 
+                  href="https://facebook.com/bazar360.online" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-500 hover:border-orange-500 text-slate-400 hover:text-white transition-all duration-200"
+                >
+                  <Facebook className="w-3.5 h-3.5" />
+                </a>
+                <a 
+                  href="https://instagram.com/bazar360.online" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-500 hover:border-orange-500 text-slate-400 hover:text-white transition-all duration-200"
+                >
+                  <Instagram className="w-3.5 h-3.5" />
+                </a>
+                <a 
+                  href="https://linkedin.com/company/bazar360" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-500 hover:border-orange-500 text-slate-400 hover:text-white transition-all duration-200"
+                >
+                  <Linkedin className="w-3.5 h-3.5" />
+                </a>
+                <a 
+                  href="https://youtube.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-500 hover:border-orange-500 text-slate-400 hover:text-white transition-all duration-200"
+                >
+                  <Youtube className="w-3.5 h-3.5" />
+                </a>
+                <a 
+                  href="https://wa.me/923149198403" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center hover:bg-orange-500 hover:border-orange-500 text-slate-400 hover:text-white transition-all duration-200"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                </a>
               </div>
             </div>
 
-            {/* Column 2: Quick Navigation */}
+            {/* Column 2: MARKETPLACE */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-100 flex items-center gap-2">
-                <Compass className="w-4 h-4 text-[#F97316]" />
-                {t.navTitle}
-              </h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <button 
-                    onClick={() => setTab && setTab('home')}
-                    className="hover:text-white transition-all flex items-center gap-1 group text-slate-400"
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-600 group-hover:bg-[#F97316] transition-colors"></span>
-                    {isUrdu ? 'ہوم پیج' : 'Homepage'}
-                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-[#F97316]" />
-                  </button>
-                </li>
+              <div className="space-y-1">
+                <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                  MARKETPLACE
+                </h3>
+                <div className="h-[2px] w-6 bg-[#F97316]"></div>
+              </div>
+              <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
                 <li>
                   <button 
                     onClick={() => setTab && setTab('search')}
-                    className="hover:text-white transition-all flex items-center gap-1 group text-slate-400"
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5"
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-600 group-hover:bg-[#F97316] transition-colors"></span>
-                    {isUrdu ? 'گاڑیاں تلاش کریں' : 'Browse Inventory'}
-                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-[#F97316]" />
+                    <span className="text-[#F97316]">&gt;</span> Browse Cars
                   </button>
                 </li>
                 <li>
                   <button 
                     onClick={() => setTab && setTab('dealer-storefront')}
-                    className="hover:text-white transition-all flex items-center gap-1 group text-slate-400"
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5"
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-600 group-hover:bg-[#F97316] transition-colors"></span>
-                    {isUrdu ? 'تصدیق شدہ شورومز' : 'Verified Showrooms'}
-                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-[#F97316]" />
+                    <span className="text-[#F97316]">&gt;</span> Verified Showrooms
                   </button>
                 </li>
                 <li>
                   <button 
                     onClick={() => setTab && setTab('portal')}
-                    className="hover:text-white transition-all flex items-center gap-1 group text-slate-400"
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5"
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-600 group-hover:bg-[#F97316] transition-colors"></span>
-                    {isUrdu ? 'ملٹی رول پورٹل' : 'Onboarding Portal'}
-                    <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all text-[#F97316]" />
+                    <span className="text-[#F97316]">&gt;</span> Services
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setTab && setTab('dealer-storefront')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Auto Choice
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setTab && setTab('portal')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Sell Vehicle
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setTab && setTab('portal')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Contact Us
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setTab && setTab('search')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> FAQs
                   </button>
                 </li>
               </ul>
             </div>
 
-            {/* Column 3: Redesigned Support Desk */}
+            {/* Column 3: SUPPORT */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-100 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-[#F97316]" />
-                {t.supportTitle}
-              </h3>
-              
-              <div className="space-y-3.5">
-                {/* 1. Direct Slide-up support ticket drawer CTA */}
-                {onOpenSupportDrawer && (
+              <div className="space-y-1">
+                <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                  SUPPORT
+                </h3>
+                <div className="h-[2px] w-6 bg-[#F97316]"></div>
+              </div>
+              <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
+                <li>
                   <button 
                     onClick={onOpenSupportDrawer}
-                    className="w-full flex items-center justify-between px-3.5 py-2.5 bg-white/5 border border-white/10 hover:border-[#F97316]/30 hover:bg-white/10 rounded-xl text-xs font-semibold text-white transition-all shadow-md group"
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 text-left"
                   >
-                    <span className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-[#F97316]" />
-                      {t.openTicket}
-                    </span>
-                    <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
+                    <span className="text-[#F97316]">&gt;</span> Help Center
                   </button>
-                )}
+                </li>
+                <li>
+                  <button 
+                    onClick={onOpenSupportDrawer}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 text-left"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Support Ticket
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => alert('Our detailed legal terms are securely registered with Peshawar Regional Authority.')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 text-left"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => alert('Terms and Conditions apply to all showroom dealer entities and buyers.')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 text-left"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Terms & Conditions
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => alert('Cookies allow premium profile session storage persistence.')}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 text-left"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Cookies Policy
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={onOpenSupportDrawer}
+                    className="hover:text-white transition-colors duration-150 flex items-center gap-1.5 text-left"
+                  >
+                    <span className="text-[#F97316]">&gt;</span> Report Abuse
+                  </button>
+                </li>
+              </ul>
+            </div>
 
-                {/* 2. Direct Admin Contacts (Styled perfectly with WhatsApp clicks) */}
-                <div className="space-y-2.5 pt-1.5 border-t border-white/5">
-                  <div className="text-xs">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">{t.adminMazhar}</p>
-                    <a 
-                      href="https://wa.me/923159085086"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-white hover:text-[#38BDF8] font-semibold transition-colors group"
-                    >
-                      <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>+92 315 9085086</span>
-                    </a>
+            {/* Column 4: OUR TEAM */}
+            <div className="space-y-4 sm:col-span-2 md:col-span-1 lg:col-span-1">
+              <div className="space-y-1">
+                <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                  OUR TEAM
+                </h3>
+                <div className="h-[2px] w-6 bg-[#F97316]"></div>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Team Profile 1 */}
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center shrink-0 bg-[#0B1329] text-orange-500 font-extrabold text-[10px] uppercase">
+                    MA
                   </div>
+                  <div className="text-left">
+                    <h4 className="text-xs font-black text-white leading-tight">
+                      Muhammad Amjid <span className="text-slate-500 font-mono font-normal">| 03149198403</span>
+                    </h4>
+                    <p className="text-[10px] font-bold text-orange-500 uppercase mt-0.5">
+                      Founder & CEO
+                    </p>
+                    <p className="text-[9px] text-slate-500 leading-tight mt-1">
+                      Product Strategy • Technology • Platform Development
+                    </p>
+                  </div>
+                </div>
 
-                  <div className="text-xs">
-                    <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">{t.adminAmjid}</p>
-                    <a 
-                      href="https://wa.me/923149198403"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-white hover:text-[#38BDF8] font-semibold transition-colors group"
-                    >
-                      <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>+92 314 9198403</span>
-                    </a>
+                {/* Team Profile 2 */}
+                <div className="flex items-start gap-3 border-t border-white/5 pt-3">
+                  <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center shrink-0 bg-[#0B1329] text-orange-500 font-extrabold text-[10px] uppercase">
+                    MM
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xs font-black text-white leading-tight">
+                      Malak Mazhar <span className="text-slate-500 font-mono font-normal">| 03159085086</span>
+                    </h4>
+                    <p className="text-[10px] font-bold text-orange-500 uppercase mt-0.5">
+                      Head of Automotive Sales
+                    </p>
+                    <p className="text-[9px] text-slate-500 leading-tight mt-1">
+                      Vehicle Sales • Negotiations • Customer Advisory
+                    </p>
+                  </div>
+                </div>
+
+                {/* Team Profile 3 */}
+                <div className="flex items-start gap-3 border-t border-white/5 pt-3">
+                  <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center shrink-0 bg-[#0B1329] text-orange-500 font-extrabold text-[10px] uppercase">
+                    GK
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-xs font-black text-white leading-tight">
+                      Ghani Khan <span className="text-slate-500 font-mono font-normal">| 03556908996</span>
+                    </h4>
+                    <p className="text-[10px] font-bold text-orange-500 uppercase mt-0.5">
+                      Media & Inventory Manager
+                    </p>
+                    <p className="text-[9px] text-slate-500 leading-tight mt-1">
+                      Vehicle Listings • Media Management • Marketplace Operations
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Column 4: Interactive Suggestions Box */}
+            {/* Column 5: NEWSLETTER / SUGGESTIONS BOX */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-100 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#F97316]" />
-                {t.suggestionsTitle}
-              </h3>
+              <div className="space-y-1">
+                <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                  NEWSLETTER
+                </h3>
+                <div className="h-[2px] w-6 bg-[#F97316]"></div>
+              </div>
+
               <p className="text-xs text-slate-400 leading-relaxed">
-                {t.suggestionsSub}
+                Stay updated with the latest vehicles, verified showrooms and exclusive offers.
               </p>
 
-              <form onSubmit={handleSuggestionSubmit} className="space-y-2">
+              <form onSubmit={handleSuggestionSubmit} className="space-y-2.5">
                 <div className="relative">
-                  <textarea 
+                  <input 
+                    type="text"
                     value={suggestionText}
                     onChange={(e) => setSuggestionText(e.target.value)}
-                    placeholder={t.placeholder}
-                    rows={2}
-                    className="w-full text-xs bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-[#F97316] focus:ring-1 focus:ring-[#F97316] transition-all resize-none"
+                    placeholder="Your email address or message"
+                    className="w-full text-xs bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-[#F97316] focus:ring-1 focus:ring-[#F97316] transition-all resize-none font-sans"
                     disabled={isSubmitting}
                   />
                 </div>
@@ -258,34 +388,72 @@ export default function Footer({ lang = 'en', setTab, onOpenSupportDrawer }: Foo
                 <button 
                   type="submit"
                   disabled={isSubmitting || !suggestionText.trim()}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-[#F97316] hover:bg-orange-600 disabled:bg-slate-700 disabled:text-slate-400 text-white text-xs font-bold rounded-xl transition-all shadow-md active:scale-95"
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 bg-[#F97316] hover:bg-orange-600 disabled:bg-slate-700 disabled:text-slate-400 text-stone-950 text-xs font-black rounded-xl transition-all shadow-md active:scale-95"
                 >
+                  <span>Subscribe</span>
                   <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? '...' : t.btnSend}</span>
                 </button>
 
                 {submitSuccess && (
-                  <p className="text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-1 px-2 text-center animate-fade-in font-medium">
-                    {t.successMsg}
+                  <p className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg py-1 px-2 text-center animate-fade-in font-medium">
+                    ✓ Thank you! Registered successfully.
                   </p>
                 )}
 
                 {submitError && (
-                  <p className="text-[11px] text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg py-1 px-2 text-center font-medium">
+                  <p className="text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg py-1 px-2 text-center font-medium">
                     {submitError}
                   </p>
                 )}
               </form>
+
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1 justify-center sm:justify-start">
+                <Lock className="w-3 h-3 text-emerald-500" />
+                <span>We respect your privacy.</span>
+              </div>
             </div>
 
           </div>
 
+          {/* Separate Contact Section Below */}
+          <div className="mt-8 pt-6 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-4 text-center md:text-left">
+            <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-3 rounded-2xl justify-center md:justify-start">
+              <Phone className="w-4 h-4 text-emerald-400" />
+              <div className="text-left text-xs">
+                <span className="text-slate-500 font-mono block uppercase text-[9px] font-black leading-none mb-1">Malak Mazhar Services</span>
+                <a href="tel:+923159085086" className="text-white hover:text-orange-500 font-black font-mono transition-colors">
+                  +92 315 9085086
+                </a>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-3 rounded-2xl justify-center md:justify-start">
+              <Phone className="w-4 h-4 text-emerald-400" />
+              <div className="text-left text-xs">
+                <span className="text-slate-500 font-mono block uppercase text-[9px] font-black leading-none mb-1">Helpline & Product Support</span>
+                <a href="tel:+923149198403" className="text-white hover:text-orange-500 font-black font-mono transition-colors">
+                  +92 314 9198403
+                </a>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-white/5 border border-white/5 px-4 py-3 rounded-2xl justify-center md:justify-start">
+              <Mail className="w-4 h-4 text-[#F97316]" />
+              <div className="text-left text-xs">
+                <span className="text-slate-500 font-mono block uppercase text-[9px] font-black leading-none mb-1">Official Administration Email</span>
+                <a href="mailto:amjid.psh@gmail.com" className="text-white hover:text-orange-500 font-black font-mono transition-colors">
+                  amjid.psh@gmail.com
+                </a>
+              </div>
+            </div>
+          </div>
+
           {/* Bottom copyright segment */}
-          <div className="pt-6 border-t border-white/5 flex flex-wrap md:flex-nowrap items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="mt-8 pt-6 border-t border-white/5 flex flex-wrap md:flex-nowrap items-center justify-between gap-4 text-xs text-slate-500">
             <span>{t.copyright}</span>
             <div className="flex items-center gap-1">
-              <span>Made with</span>
-              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 animate-pulse" />
+              <span>Simple. Direct. Secure.</span>
+              <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 animate-pulse ml-1.5" />
               <span>for Peshawar Regional Network</span>
             </div>
           </div>

@@ -47,7 +47,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { callRegisterUser } from '../services/api';
 
 // Extend Window interface for clean typing of Firebase Auth variables
@@ -123,6 +123,7 @@ export default function RegistrationPortal({
   // Email + Password & Google Identity states
   const [regConfirmPass, setRegConfirmPass] = useState<string>('');
   const [resetEmail, setResetEmail] = useState<string>('');
+  const [selectedAmjidRole, setSelectedAmjidRole] = useState<'Admin' | 'Dealer' | 'Buyer'>('Admin');
   const [isForgotPasswordMode, setIsForgotPasswordMode] = useState<boolean>(false);
   const [isEmailVerified, setIsEmailVerified] = useState<boolean>(true);
 
@@ -190,6 +191,7 @@ export default function RegistrationPortal({
   const [newEngine, setNewEngine] = useState<number>(1500); // Engine CC
   const [newCondition, setNewCondition] = useState<'New' | 'Used'>('Used');
   const [newDesc, setNewDesc] = useState<string>('');
+  const [newImageUrl, setNewImageUrl] = useState<string>('');
 
   // Duplicate showrooms resolver state
   const [showroomDuplicates, setShowroomDuplicates] = useState<boolean>(true);
@@ -559,18 +561,30 @@ export default function RegistrationPortal({
       const result = await signInWithPopup(auth, facebookProvider);
       const user = result.user;
       
+      const isAmjidEmail = user.email === 'amjid.bisconni@gmail.com' || user.email === 'amjid.psh@gmail.com';
+      const isGhaniEmail = user.email === 'khattakghani94@gmail.com';
+      
       const fetchedProfile = await dbFetchUserProfile(user.uid);
       if (fetchedProfile) {
+        if (isAmjidEmail) {
+          fetchedProfile.role = selectedAmjidRole;
+          await dbSaveUserProfile(fetchedProfile);
+        }
         setCurrentUser(fetchedProfile);
         setSuccessMessage('✓ Session successfully restored via Facebook Sign-In.');
       } else {
-        const assignedRole = user.email === 'amjid.bisconni@gmail.com' ? 'Admin' : 'Buyer';
+        let assignedRole: 'Admin' | 'Dealer' | 'Buyer' = 'Buyer';
+        if (isAmjidEmail) {
+          assignedRole = selectedAmjidRole;
+        } else if (isGhaniEmail) {
+          assignedRole = 'Dealer';
+        }
         const newProfile = await createNewUserProfile(
           user.uid,
           user.email || 'user-facebook@bazar360.online',
-          user.displayName || 'Bazar360 Facebook User',
+          isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 Facebook User'),
           assignedRole,
-          { phoneNumber: user.phoneNumber || '' }
+          isGhaniEmail ? { phoneNumber: '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via Facebook Identity.');
@@ -593,18 +607,30 @@ export default function RegistrationPortal({
       const result = await signInWithPopup(auth, linkedinProvider);
       const user = result.user;
       
+      const isAmjidEmail = user.email === 'amjid.bisconni@gmail.com' || user.email === 'amjid.psh@gmail.com';
+      const isGhaniEmail = user.email === 'khattakghani94@gmail.com';
+      
       const fetchedProfile = await dbFetchUserProfile(user.uid);
       if (fetchedProfile) {
+        if (isAmjidEmail) {
+          fetchedProfile.role = selectedAmjidRole;
+          await dbSaveUserProfile(fetchedProfile);
+        }
         setCurrentUser(fetchedProfile);
         setSuccessMessage('✓ Session successfully restored via LinkedIn Sign-In.');
       } else {
-        const assignedRole = user.email === 'amjid.bisconni@gmail.com' ? 'Admin' : 'Buyer';
+        let assignedRole: 'Admin' | 'Dealer' | 'Buyer' = 'Buyer';
+        if (isAmjidEmail) {
+          assignedRole = selectedAmjidRole;
+        } else if (isGhaniEmail) {
+          assignedRole = 'Dealer';
+        }
         const newProfile = await createNewUserProfile(
           user.uid,
           user.email || 'user-linkedin@bazar360.online',
-          user.displayName || 'Bazar360 LinkedIn User',
+          isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 LinkedIn User'),
           assignedRole,
-          { phoneNumber: user.phoneNumber || '' }
+          isGhaniEmail ? { phoneNumber: '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via LinkedIn Identity.');
@@ -627,20 +653,32 @@ export default function RegistrationPortal({
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
+      const isAmjidEmail = user.email === 'amjid.bisconni@gmail.com' || user.email === 'amjid.psh@gmail.com';
+      const isGhaniEmail = user.email === 'khattakghani94@gmail.com';
+      
       // Look up existing user by uid
       const fetchedProfile = await dbFetchUserProfile(user.uid);
       if (fetchedProfile) {
+        if (isAmjidEmail) {
+          fetchedProfile.role = selectedAmjidRole;
+          await dbSaveUserProfile(fetchedProfile);
+        }
         setCurrentUser(fetchedProfile);
         setSuccessMessage('✓ Session successfully restored via Google Sign-In.');
       } else {
         // First-time login: Automatically create profile in Firestore
-        const assignedRole = user.email === 'amjid.bisconni@gmail.com' ? 'Admin' : 'Buyer';
+        let assignedRole: 'Admin' | 'Dealer' | 'Buyer' = 'Buyer';
+        if (isAmjidEmail) {
+          assignedRole = selectedAmjidRole;
+        } else if (isGhaniEmail) {
+          assignedRole = 'Dealer';
+        }
         const newProfile = await createNewUserProfile(
           user.uid,
           user.email || 'user@bazar360.online',
-          user.displayName || 'Bazar360 User',
+          isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 User'),
           assignedRole,
-          { phoneNumber: user.phoneNumber || '' }
+          isGhaniEmail ? { phoneNumber: '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via Google Identity.');
@@ -654,29 +692,66 @@ export default function RegistrationPortal({
   // Email + Password Login Handler
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const emailLower = regEmail.trim().toLowerCase();
+    
     try {
       setAuthError('');
       setSuccessMessage('');
       
-      const userCredential = await signInWithEmailAndPassword(auth, regEmail.trim(), regPass);
-      const user = userCredential.user;
+      let userCredential;
+      try {
+        userCredential = await signInWithEmailAndPassword(auth, emailLower, regPass);
+      } catch (signInErr: any) {
+        // If it is Ghani Khan and doesn't exist, automatically create it!
+        if (emailLower === 'khattakghani94@gmail.com' && regPass === 'bazar360@1' && (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/wrong-password')) {
+          console.log("Creating Ghani Khan's account...");
+          userCredential = await createUserWithEmailAndPassword(auth, emailLower, regPass);
+        } else {
+          throw signInErr;
+        }
+      }
       
-      const fetchedProfile = await dbFetchUserProfile(user.uid);
+      const user = userCredential.user;
+      const isAmjidEmail = user.email === 'amjid.bisconni@gmail.com' || user.email === 'amjid.psh@gmail.com';
+      const isGhaniEmail = user.email === 'khattakghani94@gmail.com';
+      
+      let fetchedProfile = await dbFetchUserProfile(user.uid);
       if (fetchedProfile) {
+        let changed = false;
+        if (isAmjidEmail) {
+          fetchedProfile.role = selectedAmjidRole;
+          changed = true;
+        }
+        if (isGhaniEmail) {
+          fetchedProfile.role = 'Dealer';
+          fetchedProfile.displayName = 'Ghani Khan';
+          fetchedProfile.phoneNumber = '03556908996';
+          fetchedProfile.city = 'Peshawar';
+          changed = true;
+        }
+        if (changed) {
+          await dbSaveUserProfile(fetchedProfile);
+        }
         setCurrentUser(fetchedProfile);
         setSuccessMessage('✓ Welcome back! Successfully authenticated.');
       } else {
         // Fallback profile creation if none exists in Firestore
-        const assignedRole = user.email === 'amjid.bisconni@gmail.com' ? 'Admin' : 'Buyer';
+        let assignedRole: 'Admin' | 'Dealer' | 'Buyer' = 'Buyer';
+        if (isAmjidEmail) {
+          assignedRole = selectedAmjidRole;
+        } else if (isGhaniEmail) {
+          assignedRole = 'Dealer';
+        }
+        
         const newProfile = await createNewUserProfile(
           user.uid,
-          user.email || regEmail.trim(),
-          regEmail.split('@')[0],
+          user.email || emailLower,
+          isGhaniEmail ? 'Ghani Khan' : (emailLower.split('@')[0]),
           assignedRole,
-          {}
+          isGhaniEmail ? { phoneNumber: '03556908996', city: 'Peshawar' } : {}
         );
         setCurrentUser(newProfile);
-        setSuccessMessage('✓ Logged in and temporary profile initialized.');
+        setSuccessMessage('✓ Logged in and profile initialized.');
       }
     } catch (err: any) {
       console.error('Email Login Error:', err);
@@ -871,6 +946,9 @@ export default function RegistrationPortal({
       return;
     }
 
+    const finalImg = newImageUrl || 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&q=80&w=600';
+    const isDealerAccount = currentUser?.role === 'Dealer' || currentUser?.displayName?.includes('Ghani') || currentUser?.email === 'khattakghani94@gmail.com';
+
     const newAd: CarListing = {
       id: `lst-${Date.now()}`,
       title: `${newYear} ${newMake} ${newModel}`,
@@ -881,11 +959,12 @@ export default function RegistrationPortal({
       mileage: Number(newMileage),
       fuelType: newFuel,
       transmission: newTrans,
-      imageUrl: 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&q=80&w=600',
+      imageUrl: finalImg,
       verified: true,
       featured: false,
-      dealerId: currentUser?.role === 'Dealer' ? 'auto-choice-peshawar' : 'private',
+      dealerId: isDealerAccount ? 'auto-choice-peshawar' : 'private',
       assignedSalesRepId: currentUser?.uid || 'guest-seller',
+      createdBy: currentUser?.uid || 'guest-seller',
       description: newDesc || 'Perfect family driven vehicle in immaculate state. Low mileage, complete files available.',
       createdAt: new Date().toISOString(),
       tags: [newMake, newModel, 'Bazar360'],
@@ -895,7 +974,7 @@ export default function RegistrationPortal({
         horspower: 'Standard Spec',
         regionalSpecs: 'Local'
       },
-      approved: currentUser?.role === 'Admin' ? true : false, // Needs admin approval if posted by user
+      approved: (currentUser?.role === 'Admin' || isDealerAccount) ? true : false, // Autoprove for admin or dealer
       condition: newCondition,
       engineCC: newEngine,
       exteriorColor: 'White',
@@ -903,17 +982,18 @@ export default function RegistrationPortal({
       registrationCity: newCity,
       documentType: 'Smart Card',
       tokenTaxPaid: true,
-      images: ['https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&q=80&w=600']
+      images: [finalImg]
     };
 
     try {
       await dbSaveListing(newAd);
       setAllVehicles(prev => [newAd, ...prev]);
-      setSuccessMessage('✓ Vehicle Listing posted successfully! Submitted to Moderator Queue.');
+      setSuccessMessage('✓ Vehicle Listing posted successfully! Your inventory has been updated.');
       // Reset fields
       setNewMake('');
       setNewModel('');
       setNewDesc('');
+      setNewImageUrl('');
       setTimeout(() => setSuccessMessage(''), 4000);
     } catch (err) {
       console.warn('Fallback dynamic add:', err);
@@ -927,23 +1007,41 @@ export default function RegistrationPortal({
   };
 
   // Toggle vehicle sold/reserved
-  const handleToggleStatus = (carId: string, statusType: 'sold' | 'reserved') => {
+  const handleToggleStatus = async (carId: string, statusType: 'sold' | 'reserved') => {
+    let updatedCar: CarListing | null = null;
+    
     setAllVehicles(prev => prev.map(car => {
       if (car.id === carId) {
         if (statusType === 'sold') {
-          return { ...car, isSold: !car.isSold };
+          updatedCar = { ...car, isSold: !car.isSold };
         } else {
-          return { ...car, tags: car.tags.includes('Reserved') ? car.tags.filter(t => t !== 'Reserved') : [...car.tags, 'Reserved'] };
+          updatedCar = { ...car, tags: car.tags.includes('Reserved') ? car.tags.filter(t => t !== 'Reserved') : [...car.tags, 'Reserved'] };
         }
+        return updatedCar;
       }
       return car;
     }));
+
+    if (updatedCar) {
+      try {
+        await dbSaveListing(updatedCar);
+        console.log(`Successfully updated listing ${carId} in database.`);
+      } catch (err) {
+        console.error('Failed to update listing status in Firestore:', err);
+      }
+    }
   };
 
   // Delete dynamic listing
-  const handleDeleteCar = (carId: string) => {
+  const handleDeleteCar = async (carId: string) => {
     if (confirm('Are you sure you want to delete this vehicle listing from Bazar360?')) {
       setAllVehicles(prev => prev.filter(car => car.id !== carId));
+      try {
+        await deleteDoc(doc(db, 'listings', carId));
+        console.log(`Successfully deleted listing ${carId} from database.`);
+      } catch (err) {
+        console.error('Failed to delete listing from Firestore:', err);
+      }
     }
   };
 
@@ -1021,17 +1119,20 @@ export default function RegistrationPortal({
           </p>
         </div>
 
-        {currentUser && (
-          <div className="flex items-center gap-3 bg-[#111827] border border-white/5 px-4 py-2.5 rounded-2xl shadow-sm">
-            <div className="w-9 h-9 rounded-full bg-[#2563EB] text-white font-black flex items-center justify-center text-sm uppercase">
-              {currentUser.displayName?.substring(0,2)}
+        {currentUser && (() => {
+          const userDisplayName = currentUser.displayName || currentUser.email?.split('@')[0]?.split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'User';
+          return (
+            <div className="flex items-center gap-3 bg-[#111827] border border-white/5 px-4 py-2.5 rounded-2xl shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-[#2563EB] text-white font-black flex items-center justify-center text-sm uppercase">
+                {userDisplayName.substring(0,2)}
+              </div>
+              <div className="text-left text-xs">
+                <span className="font-extrabold text-white block leading-tight">{userDisplayName}</span>
+                <span className="text-[10px] font-mono font-bold uppercase text-[#38BDF8] block mt-0.5">{currentUser.role}</span>
+              </div>
             </div>
-            <div className="text-left text-xs">
-              <span className="font-extrabold text-white block leading-tight">{currentUser.displayName}</span>
-              <span className="text-[10px] font-mono font-bold uppercase text-[#38BDF8] block mt-0.5">{currentUser.role}</span>
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* Role privilege level quick simulation block */}
@@ -1313,6 +1414,31 @@ export default function RegistrationPortal({
                       onChange={e => setRegEmail(e.target.value)}
                       className="w-full bg-[#111827] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
                     />
+                    
+                    {/* Amjid Role Selector Trigger */}
+                    {(regEmail.trim().toLowerCase() === 'amjid.bisconni@gmail.com' || regEmail.trim().toLowerCase() === 'amjid.psh@gmail.com') && (
+                      <div className="bg-sky-500/10 border border-sky-500/20 p-3 rounded-xl mt-3 space-y-2 animate-fade-in">
+                        <label className="text-[10px] font-mono uppercase text-sky-400 tracking-wider block font-bold">
+                          Select Active Session Role *
+                        </label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(['Admin', 'Dealer', 'Buyer'] as const).map(role => (
+                            <button
+                              key={role}
+                              type="button"
+                              onClick={() => setSelectedAmjidRole(role)}
+                              className={`py-1.5 rounded-lg text-[10px] font-mono font-black uppercase transition-all ${
+                                selectedAmjidRole === role
+                                  ? 'bg-[#38BDF8] text-stone-950 shadow-md shadow-sky-500/25 font-bold'
+                                  : 'bg-[#111827] text-slate-400 border border-white/5 hover:text-white'
+                              }`}
+                            >
+                              {role}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1904,40 +2030,45 @@ export default function RegistrationPortal({
               <div className="lg:w-1/3 space-y-6 border-b lg:border-b-0 lg:border-r border-white/5 pb-6 lg:pb-0 lg:pr-8">
                 
                 {/* Profile Picture & User Info */}
-                <div className="flex items-center gap-4">
-                  <div className="relative shrink-0">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-black flex items-center justify-center text-2xl uppercase shadow-lg">
-                      {currentUser.displayName?.substring(0, 2)}
+                {(() => {
+                  const userDisplayName = currentUser.displayName || currentUser.email?.split('@')[0]?.split(/[._-]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'User';
+                  return (
+                    <div className="flex items-center gap-4">
+                      <div className="relative shrink-0">
+                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-black flex items-center justify-center text-2xl uppercase shadow-lg">
+                          {userDisplayName.substring(0, 2)}
+                        </div>
+                        <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#111827]" title="Online Status"></span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-white tracking-tight uppercase leading-tight">
+                          {userDisplayName}
+                        </h3>
+                        <p className="text-xs font-mono text-slate-400 mt-1">
+                          {currentUser.phoneNumber || 'No phone number'}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <span className={`px-2.5 py-0.5 rounded text-[9px] font-mono font-black uppercase border ${
+                            currentUser.role === 'Admin'
+                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                              : currentUser.role === 'Dealer'
+                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                              : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                          }`}>
+                            {currentUser.role}
+                          </span>
+                          <span className={`border px-2 py-0.5 rounded text-[9px] font-mono font-black uppercase flex items-center gap-1 ${
+                            isEmailVerified 
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                          }`}>
+                            {isEmailVerified ? '✓ Verified Account' : '⚠ Verification Pending'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#111827]" title="Online Status"></span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-white tracking-tight uppercase leading-tight">
-                      {currentUser.displayName}
-                    </h3>
-                    <p className="text-xs font-mono text-slate-400 mt-1">
-                      {currentUser.phoneNumber || 'No phone number'}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                      <span className={`px-2.5 py-0.5 rounded text-[9px] font-mono font-black uppercase border ${
-                        currentUser.role === 'Admin'
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          : currentUser.role === 'Dealer'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                          : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
-                      }`}>
-                        {currentUser.role}
-                      </span>
-                      <span className={`border px-2 py-0.5 rounded text-[9px] font-mono font-black uppercase flex items-center gap-1 ${
-                        isEmailVerified 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                      }`}>
-                        {isEmailVerified ? '✓ Verified Account' : '⚠ Verification Pending'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 {/* Profile Meta Fields */}
                 <div className="space-y-3 bg-slate-900/40 p-4 rounded-2xl border border-white/5 text-xs">
@@ -2292,7 +2423,7 @@ export default function RegistrationPortal({
                         if (!currentUser) return false;
                         if (currentUser.role === 'Admin') return true;
                         if (currentUser.role === 'Dealer') {
-                          if (currentUser.displayName?.includes('Auto Choice')) {
+                          if (currentUser.displayName?.includes('Auto Choice') || currentUser.displayName?.includes('Ghani Khan') || currentUser.email === 'khattakghani94@gmail.com') {
                             return v.dealerId === 'auto-choice-peshawar' || v.createdBy === currentUser.uid;
                           }
                           return v.createdBy === currentUser.uid || v.dealerId === currentUser.uid;
@@ -2305,7 +2436,7 @@ export default function RegistrationPortal({
                               if (!currentUser) return false;
                               if (currentUser.role === 'Admin') return true;
                               if (currentUser.role === 'Dealer') {
-                                if (currentUser.displayName?.includes('Auto Choice')) {
+                                if (currentUser.displayName?.includes('Auto Choice') || currentUser.displayName?.includes('Ghani Khan') || currentUser.email === 'khattakghani94@gmail.com') {
                                   return v.dealerId === 'auto-choice-peshawar' || v.createdBy === currentUser.uid;
                                 }
                                 return v.createdBy === currentUser.uid || v.dealerId === currentUser.uid;
@@ -2822,6 +2953,17 @@ export default function RegistrationPortal({
                   </div>
 
                   <div className="sm:col-span-2">
+                    <label className="text-[10px] font-mono uppercase text-slate-500 block mb-1">Vehicle Image / Media URL (Optional)</label>
+                    <input
+                      type="url"
+                      placeholder="e.g. https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600"
+                      value={newImageUrl}
+                      onChange={e => setNewImageUrl(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-sky-500 font-mono text-[11px]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
                     <label className="text-[10px] font-mono uppercase text-slate-500 block mb-1">Description / Condition notes</label>
                     <textarea
                       placeholder="Describe body touch-ups, engine health, registration tax history, etc."
@@ -2849,7 +2991,13 @@ export default function RegistrationPortal({
                   </h3>
 
                   <div className="space-y-4">
-                    {allVehicles.filter(car => car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid).map(car => (
+                    {allVehicles.filter(car => {
+                      const isDealerAC = currentUser.displayName?.includes('Auto Choice') || currentUser.displayName?.includes('Ghani Khan') || currentUser.email === 'khattakghani94@gmail.com';
+                      if (isDealerAC) {
+                        return car.dealerId === 'auto-choice-peshawar' || car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid;
+                      }
+                      return car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid;
+                    }).map(car => (
                       <div key={car.id} className="p-3 border border-slate-100 rounded-2xl bg-slate-50">
                         <div className="flex justify-between items-start gap-2">
                           <div className="text-left">
@@ -2892,9 +3040,15 @@ export default function RegistrationPortal({
                       </div>
                     ))}
 
-                    {allVehicles.filter(car => car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid).length === 0 && (
+                    {allVehicles.filter(car => {
+                      const isDealerAC = currentUser.displayName?.includes('Auto Choice') || currentUser.displayName?.includes('Ghani Khan') || currentUser.email === 'khattakghani94@gmail.com';
+                      if (isDealerAC) {
+                        return car.dealerId === 'auto-choice-peshawar' || car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid;
+                      }
+                      return car.createdBy === currentUser.uid || car.assignedSalesRepId === currentUser.uid;
+                    }).length === 0 && (
                       <div className="text-center py-8 text-slate-400 font-medium">
-                        No private vehicle postings listed yet. Create one on the left!
+                        No vehicles posted yet. Create listings instantly above!
                       </div>
                     )}
                   </div>
