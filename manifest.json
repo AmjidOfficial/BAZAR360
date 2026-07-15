@@ -1,6 +1,6 @@
 {
   "short_name": "Bazar360",
-  "name": "BAZAR360 | Global Marketplace & Auto Choice",
+  "name": "BAZAR360.online | Global Automotive Marketplace",
   "description": "Mobile-first high-performance marketplace platform and premium vehicle catalog.",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
@@ -10,13 +10,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/auto_choice_logo_1781509565476.jpg",
+      "src": "/bazar360_icon.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/auto_choice_logo_1781509565476.jpg",
+      "src": "/bazar360_icon.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any maskable"
