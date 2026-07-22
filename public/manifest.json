@@ -1,0 +1,37 @@
+{
+  "short_name": "Bazar360",
+  "name": "BAZAR360.online | Auto Choice Automotive Marketplace",
+  "description": "Premier Automotive Marketplace & Showroom Management System for Pakistan & Global Automotive Sales.",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "background_color": "#0B0F19",
+  "theme_color": "#0F3460",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

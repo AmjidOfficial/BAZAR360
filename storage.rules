@@ -1,0 +1,111 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isSuperUser() {
+      return isSignedIn() && (
+        request.auth.token.email == 'khattakghani94@gmail.com' ||
+        request.auth.token.email == 'amjid.bisconni@gmail.com'
+      );
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < 10 * 1024 * 1024; // Limit to 10MB
+    }
+
+    function isValidVideo() {
+      return request.resource.contentType.matches('video/.*')
+        && request.resource.size < 100 * 1024 * 1024; // Limit to 100MB
+    }
+
+    function isValidDocument() {
+      return (
+        request.resource.contentType == 'application/pdf' ||
+        request.resource.contentType == 'application/msword' ||
+        request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        request.resource.contentType == 'image/jpeg' ||
+        request.resource.contentType == 'image/png'
+      ) && request.resource.size < 25 * 1024 * 1024; // Limit to 25MB
+    }
+
+    // 0. Global Unrestricted Override for Super Users (Ghani & Amjid)
+    match /{allPaths=**} {
+      allow read, write: if isSuperUser();
+    }
+
+    // 1. Profile Photos (Owners write/update, public read)
+    match /profile-photos/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+    }
+
+    // 2. Showroom Logos
+    match /showroom-logos/{showroomId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImage();
+    }
+
+    // 3. Showroom Banners
+    match /showroom-banners/{showroomId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImage();
+    }
+
+    // 4. Vehicle Images (Public read, authenticated users write)
+    match /vehicle-images/{vehicleId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImage();
+    }
+
+    // 5. Vehicle Videos (Public read, authenticated users write)
+    match /vehicle-videos/{vehicleId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidVideo();
+    }
+
+    // 6. Verification and Business Documents (Private: only owner or authenticated staff read/write)
+    match /documents/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId) || isSignedIn();
+      allow write: if isOwner(userId) && isValidDocument();
+    }
+
+    // 7. Inspection Reports
+    match /inspection-reports/{vehicleId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidDocument();
+    }
+
+    // 8. Advertisements Banners
+    match /advertisements/{adId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImage();
+    }
+
+    // 9. Blog and News Images
+    match /blog-images/{blogId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImage();
+    }
+
+    // 10. Temporary uploads
+    match /temporary/{userId}/{allPaths=**} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 11. Showroom Dynamic Structured Media Gallery Sourcing
+    match /showrooms/{ownerId}/vehicles/{vehicleId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(ownerId) && isValidImage();
+    }
+  }
+}

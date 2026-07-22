@@ -1,0 +1,251 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ==========================================
+    // 0. GLOBAL HELPERS & PRIMITIVES
+    // ==========================================
+    
+    // Catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      // In this dev environment we might not have verified emails for all mock users, 
+      // but for production rules it's requested. We will check it if email exists.
+      return request.auth.token.email_verified == true;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email.lower() in [
+          'amjid.bisconni@gmail.com',
+          'amjid.psh@gmail.com',
+          'khattakghani94@gmail.com',
+          'ghani.khattak94@gmail.com',
+          'mazharsouls@gmail.com'
+        ]
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // ==========================================
+    // 1. DEALERS (SHOWROOMS)
+    // ==========================================
+    
+    match /dealers/{dealerId} {
+      allow read: if true;
+      
+      function isValidDealer(data) {
+        return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+               data.ownerUid == request.auth.uid &&
+               data.description is string && data.description.size() <= 2000;
+      }
+      
+      allow create: if isSignedIn() && isValidId(dealerId) && isValidDealer(incoming()) &&
+                    // Strict key size constraint to prevent ghost fields on create
+                    incoming().keys().hasAll(['name', 'ownerUid', 'description']);
+                    
+      allow update: if isSignedIn() && isValidId(dealerId) && (
+        isAdmin() || 
+        (
+          existing().ownerUid == request.auth.uid &&
+          isValidDealer(incoming()) &&
+          incoming().ownerUid == existing().ownerUid && // Immutable
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'subtitle', 'description', 'about', 'location', 
+            'phone', 'whatsapp', 'landline', 'contactPerson', 
+            'logo', 'coverImage', 'tagline', 'taglineCategory', 
+            'socials', 'theme_choice', 'themeSettings', 'gallery', 'updatedAt',
+            'likesCount', 'likes_count'
+          ])
+        )
+      );
+      
+      allow delete: if isAdmin();
+      
+      // Sub-collection: Reviews
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn() && isValidId(reviewId) &&
+                      incoming().author is string && incoming().rating is number;
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // ==========================================
+    // 2. LISTINGS (VEHICLES)
+    // ==========================================
+    
+    match /listings/{listingId} {
+      allow read: if true;
+      
+      function isValidListing(data) {
+        return data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+               data.price is number && data.price >= 0 &&
+               data.dealerId is string && data.dealerId.size() > 0 && data.dealerId.size() <= 128;
+      }
+      
+      function getDealer(dId) {
+        return get(/databases/$(database)/documents/dealers/$(dId)).data;
+      }
+      
+      allow create: if isSignedIn() && isValidId(listingId) && 
+                    isValidListing(incoming()) && 
+                    (
+                      isAdmin() || 
+                      (
+                        exists(/databases/$(database)/documents/dealers/$(incoming().dealerId)) &&
+                        getDealer(incoming().dealerId).ownerUid == request.auth.uid
+                      )
+                    );
+                    
+      allow update: if isSignedIn() && isValidId(listingId) && (
+        isAdmin() ||
+        (
+          isValidListing(incoming()) &&
+          incoming().dealerId == existing().dealerId && // Immutable ownership
+          exists(/databases/$(database)/documents/dealers/$(existing().dealerId)) &&
+          getDealer(existing().dealerId).ownerUid == request.auth.uid &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'description', 'price', 'mileage', 'images', 'imageUrl', 
+            'videoUrl', 'specs', 'isSold', 'isPaused', 'isArchived', 'updatedAt',
+            'make', 'model', 'year', 'condition', 'engineCC', 'exteriorColor', 'bodyCondition',
+            'fuelType', 'transmission', 'verified'
+          ])
+        )
+      );
+      
+      allow delete: if isAdmin() || (
+        isSignedIn() && 
+        exists(/databases/$(database)/documents/dealers/$(existing().dealerId)) &&
+        getDealer(existing().dealerId).ownerUid == request.auth.uid
+      );
+      
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow delete: if isAdmin() || isOwner(existing().userId);
+      }
+      
+      match /likes/{userId} {
+        allow read: if true;
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // ==========================================
+    // 3. USERS & PROFILES
+    // ==========================================
+    
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && 
+                    (!('role' in incoming()) || (incoming().role != 'Admin' && incoming().role != 'Super Admin'));
+      allow update: if isOwner(userId) && (
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'phoneNumber', 'city', 'state', 'socials', 'socialMedia', 
+          'profilePhoto', 'photoURL', 'preferredLanguage', 'preferredTheme', 
+          'whatsappNumber', 'updatedAt', 'notificationSettings', 'privacySettings'
+        ])
+      ) || isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    match /profiles/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // ==========================================
+    // 4. CRM: LEADS & BARGAINS
+    // ==========================================
+    
+    match /leads/{leadId} {
+      allow read: if isSignedIn() && (
+        isOwner(resource.data.customerId) || 
+        isOwner(resource.data.showroomOwnerId) || 
+        isAdmin()
+      );
+      allow create: if isSignedIn() && (
+        isOwner(incoming().customerId) || 
+        incoming().customerId == 'guest'
+      );
+      allow update: if isSignedIn() && (
+        isOwner(resource.data.showroomOwnerId) || 
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /bargains/{bargainId} {
+      allow read: if isSignedIn() && (
+        isOwner(resource.data.buyerUid) || 
+        isOwner(resource.data.dealerOwnerUid) || 
+        isAdmin()
+      );
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 4b. SOCIAL COMMUNITY FEED
+    // ==========================================
+    
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        isOwner(existing().userId) || 
+        incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'commentsCount'])
+      );
+      allow delete: if isAdmin() || isOwner(existing().userId);
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+        allow update, delete: if isAdmin() || isOwner(existing().userId);
+      }
+    }
+
+    // ==========================================
+    // 5. SYSTEM & ANALYTICS
+    // ==========================================
+    
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+    
+    match /suggestions/{suggestionId} {
+      allow read: if isAdmin();
+      allow create: if true;
+    }
+
+    match /system/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Bazar360.online",
+  "description": "Auto Choice: The Right Choice is Pakistan's premier automotive marketplace, certified showroom hub, and vehicle classifieds ecosystem.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
