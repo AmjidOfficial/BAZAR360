@@ -1,6 +1,0 @@
-import{c as h,r}from"./index-DF2S6WEE.js";/**
- * @license lucide-react v0.546.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const p=[["path",{d:"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16",key:"jecpp"}],["rect",{width:"20",height:"14",x:"2",y:"6",rx:"2",key:"i6l2r4"}]],A=h("briefcase",p);function b(f,a,S={}){const{delay:c=800,enabled:n=!0,onSaveToCloud:s,storageKeyPrefix:d="bazar360_autosave_"}=S,t=`${d}${f}`,[v,l]=r.useState(!1),[y,u]=r.useState(null),i=r.useRef(!0);r.useEffect(()=>{if(i.current){i.current=!1;return}if(!n||a===void 0||a===null)return;l(!0);const e=setTimeout(async()=>{try{const o=JSON.stringify(a);localStorage.setItem(t,o),s&&await s(a),u(new Date)}catch(o){console.warn("[useAutoSave] Error auto-saving state:",o)}finally{l(!1)}},c);return()=>clearTimeout(e)},[t,a,c,n,s]);const g=r.useCallback(()=>{try{localStorage.removeItem(t),u(null)}catch(e){console.warn("[useAutoSave] Failed to clear draft:",e)}},[t]),m=r.useCallback(()=>{try{const e=localStorage.getItem(t);if(e)return JSON.parse(e)}catch(e){console.warn("[useAutoSave] Failed to load draft:",e)}return null},[t]);return{isSaving:v,lastSavedAt:y,clearDraft:g,loadDraft:m}}export{A as B,b as u};
