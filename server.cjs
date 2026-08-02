@@ -61,30 +61,84 @@ var init_leads = __esm({
 // src/lib/seoGenerator.ts
 var seoGenerator_exports = {};
 __export(seoGenerator_exports, {
-  generateDealerSeo: () => generateDealerSeo
+  generateDealerSeo: () => generateDealerSeo,
+  generateVehicleSeo: () => generateVehicleSeo
 });
+function ensureAbsoluteUrl(url) {
+  if (!url) return "https://bazar360.online/auto_choice_logo_dark.jpg";
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+    return url;
+  }
+  return `https://bazar360.online/${url.replace(/^\//, "")}`;
+}
 async function generateDealerSeo(dealerId) {
-  const dealerDoc = await db.collection("dealers").doc(dealerId).get();
-  if (!dealerDoc.exists) {
+  try {
+    const dealerDoc = await db.collection("dealers").doc(dealerId).get();
+    if (!dealerDoc.exists) {
+      return "";
+    }
+    const dealer = dealerDoc.data();
+    const title = `${dealer.name} - Verified Showroom | Bazar360 Online`;
+    const description = dealer.subtitle || `Browse active pre-owned vehicle stock and contact ${dealer.name} directly on Bazar360.online.`;
+    const rawImage = dealer.logoUrl || dealer.logo || dealer.avatarUrl || dealer.coverImage;
+    const imageUrl = ensureAbsoluteUrl(rawImage);
+    const url = `https://bazar360.online/dealers/${dealerId}`;
+    return `
+      <title>${title}</title>
+      <meta name="description" content="${description}" />
+      <meta property="og:site_name" content="Bazar360 Online" />
+      <meta property="og:title" content="${title}" />
+      <meta property="og:description" content="${description}" />
+      <meta property="og:image" content="${imageUrl}" />
+      <meta property="og:image:secure_url" content="${imageUrl}" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:url" content="${url}" />
+      <meta property="og:type" content="website" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content="${title}" />
+      <meta name="twitter:description" content="${description}" />
+      <meta name="twitter:image" content="${imageUrl}" />
+    `;
+  } catch (e) {
+    console.error("[SEO Generator] Error generating dealer SEO:", e);
     return "";
   }
-  const dealer = dealerDoc.data();
-  const title = `${dealer.name} | Bazar360`;
-  const description = dealer.subtitle || "Explore our exclusive automotive showroom inventory on Bazar360.online.";
-  const imageUrl = dealer.logo || "https://bazar360.online/og-image.png";
-  const url = `https://bazar360.online/dealers/${dealerId}`;
-  return `
-    <title>${title}</title>
-    <meta name="description" content="${description}" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
-    <meta property="og:image" content="${imageUrl}" />
-    <meta property="og:url" content="${url}" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
-    <meta name="twitter:image" content="${imageUrl}" />
-  `;
+}
+async function generateVehicleSeo(vehicleId) {
+  try {
+    const carDoc = await db.collection("listings").doc(vehicleId).get();
+    if (!carDoc.exists) {
+      return "";
+    }
+    const car = carDoc.data();
+    const title = `${car.make} ${car.model} ${car.year} for sale | Bazar360 Online`;
+    const formattedPrice = car.price ? `PKR ${(car.price / 1e5).toFixed(1)} Lakh` : "Inquire Price";
+    const description = `For Sale: ${car.title || `${car.make} ${car.model}`} (${car.year}) - ${formattedPrice}. ${car.condition || "Used"} condition. Direct WhatsApp connection on Bazar360.online.`;
+    const rawImage = car.imageUrl || car.images && car.images[0];
+    const imageUrl = ensureAbsoluteUrl(rawImage);
+    const url = `https://bazar360.online/vehicle/${vehicleId}`;
+    return `
+      <title>${title}</title>
+      <meta name="description" content="${description}" />
+      <meta property="og:site_name" content="Bazar360 Online" />
+      <meta property="og:title" content="${title}" />
+      <meta property="og:description" content="${description}" />
+      <meta property="og:image" content="${imageUrl}" />
+      <meta property="og:image:secure_url" content="${imageUrl}" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:url" content="${url}" />
+      <meta property="og:type" content="website" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content="${title}" />
+      <meta name="twitter:description" content="${description}" />
+      <meta name="twitter:image" content="${imageUrl}" />
+    `;
+  } catch (e) {
+    console.error("[SEO Generator] Error generating vehicle SEO:", e);
+    return "";
+  }
 }
 var admin, app2, db;
 var init_seoGenerator = __esm({
@@ -1007,13 +1061,25 @@ Your task is to translate any incoming text block beautifully and accurately int
     app3.get("*", async (req, res) => {
       const filePath = import_path.default.join(distPath, "index.html");
       let html = await import("fs/promises").then((fs) => fs.readFile(filePath, "utf8"));
-      if (req.path.startsWith("/dealers/")) {
+      if (req.path.startsWith("/dealers/") || req.path.startsWith("/showroom/")) {
         const dealerId = req.path.split("/")[2];
         if (dealerId) {
           const { generateDealerSeo: generateDealerSeo2 } = await Promise.resolve().then(() => (init_seoGenerator(), seoGenerator_exports));
           const metaTags = await generateDealerSeo2(dealerId);
-          html = html.replace("</head>", `${metaTags}
+          if (metaTags) {
+            html = html.replace("</head>", `${metaTags}
 </head>`);
+          }
+        }
+      } else if (req.path.startsWith("/vehicle/")) {
+        const vehicleId = req.path.split("/")[2];
+        if (vehicleId) {
+          const { generateVehicleSeo: generateVehicleSeo2 } = await Promise.resolve().then(() => (init_seoGenerator(), seoGenerator_exports));
+          const metaTags = await generateVehicleSeo2(vehicleId);
+          if (metaTags) {
+            html = html.replace("</head>", `${metaTags}
+</head>`);
+          }
         }
       }
       res.send(html);
