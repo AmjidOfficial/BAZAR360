@@ -53,8 +53,9 @@ var init_leads = __esm({
       userEmail: import_zod.z.string().optional(),
       vehicleTitle: import_zod.z.string().optional(),
       vehiclePrice: import_zod.z.number().optional(),
-      inquiryMessage: import_zod.z.string().optional()
-    });
+      inquiryMessage: import_zod.z.string().optional(),
+      vehicleImage: import_zod.z.string().optional()
+    }).passthrough();
   }
 });
 
@@ -79,10 +80,77 @@ async function generateDealerSeo(dealerId) {
     }
     const dealer = dealerDoc.data();
     const title = `${dealer.name} - Verified Showroom | Bazar360 Online`;
-    const description = dealer.subtitle || `Browse active pre-owned vehicle stock and contact ${dealer.name} directly on Bazar360.online.`;
+    const description = dealer.subtitle || dealer.description || `Browse active pre-owned vehicle stock and contact ${dealer.name} directly on Bazar360.online.`;
     const rawImage = dealer.logoUrl || dealer.logo || dealer.avatarUrl || dealer.coverImage;
     const imageUrl = ensureAbsoluteUrl(rawImage);
     const url = `https://bazar360.online/dealers/${dealerId}`;
+    const jsonLd = [
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": `https://bazar360.online/dealers/${dealerId}#organization`,
+        "name": dealer.name,
+        "url": url,
+        "logo": imageUrl,
+        "description": description,
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "telephone": dealer.phone || dealer.whatsapp || "+92-314-9198403",
+          "contactType": "customer service",
+          "areaServed": "PK",
+          "availableLanguage": ["English", "Urdu"]
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": ["AutoDealer", "AutomotiveBusiness", "LocalBusiness"],
+        "@id": `https://bazar360.online/dealers/${dealerId}#localbusiness`,
+        "name": dealer.name,
+        "image": imageUrl,
+        "telephone": dealer.phone || dealer.whatsapp || "+92-314-9198403",
+        "url": url,
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": dealer.location || "Peshawar, KPK",
+          "addressLocality": (dealer.location || "Peshawar").split(",")[0]?.trim() || "Peshawar",
+          "addressRegion": (dealer.location || "KPK").split(",")[1]?.trim() || "KPK",
+          "addressCountry": "PK"
+        },
+        "description": description,
+        "priceRange": "$$$",
+        "aggregateRating": dealer.rating ? {
+          "@type": "AggregateRating",
+          "ratingValue": dealer.rating,
+          "bestRating": "5",
+          "worstRating": "1",
+          "reviewCount": dealer.reviewsCount || dealer.vehiclesCount || 10
+        } : void 0
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://bazar360.online"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Showrooms",
+            "item": "https://bazar360.online/dealers"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": dealer.name,
+            "item": url
+          }
+        ]
+      }
+    ];
     return `
       <title>${title}</title>
       <meta name="description" content="${description}" />
@@ -99,6 +167,7 @@ async function generateDealerSeo(dealerId) {
       <meta name="twitter:title" content="${title}" />
       <meta name="twitter:description" content="${description}" />
       <meta name="twitter:image" content="${imageUrl}" />
+      <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
     `;
   } catch (e) {
     console.error("[SEO Generator] Error generating dealer SEO:", e);

@@ -4,10 +4,28 @@
   "description": "Premier Automotive Marketplace & Showroom Management System for Pakistan & Global Automotive Sales.",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
+  "scope": "/",
   "background_color": "#0B0F19",
   "theme_color": "#0F3460",
   "display": "standalone",
   "orientation": "portrait-primary",
+  "categories": ["shopping", "automotive", "business", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Search Inventory",
+      "short_name": "Search",
+      "description": "Browse verified pre-owned cars and showrooms",
+      "url": "/?tab=search",
+      "icons": [{ "src": "/pwa-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Showroom Hub",
+      "short_name": "Showrooms",
+      "description": "Explore flagship verified showrooms",
+      "url": "/?tab=showrooms",
+      "icons": [{ "src": "/pwa-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/pwa-192.png",
@@ -31,7 +49,7 @@
       "src": "/pwa-512.jpg",
       "sizes": "512x512",
       "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
