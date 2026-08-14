@@ -703,6 +703,52 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: err.message || "Failed to remove Cloudinary asset." });
     }
   });
+  app3.post("/api/cloudinary/upload", import_express.default.json({ limit: "25mb" }), async (req, res) => {
+    try {
+      const { fileData, folder = "bazar360/uploads", resourceType = "image", tags } = req.body;
+      if (!fileData) {
+        return res.status(400).json({ success: false, error: "fileData parameter is required" });
+      }
+      const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || "me634xd0";
+      const uploadPreset = process.env.VITE_CLOUDINARY_UPLOAD_PRESET || "bazar360_upload";
+      const apiKey = process.env.VITE_CLOUDINARY_API_KEY || "165721653511945";
+      const cloudUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+      const response = await fetch(cloudUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          file: fileData,
+          upload_preset: uploadPreset,
+          api_key: apiKey,
+          folder: folder || "bazar360/uploads",
+          ...tags ? { tags } : {}
+        })
+      });
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn(`[Cloudinary Proxy] Upload failed with status ${response.status}: ${errText}`);
+        return res.status(response.status).json({
+          success: false,
+          error: `Cloudinary returned ${response.status}: ${errText}`
+        });
+      }
+      const result = await response.json();
+      return res.json({
+        success: true,
+        url: result.url,
+        secure_url: result.secure_url,
+        public_id: result.public_id,
+        format: result.format,
+        resource_type: result.resource_type,
+        bytes: result.bytes
+      });
+    } catch (err) {
+      console.error("[Cloudinary Proxy] Server error during upload:", err);
+      return res.status(500).json({ success: false, error: err.message || "Server upload proxy failed." });
+    }
+  });
   app3.get("/robots.txt", (req, res) => {
     let robots = `User-agent: *
 `;
