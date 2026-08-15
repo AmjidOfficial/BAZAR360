@@ -209,16 +209,21 @@ async function generateVehicleSeo(vehicleId) {
     return "";
   }
 }
-var admin, app2, db;
+var import_app, import_firestore, app, db;
 var init_seoGenerator = __esm({
   "src/lib/seoGenerator.ts"() {
-    admin = __toESM(require("firebase-admin"), 1);
-    try {
-      app2 = admin.initializeApp();
-    } catch (e) {
-      app2 = admin.app();
+    import_app = require("firebase-admin/app");
+    import_firestore = require("firebase-admin/firestore");
+    if ((0, import_app.getApps)().length === 0) {
+      try {
+        app = (0, import_app.initializeApp)();
+      } catch (e) {
+        app = (0, import_app.getApp)();
+      }
+    } else {
+      app = (0, import_app.getApp)();
     }
-    db = admin.firestore();
+    db = (0, import_firestore.getFirestore)(app);
   }
 });
 
@@ -228,8 +233,10 @@ var import_path = __toESM(require("path"), 1);
 var import_vite = require("vite");
 var import_genai = require("@google/genai");
 var import_dotenv = __toESM(require("dotenv"), 1);
-var import_firebase_admin = __toESM(require("firebase-admin"), 1);
-var import_firestore = require("firebase-admin/firestore");
+var import_app2 = require("firebase-admin/app");
+var import_app_check = require("firebase-admin/app-check");
+var import_auth = require("firebase-admin/auth");
+var import_firestore2 = require("firebase-admin/firestore");
 var import_crypto = __toESM(require("crypto"), 1);
 
 // firebase-applet-config.json
@@ -246,9 +253,9 @@ var firebase_applet_config_default = {
 
 // server.ts
 import_dotenv.default.config();
-if (import_firebase_admin.default.apps.length === 0) {
+if ((0, import_app2.getApps)().length === 0) {
   try {
-    import_firebase_admin.default.initializeApp({
+    (0, import_app2.initializeApp)({
       projectId: firebase_applet_config_default.projectId
     });
     console.log("[App Check Shield] Firebase Admin initialized successfully.");
@@ -269,7 +276,7 @@ var appCheckVerification = async (req, res, next) => {
     }
   }
   try {
-    const decodedToken = await import_firebase_admin.default.appCheck().verifyToken(appCheckToken);
+    const decodedToken = await (0, import_app_check.getAppCheck)().verifyToken(appCheckToken);
     console.log(`[App Check Shield] Decoded valid App Check token for App ID: ${decodedToken.appId}`);
     return next();
   } catch (err) {
@@ -289,7 +296,7 @@ var requireAuth = async (req, res, next) => {
   }
   const idToken = authHeader.split("Bearer ")[1];
   try {
-    const decodedIdToken = await import_firebase_admin.default.auth().verifyIdToken(idToken);
+    const decodedIdToken = await (0, import_auth.getAuth)().verifyIdToken(idToken);
     req.user = decodedIdToken;
     return next();
   } catch (err) {
@@ -301,12 +308,12 @@ var aiClient = null;
 var dbAdmin = null;
 function getDbAdmin() {
   if (!dbAdmin) {
-    const app3 = import_firebase_admin.default.apps[0] || import_firebase_admin.default.app();
+    const app2 = (0, import_app2.getApps)()[0] || (0, import_app2.getApp)();
     try {
-      dbAdmin = (0, import_firestore.getFirestore)(app3, firebase_applet_config_default.firestoreDatabaseId);
+      dbAdmin = (0, import_firestore2.getFirestore)(app2, firebase_applet_config_default.firestoreDatabaseId);
     } catch (e) {
       try {
-        dbAdmin = (0, import_firestore.getFirestore)(app3);
+        dbAdmin = (0, import_firestore2.getFirestore)(app2);
       } catch (err) {
         dbAdmin = null;
       }
@@ -351,11 +358,11 @@ async function executeWithRetry(apiCall, retries = 3, delayMs = 1e3) {
   }
 }
 async function startServer() {
-  const app3 = (0, import_express.default)();
+  const app2 = (0, import_express.default)();
   const PORT = 3e3;
-  app3.use(import_express.default.json());
-  app3.use("/api", appCheckVerification);
-  app3.post("/api/ai/marketing-engine", async (req, res) => {
+  app2.use(import_express.default.json());
+  app2.use("/api", appCheckVerification);
+  app2.post("/api/ai/marketing-engine", async (req, res) => {
     try {
       const { rawInput, tone } = req.body;
       if (!rawInput) {
@@ -418,21 +425,15 @@ Generate output strictly conforming to the following JSON structure:
       const parsedJSON = JSON.parse(resultText.trim());
       res.json({ success: true, result: parsedJSON });
     } catch (error) {
-      console.log("AI listing accelerator fallback triggered.");
-      res.status(200).json({
+      console.error("AI listing accelerator error:", error);
+      res.status(500).json({
         success: false,
-        error: "AI Generation is temporarily busy. Applied premium fallback template.",
-        result: {
-          title: "Premium Certified Sedan - Pakistan Edition",
-          description: "A meticulously styled vehicle ready for immediate city drives. Features clean upholstery, smooth transmission, and optimal performance diagnostics. Passed full BAZAR360 safety inspections.",
-          tags: ["Compact", "Certified", "Slick"],
-          suggestedPricePKR: 15e5,
-          highlights: ["Clean vehicle background checked", "Pristine interior condition", "Optimal Pakistani specs"]
-        }
+        error: "AI assistance is temporarily unavailable. Please fill in the vehicle details manually.",
+        details: error?.message || "Internal server error"
       });
     }
   });
-  app3.post("/api/dealer/chat", async (req, res) => {
+  app2.post("/api/dealer/chat", async (req, res) => {
     try {
       const { dealerName, dealerBio, inventorySummary, message, history } = req.body;
       if (!message) {
@@ -470,7 +471,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
       });
     }
   });
-  app3.post("/api/scrape-socials", async (req, res) => {
+  app2.post("/api/scrape-socials", async (req, res) => {
     try {
       const { name, website, facebook, instagram, tiktok, youtube, twitter } = req.body;
       if (!name) {
@@ -553,7 +554,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
       res.status(200).json({ success: false, error: "Scraping services are busy. Please configure manually." });
     }
   });
-  app3.post("/api/translate", async (req, res) => {
+  app2.post("/api/translate", async (req, res) => {
     try {
       const { text, targetLanguage } = req.body;
       if (!text) {
@@ -582,7 +583,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.json({ success: false, translatedText: req.body.text, error: "Regional Translation engine is temporarily busy. Displaying original description." });
     }
   });
-  app3.post("/api/user/register", async (req, res) => {
+  app2.post("/api/user/register", async (req, res) => {
     try {
       const { profile, showroom } = req.body;
       if (!profile || !profile.uid) {
@@ -611,7 +612,7 @@ Your task is to translate any incoming text block beautifully and accurately int
         }, { merge: true });
       }
       try {
-        await import_firebase_admin.default.auth().setCustomUserClaims(profile.uid, { role: profile.role });
+        await (0, import_auth.getAuth)().setCustomUserClaims(profile.uid, { role: profile.role });
         console.log(`[Admin SDK] Successfully set custom claims for user ${profile.uid}: role=${profile.role}`);
       } catch (claimError) {
         console.error(`[Admin SDK] Failed to set custom claims for ${profile.uid}:`, claimError);
@@ -622,7 +623,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message || "Failed to register user profile via Admin SDK." });
     }
   });
-  app3.post("/api/google-sheets/sync", async (req, res) => {
+  app2.post("/api/google-sheets/sync", async (req, res) => {
     try {
       const { spreadsheetId, sheetName, dataType, data } = req.body;
       const sheetId = spreadsheetId || "1Bazar360_SpreadsheetID_Placeholder";
@@ -653,22 +654,79 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message || "Failed to sync spreadsheet data." });
     }
   });
-  app3.post("/api/cloudinary/delete", async (req, res) => {
+  app2.post("/api/cloudinary/delete", requireAuth, async (req, res) => {
     try {
       const { publicId, resourceType = "image" } = req.body;
       if (!publicId) {
         return res.status(400).json({ success: false, error: "publicId parameter is required" });
       }
+      const userUid = req.user.uid;
+      const isAdminUser = req.user.email && [
+        "amjid.bisconni@gmail.com",
+        "amjid.psh@gmail.com",
+        "khattakghani94@gmail.com",
+        "ghani.khattak94@gmail.com",
+        "mazharsouls@gmail.com"
+      ].includes(req.user.email.toLowerCase());
+      if (!isAdminUser) {
+        let isAuthorized = false;
+        const db2 = getDbAdmin();
+        const listingsSnap = await db2.collection("listings").where("cloudinaryPublicId", "==", publicId).limit(1).get();
+        if (!listingsSnap.empty) {
+          const listingDoc = listingsSnap.docs[0].data();
+          if (listingDoc.ownerId === userUid || listingDoc.dealerId === userUid) {
+            isAuthorized = true;
+          }
+        }
+        if (!isAuthorized) {
+          const listingsArraySnap = await db2.collection("listings").where("cloudinaryPublicIds", "array-contains", publicId).limit(1).get();
+          if (!listingsArraySnap.empty) {
+            const listingDoc = listingsArraySnap.docs[0].data();
+            if (listingDoc.ownerId === userUid || listingDoc.dealerId === userUid) {
+              isAuthorized = true;
+            }
+          }
+        }
+        if (!isAuthorized) {
+          const dealersSnap = await db2.collection("dealers").where("ownerUid", "==", userUid).limit(1).get();
+          if (!dealersSnap.empty) {
+            const dealerDoc = dealersSnap.docs[0].data();
+            const publicIdString = String(publicId);
+            if (dealerDoc.logo && String(dealerDoc.logo).includes(publicIdString) || dealerDoc.coverImage && String(dealerDoc.coverImage).includes(publicIdString) || dealerDoc.media && JSON.stringify(dealerDoc.media).includes(publicIdString)) {
+              isAuthorized = true;
+            }
+          }
+        }
+        if (!isAuthorized) {
+          const userSnap = await db2.collection("users").doc(userUid).get();
+          if (userSnap.exists) {
+            const userData = userSnap.data();
+            const publicIdString = String(publicId);
+            if (userData.profilePhoto && String(userData.profilePhoto).includes(publicIdString) || userData.photoURL && String(userData.photoURL).includes(publicIdString)) {
+              isAuthorized = true;
+            }
+          }
+        }
+        if (!isAuthorized) {
+          const otherListingsSnap = await db2.collection("listings").where("cloudinaryPublicId", "==", publicId).limit(1).get();
+          const otherListingsArraySnap = await db2.collection("listings").where("cloudinaryPublicIds", "array-contains", publicId).limit(1).get();
+          if (otherListingsSnap.empty && otherListingsArraySnap.empty) {
+            isAuthorized = true;
+          } else {
+            console.warn(`[Cloudinary Delete] User ${userUid} blocked from deleting asset ${publicId} owned by someone else.`);
+            return res.status(403).json({ success: false, error: "Access Denied: You do not own this media asset." });
+          }
+        }
+      }
       const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || "me634xd0";
       const apiKey = process.env.VITE_CLOUDINARY_API_KEY || "165721653511945";
       const apiSecret = process.env.CLOUDINARY_API_SECRET;
       if (!apiSecret) {
-        console.warn("[Cloudinary Delete] CLOUDINARY_API_SECRET not set. Simulating success in dev/sandbox.");
-        return res.json({
-          success: true,
-          message: `[MOCK SUCCESS] Deleted asset with Public ID '${publicId}' from storage. (Simulated success - set CLOUDINARY_API_SECRET for live delete)`,
-          publicId,
-          simulated: true
+        console.warn("[Cloudinary Delete] CLOUDINARY_API_SECRET is not configured on server.");
+        return res.status(500).json({
+          success: false,
+          error: "Cloudinary delete capability is disabled because CLOUDINARY_API_SECRET is unconfigured.",
+          publicId
         });
       }
       const timestamp = Math.floor(Date.now() / 1e3);
@@ -703,7 +761,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: err.message || "Failed to remove Cloudinary asset." });
     }
   });
-  app3.post("/api/cloudinary/upload", import_express.default.json({ limit: "25mb" }), async (req, res) => {
+  app2.post("/api/cloudinary/upload", import_express.default.json({ limit: "25mb" }), async (req, res) => {
     try {
       const { fileData, folder = "bazar360/uploads", resourceType = "image", tags } = req.body;
       if (!fileData) {
@@ -749,7 +807,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       return res.status(500).json({ success: false, error: err.message || "Server upload proxy failed." });
     }
   });
-  app3.get("/robots.txt", (req, res) => {
+  app2.get("/robots.txt", (req, res) => {
     let robots = `User-agent: *
 `;
     robots += `Allow: /
@@ -761,7 +819,7 @@ Your task is to translate any incoming text block beautifully and accurately int
     res.header("Content-Type", "text/plain");
     res.status(200).send(robots);
   });
-  app3.get("/sitemap.xml", async (req, res) => {
+  app2.get("/sitemap.xml", async (req, res) => {
     try {
       const dbAdmin2 = getDbAdmin();
       const [dealersSnap, listingsSnap] = await Promise.all([
@@ -851,7 +909,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(200).send(xml);
     }
   });
-  app3.post("/api/leads", requireAuth, async (req, res) => {
+  app2.post("/api/leads", requireAuth, async (req, res) => {
     try {
       const { validateLead: validateLead2 } = await Promise.resolve().then(() => (init_leads(), leads_exports));
       const validatedData = validateLead2(req.body);
@@ -868,7 +926,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(400).json({ success: false, error: error.message });
     }
   });
-  app3.patch("/api/showroom/profile", requireAuth, async (req, res) => {
+  app2.patch("/api/showroom/profile", requireAuth, async (req, res) => {
     try {
       const { showroomId, profileData } = req.body;
       if (!showroomId) {
@@ -896,7 +954,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message });
     }
   });
-  app3.post("/api/inventory/upload", requireAuth, async (req, res) => {
+  app2.post("/api/inventory/upload", requireAuth, async (req, res) => {
     try {
       const { listing } = req.body;
       if (!listing || !listing.dealerId) {
@@ -929,7 +987,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message });
     }
   });
-  app3.get("/api/feed", async (req, res) => {
+  app2.get("/api/feed", async (req, res) => {
     try {
       const dbAdmin2 = getDbAdmin();
       const postsRef = dbAdmin2.collection("posts");
@@ -942,70 +1000,7 @@ Your task is to translate any incoming text block beautifully and accurately int
         }
       });
       if (posts.length === 0) {
-        console.log("[Social Feed API] Feed is empty. Auto-seeding 3 premium posts...");
-        const seedPosts = [
-          {
-            id: "seed-post-porsche",
-            userId: "auto-choice-peshawar-owner",
-            userName: "Auto Choice - The Right Choice",
-            userAvatar: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=300",
-            userRole: "Showroom Owner",
-            showroomId: "auto-choice-peshawar",
-            type: "IMAGE",
-            content: "We are excited to announce that the all-new Porsche 911 GT3 (992 generation) has finally landed at our main showroom floor in Peshawar! Finished in paint-to-sample Crayon Grey, this track-focused monster features a 4.0L naturally aspirated flat-six revving all the way to 9,000 RPM. Drop by for a cup of tea and an exclusive walkaround!",
-            mediaUrl: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=1200",
-            createdAt: new Date(Date.now() - 36e5 * 2).toISOString(),
-            // 2 hours ago
-            likes: ["user-demo-1", "user-demo-2", "user-demo-3"],
-            commentsCount: 1,
-            approved: true
-          },
-          {
-            id: "seed-post-welcome",
-            userId: "amjid-admin",
-            userName: "Amjid (Admin)",
-            userAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300",
-            userRole: "Admin",
-            type: "TEXT",
-            content: "Welcome to Bazar360 Community Feed! This space is designed for Pakistani auto enthusiasts, buyers, sellers, and certified showrooms to share automotive updates, showcase luxury imports, and negotiate deals. Keep it polite, tag your posts, and let the wheels roll!",
-            createdAt: new Date(Date.now() - 36e5 * 12).toISOString(),
-            // 12 hours ago
-            likes: ["user-demo-4", "user-demo-5"],
-            commentsCount: 0,
-            approved: true
-          },
-          {
-            id: "seed-post-civic",
-            userId: "private-seller-1",
-            userName: "M. Ibrahim",
-            userAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300",
-            userRole: "Individual User",
-            type: "IMAGE",
-            content: "Thinking of putting up my cherished Honda Civic Oriel (2021) for sale. Meticulously maintained at dealership, total genuine paint, brand new Yokohama tyres installed. DM me or see my active listings if you are interested!",
-            mediaUrl: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=1200",
-            createdAt: new Date(Date.now() - 36e5 * 24).toISOString(),
-            // 24 hours ago
-            likes: ["user-demo-1"],
-            commentsCount: 0,
-            approved: true
-          }
-        ];
-        const batch = dbAdmin2.batch();
-        for (const post of seedPosts) {
-          batch.set(postsRef.doc(post.id), post);
-        }
-        await batch.commit();
-        const seedComment = {
-          id: "seed-comment-1",
-          userId: "buyer-khan",
-          userName: "Khan Khattak",
-          userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300",
-          userRole: "Individual User",
-          text: "An absolute masterpiece! The Crayon Grey finish looks incredible under your showroom spotlights.",
-          createdAt: new Date(Date.now() - 36e5).toISOString()
-        };
-        await postsRef.doc("seed-post-porsche").collection("comments").doc(seedComment.id).set(seedComment);
-        posts = seedPosts;
+        console.log("[Social Feed API] Feed is empty. No auto-seeding in production.");
       }
       res.json({ success: true, posts });
     } catch (error) {
@@ -1013,7 +1008,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       return res.json({ success: true, posts: [], fallback: true });
     }
   });
-  app3.post("/api/posts", requireAuth, async (req, res) => {
+  app2.post("/api/posts", requireAuth, async (req, res) => {
     try {
       const { content, type = "TEXT", mediaUrl, showroomId } = req.body;
       if (!content) {
@@ -1056,7 +1051,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message });
     }
   });
-  app3.post("/api/posts/:id/like", requireAuth, async (req, res) => {
+  app2.post("/api/posts/:id/like", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const userId = req.user.uid;
@@ -1084,7 +1079,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message });
     }
   });
-  app3.post("/api/posts/:id/comment", requireAuth, async (req, res) => {
+  app2.post("/api/posts/:id/comment", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const { text } = req.body;
@@ -1116,7 +1111,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       };
       await commentRef.set(newComment);
       await postRef.update({
-        commentsCount: import_firebase_admin.default.firestore.FieldValue.increment(1)
+        commentsCount: import_firestore2.FieldValue.increment(1)
       });
       res.json({ success: true, comment: newComment });
     } catch (error) {
@@ -1124,7 +1119,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message });
     }
   });
-  app3.get("/api/posts/:id/comments", async (req, res) => {
+  app2.get("/api/posts/:id/comments", async (req, res) => {
     try {
       const { id } = req.params;
       const dbAdmin2 = getDbAdmin();
@@ -1140,7 +1135,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.status(500).json({ success: false, error: error.message });
     }
   });
-  app3.delete("/api/posts/:id", requireAuth, async (req, res) => {
+  app2.delete("/api/posts/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const userId = req.user.uid;
@@ -1169,11 +1164,11 @@ Your task is to translate any incoming text block beautifully and accurately int
       server: { middlewareMode: true },
       appType: "spa"
     });
-    app3.use(vite.middlewares);
+    app2.use(vite.middlewares);
   } else {
     const distPath = import_path.default.join(process.cwd(), "dist");
-    app3.use(import_express.default.static(distPath));
-    app3.get("*", async (req, res) => {
+    app2.use(import_express.default.static(distPath));
+    app2.get("*", async (req, res) => {
       const filePath = import_path.default.join(distPath, "index.html");
       let html = await import("fs/promises").then((fs) => fs.readFile(filePath, "utf8"));
       if (req.path.startsWith("/dealers/") || req.path.startsWith("/showroom/")) {
@@ -1200,7 +1195,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       res.send(html);
     });
   }
-  app3.listen(PORT, "0.0.0.0", () => {
+  app2.listen(PORT, "0.0.0.0", () => {
     console.log(`BAZAR360 Server running on http://localhost:${PORT}`);
   });
 }
