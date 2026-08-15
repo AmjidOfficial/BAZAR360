@@ -1,0 +1,109 @@
+{
+  "database": "Cloud Firestore",
+  "collections": {
+    "users": {
+      "description": "User profiles with role-based access control (RBAC)",
+      "fields": {
+        "uid": { "type": "String", "description": "Firebase Auth unique ID", "primaryKey": true },
+        "email": { "type": "String", "description": "User contact email address" },
+        "role": { "type": "String", "allowedValues": ["customer", "showroom_owner", "admin"], "description": "Access level identifier" },
+        "name": { "type": "String", "description": "Display name of user" },
+        "phone": { "type": "String", "description": "Verified cellular contact number" },
+        "associatedShowroomId": { "type": "String", "optional": true, "description": "Showroom document identifier if role is showroom_owner" },
+        "favorites": { "type": "Array[String]", "description": "List of vehicle document IDs saved by user" },
+        "createdAt": { "type": "Timestamp", "description": "Account registration timestamp" },
+        "updatedAt": { "type": "Timestamp", "description": "Profile alteration timestamp" }
+      },
+      "indexes": [
+        { "fields": ["role", "createdAt"], "type": "composite" }
+      ]
+    },
+    "vehicles": {
+      "description": "Dynamic vehicle postings (inventory listings)",
+      "fields": {
+        "id": { "type": "String", "description": "Unique auto-generated document ID", "primaryKey": true },
+        "make": { "type": "String", "description": "Vehicle manufacturer (e.g., Porsche)" },
+        "model": { "type": "String", "description": "Vehicle model name (e.g., Taycan)" },
+        "year": { "type": "Number", "description": "Manufacturing year" },
+        "price": { "type": "Number", "description": "Asking price in PKR" },
+        "city": { "type": "String", "description": "Registration and physical location city" },
+        "mileage": { "type": "Number", "description": "Odometer reading in kilometers" },
+        "fuelType": { "type": "String", "allowedValues": ["Petrol", "Diesel", "Hybrid", "Electric"] },
+        "transmission": { "type": "String", "allowedValues": ["Automatic", "Manual"] },
+        "tags": { "type": "Array[String]", "description": "Keywords for dynamic filtering (e.g., ['featured', 'hybrid'])" },
+        "imageUrl": { "type": "String", "description": "Primary featured high-res image URL" },
+        "images": { "type": "Array[String]", "description": "Subsequent gallery image URLs stored in Firebase Storage" },
+        "ownerId": { "type": "String", "description": "Foreign key pointing to the user document of the posting owner" },
+        "dealerId": { "type": "String", "description": "Foreign key pointing to the associated showroom" },
+        "status": { "type": "String", "allowedValues": ["pending", "active", "sold"], "description": "Workflow verification status" },
+        "verified": { "type": "Boolean", "description": "Bazar360 inspection stamp status" },
+        "featured": { "type": "Boolean", "description": "Premium placement tag" },
+        "topSpeed": { "type": "String", "optional": true, "description": "Performance metric - maximum velocity" },
+        "acceleration": { "type": "String", "optional": true, "description": "Performance metric - 0-100 km/h sprint duration" },
+        "range": { "type": "String", "optional": true, "description": "Battery range or tank fuel range" },
+        "specs": {
+          "type": "Object",
+          "fields": {
+            "color": { "type": "String" },
+            "engineSize": { "type": "String" },
+            "horspower": { "type": "String" },
+            "regionalSpecs": { "type": "String" }
+          }
+        },
+        "createdAt": { "type": "Timestamp" },
+        "updatedAt": { "type": "Timestamp" }
+      },
+      "indexes": [
+        { "fields": ["dealerId", "status"], "type": "composite" },
+        { "fields": ["status", "price"], "type": "composite" }
+      ]
+    },
+    "leads": {
+      "description": "High-intent buyer leads generated from vehicle detail interactions",
+      "fields": {
+        "id": { "type": "String", "description": "Unique auto-generated lead identifier", "primaryKey": true },
+        "customerId": { "type": "String", "optional": true, "description": "Foreign key pointing to user who created the inquiry" },
+        "vehicleId": { "type": "String", "optional": true, "description": "Inquired vehicle document identifier" },
+        "showroomOwnerId": { "type": "String", "description": "Foreign key pointing to target showroom document" },
+        "userName": { "type": "String", "description": "Buyer contact name" },
+        "userPhone": { "type": "String", "description": "Buyer verified phone number" },
+        "userEmail": { "type": "String", "optional": true, "description": "Buyer contact email" },
+        "inquiryMessage": { "type": "String", "description": "Custom communication content" },
+        "status": { "type": "String", "allowedValues": ["New", "Contacted", "Closed", "Lost"], "description": "CRM pipeline state" },
+        "vehicleTitle": { "type": "String", "optional": true },
+        "vehiclePrice": { "type": "Number", "optional": true },
+        "vehicleImage": { "type": "String", "optional": true },
+        "createdAt": { "type": "Timestamp" }
+      },
+      "indexes": [
+        { "fields": ["showroomOwnerId", "status", "createdAt"], "type": "composite" }
+      ]
+    },
+    "showrooms": {
+      "description": "Registered dealership properties and parameters",
+      "fields": {
+        "id": { "type": "String", "primaryKey": true },
+        "ownerUid": { "type": "String", "description": "Foreign key pointing to the user who administers this showroom" },
+        "name": { "type": "String", "description": "Dealership business name" },
+        "subtitle": { "type": "String" },
+        "location": { "type": "String", "description": "Physical showroom address" },
+        "rating": { "type": "Number" },
+        "phone": { "type": "String" },
+        "whatsapp": { "type": "String" },
+        "coverImage": { "type": "String" },
+        "logo": { "type": "String", "optional": true },
+        "verified": { "type": "Boolean" },
+        "theme_choice": { "type": "String", "allowedValues": ["Cosmic", "Bone", "Emerald", "Gold"] },
+        "theme_config": {
+          "type": "Object",
+          "fields": {
+            "primaryColor": { "type": "String" },
+            "secondaryColor": { "type": "String" },
+            "bgStyle": { "type": "String", "allowedValues": ["dark", "light", "emerald", "gold"] }
+          }
+        },
+        "createdAt": { "type": "Timestamp" }
+      }
+    }
+  }
+}

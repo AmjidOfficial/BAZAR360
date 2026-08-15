@@ -1,0 +1,413 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@import "./components/AccessibilityTheme.css";
+
+@theme {
+  --font-sans: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+
+  /* Bazar360 Light Premium Automotive Design Tokens */
+  --color-primary-navy: #0B192C;
+  --color-dark-navy: #0F172A;
+  --color-dark-surface: #1E293B;
+  --color-brand-orange: #F97316;
+  --color-brand-orange-hover: #EA580C;
+  --color-off-white: #F8FAFC;
+  --color-text-dark: #0F172A;
+  --color-text-muted: #64748B;
+  --color-dark-text-muted: #94A3B8;
+  --color-light-border: #E2E8F0;
+  --color-dark-border: rgba(255, 255, 255, 0.12);
+
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F8FAFC;
+  --color-bg-tertiary: #F1F5F9;
+  --color-text-main: #0F172A;
+  --color-text-header: #0F172A;
+  --color-border-main: #E2E8F0;
+  --color-accent-main: #F97316;
+  --color-accent-hover: #EA580C;
+}
+
+*, ::before, ::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+h1, h2, h3, h4, h5, h6, p, span {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+body {
+  background-color: #FFFFFF;
+  color: #0F172A;
+  font-family: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif !important;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Manrope", ui-sans-serif, system-ui, sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+}
+
+h5, h6, p, span, button, input, select, textarea, label {
+  font-family: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif !important;
+}
+
+/* ==========================================================================
+   BAZAR360 LIGHT PREMIUM AUTOMOTIVE DESIGN UTILITIES
+   ========================================================================== */
+
+/* Subtle Radial Glows */
+.orange-radial-glow {
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.15) 0%, transparent 65%);
+}
+
+.purple-radial-glow, .purple-radial-glow-subtle {
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.12) 0%, transparent 60%);
+}
+
+.bg-purple-blue-gradient, .hover-purple-blue-gradient:hover {
+  background: #F97316 !important;
+}
+
+/* Dark Sections & Navy Accents */
+.bg-primary-dark {
+  background-color: #0B192C !important;
+}
+
+.bg-dark-navy {
+  background-color: #0F172A !important;
+}
+
+.bg-dark-surface {
+  background-color: #1E293B !important;
+}
+
+.border-dark-subtle {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Button Classes */
+.btn-primary-orange,
+.btn-primary-purple {
+  background-color: #F97316 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important; /* 12px */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25);
+}
+
+.btn-primary-orange:hover,
+.btn-primary-purple:hover {
+  background-color: #EA580C !important;
+  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-secondary-white {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-secondary-white:hover {
+  background-color: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+}
+
+/* Custom Scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Section Containers */
+.section-container {
+  width: 100%;
+  max-width: 80rem; /* 1280px */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem; /* 16px */
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .section-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* ==========================================================================
+   BAZAR360 RESPONSIVE MEDIA QUERIES & RESPONSIVE GRID / FLEX SYSTEM
+   ========================================================================== */
+
+@media (max-width: 380px) {
+  html {
+    font-size: 14px;
+  }
+
+  .section-container {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  .grid-responsive-cards,
+  .listing-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .p-mobile-compact {
+    padding: 0.75rem !important;
+  }
+
+  .text-title-responsive {
+    font-size: 1.5rem !important;
+    line-height: 1.25 !important;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 80px);
+  }
+
+  .flex-mobile-col {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .flex-mobile-center {
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .btn-mobile-full {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+  }
+
+  [role="dialog"],
+  .modal-container {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    max-height: 90vh !important;
+    margin: 0.5rem auto !important;
+    border-radius: 1rem !important;
+  }
+
+  .responsive-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: clamp(1.75rem, 6vw, 2.25rem) !important;
+  }
+
+  h2 {
+    font-size: clamp(1.35rem, 5vw, 1.75rem) !important;
+  }
+
+  h3 {
+    font-size: clamp(1.15rem, 4vw, 1.35rem) !important;
+  }
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+  button, 
+  a.btn, 
+  select, 
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"] {
+    min-height: 44px;
+  }
+
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-tablet-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .grid-tablet-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .flex-tablet-row {
+    flex-direction: row !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .grid-desktop-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .grid-desktop-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+
+  .modal-container {
+    max-height: 96vh !important;
+    padding: 0.5rem !important;
+  }
+}
+
+.grid-auto-fit-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .grid-auto-fit-cards {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+.grid-auto-fit-dealers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .grid-auto-fit-dealers {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* ==========================================================================
+   PREMIUM THEMES VARIABLE INHERITANCE overrides
+   ========================================================================== */
+
+:root.theme-luxury-light, .theme-luxury-light {
+  --color-bg-primary: #FFFFFF !important;
+  --color-bg-secondary: #F8FAFC !important;
+  --color-bg-tertiary: #F1F5F9 !important;
+  --color-text-main: #0F172A !important;
+  --color-text-header: #0F172A !important;
+  --color-border-main: #E2E8F0 !important;
+  --color-accent-main: #F97316 !important;
+  --color-accent-hover: #EA580C !important;
+}
+
+:root.theme-cosmic-dark, .theme-cosmic-dark {
+  --color-bg-primary: #0F172A !important;
+  --color-bg-secondary: #1E293B !important;
+  --color-bg-tertiary: #0B192C !important;
+  --color-text-main: #F8FAFC !important;
+  --color-text-header: #FFFFFF !important;
+  --color-border-main: rgba(255, 255, 255, 0.1) !important;
+  --color-accent-main: #F97316 !important;
+  --color-accent-hover: #EA580C !important;
+}
+
+:root.theme-emerald, .theme-emerald {
+  --color-bg-primary: #022C22 !important;
+  --color-bg-secondary: #064E3B !important;
+  --color-bg-tertiary: #02140F !important;
+  --color-text-main: #F0FDF4 !important;
+  --color-text-header: #FFFFFF !important;
+  --color-border-main: rgba(52, 211, 153, 0.15) !important;
+  --color-accent-main: #10B981 !important;
+  --color-accent-hover: #059669 !important;
+}
+
+:root.theme-gold, .theme-gold {
+  --color-bg-primary: #18181B !important;
+  --color-bg-secondary: #27272A !important;
+  --color-bg-tertiary: #09090B !important;
+  --color-text-main: #FAFAFA !important;
+  --color-text-header: #FFFFFF !important;
+  --color-border-main: rgba(212, 163, 89, 0.15) !important;
+  --color-accent-main: #D4A373 !important;
+  --color-accent-hover: #C59262 !important;
+}
+
+/* ==========================================================================
+   FLUID RESPONSIVE GRID FOUNDATIONS
+   ========================================================================== */
+
+.bazar-grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .bazar-grid-12 {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .bazar-grid-12 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Global viewport optimizations - eliminate horizontal shift */
+body {
+  overflow-x: hidden;
+  width: 100%;
+  background-color: var(--color-bg-primary) !important;
+  color: var(--color-text-main) !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Direct Theme Styling Adapters */
+.theme-cosmic-dark body, .theme-gold body, .theme-emerald body {
+  background-color: var(--color-bg-primary) !important;
+}
