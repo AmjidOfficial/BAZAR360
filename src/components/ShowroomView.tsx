@@ -3,26 +3,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AnimatePresence } from 'motion/react';
 import { Dealer, CarListing, Review } from '../types';
-import { 
-  dbFetchDealers, 
-  dbFetchListings,
-  dbFetchReviews,
-  dbAddReview
-} from '../lib/dbService';
+import { dbFetchDealers, dbFetchReviews, dbAddReview } from '../lib/dbService';
+import { fetchInventoryPage } from '../lib/inventoryRepository';
 import { useAuth } from './AuthContext';
 import { ShowroomLoading } from './ShowroomLoading';
 import { VehicleDetail } from './VehicleDetail';
 import ShowroomMiniSite from './ShowroomMiniSite';
 import DetailedVehiclePostingPage from './DetailedVehiclePostingPage';
 import ContactDrawer from './ContactDrawer';
-import { X } from 'lucide-react';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { X, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export function ShowroomView() {
   const { showroomSlug, carId } = useParams<{ showroomSlug: string; carId?: string }>();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  
+
   const [dealer, setDealer] = useState<Dealer | null>(null);
   const [listings, setListings] = useState<CarListing[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -32,48 +27,58 @@ export function ShowroomView() {
   const [contactDrawerMessage, setContactDrawerMessage] = useState('');
 
   useEffect(() => {
-    const loadShowroomData = async () => {
+    let cancelled = false;
+
+    const loadShowroomIdentity = async () => {
       setLoading(true);
       try {
         const targetSlug = (showroomSlug || '').toLowerCase();
-        
-        // Fetch dealers list
         const allDealers = await dbFetchDealers();
-        let foundDealer = allDealers.find(d => {
+        const foundDealer = allDealers.find(d => {
           const generatedSlug = d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-          return (
-            generatedSlug === targetSlug || 
-            d.id?.toLowerCase() === targetSlug || 
-            (d.id === 'auto-choice-peshawar' && (targetSlug === 'auto-choice' || targetSlug === 'auto-choice-peshawar'))
-          );
+          return generatedSlug === targetSlug || d.id?.toLowerCase() === targetSlug;
         });
 
-        if (foundDealer) {
-          setDealer(foundDealer);
-          
-          // Load listings progressively in background
-          dbFetchListings().then(allListings => {
-            const filtered = allListings.filter(l => l.dealerId === foundDealer!.id && l.approved !== false);
-            setListings(filtered);
-          }).catch(lErr => {
-            console.error('[Progressive Loading] Error fetching listings:', lErr);
-          });
-
-          // Load reviews progressively in background
-          dbFetchReviews(foundDealer.id).then(revs => {
-            setReviews(revs || []);
-          }).catch(rErr => {
-            console.warn('[Progressive Loading] Error fetching reviews:', rErr);
-          });
-        }
-      } catch (err) {
-        console.error('[ShowroomView] Error loading data:', err);
-      } finally {
+        if (cancelled) return;
+        setDealer(foundDealer || null);
         setLoading(false);
+
+        if (!foundDealer) return;
+
+        // Secondary data loads after the critical showroom identity is interactive.
+        const dealerId = foundDealer.id;
+
+        void (async () => {
+          try {
+            const firstPage = await fetchInventoryPage(24);
+            if (cancelled) return;
+            const showroomListings = firstPage.listings.filter(
+              listing => listing.dealerId === dealerId || listing.showroomId === dealerId,
+            );
+            setListings(showroomListings);
+          } catch (err) {
+            console.error('[ShowroomView] inventory load failed:', err);
+          }
+        })();
+
+        void (async () => {
+          try {
+            const revs = await dbFetchReviews(dealerId);
+            if (!cancelled) setReviews(revs || []);
+          } catch (err) {
+            console.warn('[ShowroomView] reviews load failed:', err);
+          }
+        })();
+      } catch (err) {
+        console.error('[ShowroomView] identity load failed:', err);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    loadShowroomData();
+    void loadShowroomIdentity();
+    return () => {
+      cancelled = true;
+    };
   }, [showroomSlug]);
 
   const selectedCar = carId ? listings.find(l => l.id === carId) : null;
@@ -84,13 +89,12 @@ export function ShowroomView() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-main)] font-sans">
       <Toaster position="top-center" theme="dark" richColors />
-      
       <AnimatePresence mode="wait">
         {selectedCar && (
-          <VehicleDetail 
-            car={selectedCar} 
-            dealer={dealer} 
-            onClose={() => navigate(`/showroom/${showroomSlug}`)} 
+          <VehicleDetail
+            car={selectedCar}
+            dealer={dealer}
+            onClose={() => navigate(`/showroom/${showroomSlug}`)}
           />
         )}
       </AnimatePresence>
@@ -106,7 +110,7 @@ export function ShowroomView() {
               author: currentUser?.displayName || 'Guest User',
               rating,
               comment,
-              date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+              date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
             };
             await dbAddReview(dealer.id, newRev);
             setReviews(prev => [newRev, ...prev]);
@@ -114,19 +118,14 @@ export function ShowroomView() {
             console.error(err);
           }
         }}
-        onSelectListing={(listing) => {
-          navigate(`/showroom/${showroomSlug}/car/${listing.id}`);
-        }}
+        onSelectListing={listing => navigate(`/showroom/${showroomSlug}/car/${listing.id}`)}
         currentUser={currentUser}
         onNavigateToSell={() => setShowPostingModal(true)}
-        onOpenSupportDrawer={(msg) => {
+        onOpenSupportDrawer={msg => {
           setContactDrawerMessage(msg || '');
           setIsContactDrawerOpen(true);
         }}
-        onBack={() => {
-          navigate('/');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        onBack={() => navigate('/')}
       />
 
       <ContactDrawer
@@ -136,23 +135,20 @@ export function ShowroomView() {
         initialMessage={contactDrawerMessage}
       />
 
-      {/* Multi-Step Vehicle Posting Modal */}
       {showPostingModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
           <div className="relative w-full max-w-4xl bg-[var(--color-bg-primary)] border border-[var(--color-border-main)] rounded-3xl p-4 sm:p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <button 
+            <button
               onClick={() => setShowPostingModal(false)}
               className="absolute top-4 right-4 z-50 p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-header)] bg-white/10 rounded-full transition-all cursor-pointer"
               title="Close Posting Studio"
             >
               <X size={18} />
             </button>
-            <DetailedVehiclePostingPage 
+            <DetailedVehiclePostingPage
               currentUser={currentUser}
-              contextDealerId={dealer?.id}
-              onPostCreated={() => {
-                setShowPostingModal(false);
-              }}
+              contextDealerId={dealer.id}
+              onPostCreated={() => setShowPostingModal(false)}
             />
           </div>
         </div>
@@ -174,7 +170,7 @@ function NotFoundView({ onBack }: { onBack: () => void }) {
             The requested showroom path does not exist or has been removed from our verified registry.
           </p>
         </div>
-        <button 
+        <button
           onClick={onBack}
           className="w-full bg-orange-600 hover:bg-orange-700 text-[var(--color-text-header)] font-black font-sans py-3.5 px-6 rounded-xl uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-orange-600/20 cursor-pointer"
         >
