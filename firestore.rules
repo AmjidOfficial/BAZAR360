@@ -1,38 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // ==========================================
-    // 0. GLOBAL HELPERS & PRIMITIVES
-    // ==========================================
-    
-    // Catch-all safety net
     match /{document=**} {
       allow read, write: if false;
     }
-    
+
     function isSignedIn() {
       return request.auth != null;
     }
-    
+
     function isEmailVerified() {
-      // In this dev environment we might not have verified emails for all mock users, 
-      // but for production rules it's requested. We will check it if email exists.
       return request.auth.token.email_verified == true;
     }
-    
-    function incoming() {
-      return request.resource.data;
-    }
-    
-    function existing() {
-      return resource.data;
-    }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-    
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email.lower() in [
@@ -49,122 +33,81 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // ==========================================
-    // 1. DEALERS (SHOWROOMS)
-    // ==========================================
-    
     match /dealers/{dealerId} {
       allow get: if true;
       allow list: if request.query.limit == null || request.query.limit <= 100;
-      
       function isValidDealer(data) {
         return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-               data.ownerUid == request.auth.uid &&
-               data.description is string && data.description.size() <= 2000;
+               data.ownerUid == request.auth.uid && data.description is string && data.description.size() <= 2000;
       }
-      
       allow create: if isSignedIn() && isValidId(dealerId) && isValidDealer(incoming()) &&
-                    // Strict key size constraint to prevent ghost fields on create
                     incoming().keys().hasAll(['name', 'ownerUid', 'description']);
-                    
       allow update: if isSignedIn() && isValidId(dealerId) && (
-        isAdmin() || 
-        (
-          existing().ownerUid == request.auth.uid &&
-          isValidDealer(incoming()) &&
-          incoming().ownerUid == existing().ownerUid && // Immutable
+        isAdmin() || (
+          existing().ownerUid == request.auth.uid && isValidDealer(incoming()) &&
+          incoming().ownerUid == existing().ownerUid &&
           incoming().diff(existing()).affectedKeys().hasOnly([
-            'name', 'subtitle', 'description', 'about', 'location', 
-            'phone', 'whatsapp', 'landline', 'contactPerson', 
-            'logo', 'coverImage', 'tagline', 'taglineCategory', 
-            'socials', 'theme_choice', 'themeSettings', 'gallery', 'media', 'updatedAt',
-            'likesCount', 'likes_count'
+            'name', 'subtitle', 'description', 'about', 'location', 'phone', 'whatsapp', 'landline',
+            'contactPerson', 'logo', 'coverImage', 'tagline', 'taglineCategory', 'socials',
+            'theme_choice', 'themeSettings', 'gallery', 'media', 'updatedAt', 'likesCount', 'likes_count'
           ])
         )
       );
-      
       allow delete: if isAdmin();
-      
-      // Sub-collection: Reviews
+
       match /reviews/{reviewId} {
         allow get: if true;
         allow list: if request.query.limit == null || request.query.limit <= 100;
-        allow create: if isSignedIn() && isValidId(reviewId) &&
-                      incoming().author is string && incoming().rating is number;
+        allow create: if isSignedIn() && isValidId(reviewId) && incoming().author is string && incoming().rating is number;
         allow update, delete: if isAdmin();
       }
     }
 
-    // ==========================================
-    // 2. LISTINGS (VEHICLES)
-    // ==========================================
-    
     match /listings/{listingId} {
       allow get: if true;
       allow list: if request.query.limit == null || request.query.limit <= 100;
-      
       function isValidListing(data) {
         return data.title is string && data.title.size() > 0 && data.title.size() <= 500 &&
                data.price is number && data.price >= 0 &&
                data.dealerId is string && data.dealerId.size() > 0 && data.dealerId.size() <= 128;
       }
-      
       function getDealer(dId) {
         return get(/databases/$(database)/documents/dealers/$(dId)).data;
       }
-      
-      // Allows both registered users (private sellers) and showroom dealers to create vehicle ads with strict owner checks
       allow create: if isSignedIn() && isValidId(listingId) && isValidListing(incoming()) && (
-        isAdmin() ||
-        incoming().dealerId == request.auth.uid ||
-        (
-          exists(/databases/$(database)/documents/dealers/$(incoming().dealerId)) &&
-          getDealer(incoming().dealerId).ownerUid == request.auth.uid
-        )
+        isAdmin() || incoming().dealerId == request.auth.uid ||
+        (exists(/databases/$(database)/documents/dealers/$(incoming().dealerId)) &&
+         getDealer(incoming().dealerId).ownerUid == request.auth.uid)
       );
-                    
       allow update: if isSignedIn() && isValidId(listingId) && (
-        isAdmin() ||
-        (
-          isValidListing(incoming()) &&
-          (
-            (
-              exists(/databases/$(database)/documents/dealers/$(existing().dealerId)) &&
-              getDealer(existing().dealerId).ownerUid == request.auth.uid
-            ) ||
-            existing().assignedSalesRepId == request.auth.uid ||
-            existing().dealerId == request.auth.uid
+        isAdmin() || (
+          isValidListing(incoming()) && (
+            (exists(/databases/$(database)/documents/dealers/$(existing().dealerId)) &&
+             getDealer(existing().dealerId).ownerUid == request.auth.uid) ||
+            existing().assignedSalesRepId == request.auth.uid || existing().dealerId == request.auth.uid
           ) &&
           incoming().diff(existing()).affectedKeys().hasOnly([
-            'title', 'description', 'price', 'mileage', 'images', 'imageUrl', 
-            'videoUrl', 'specs', 'isSold', 'isPaused', 'isArchived', 'updatedAt',
-            'make', 'model', 'year', 'condition', 'engineCC', 'exteriorColor', 'bodyCondition',
-            'fuelType', 'transmission', 'verified', 'approved', 'assignedSalesRepId', 'dealerId',
-            'phone', 'sellerPhone', 'tags', 'assemblyType', 'tokenTaxStatus', 'tokenTaxPaid',
-            'registrationCity', 'documentType', 'cloudinaryPublicId', 'cloudinaryPublicIds',
-            'videoCloudinaryPublicId', 'pdfUrl', 'pdfCloudinaryPublicId', 'pdfTitle'
+            'title', 'description', 'price', 'mileage', 'images', 'imageUrl', 'videoUrl', 'specs',
+            'isSold', 'isPaused', 'isArchived', 'updatedAt', 'make', 'model', 'year', 'condition',
+            'engineCC', 'exteriorColor', 'bodyCondition', 'fuelType', 'transmission', 'verified',
+            'approved', 'assignedSalesRepId', 'dealerId', 'phone', 'sellerPhone', 'tags', 'assemblyType',
+            'tokenTaxStatus', 'tokenTaxPaid', 'registrationCity', 'documentType', 'cloudinaryPublicId',
+            'cloudinaryPublicIds', 'videoCloudinaryPublicId', 'pdfUrl', 'pdfCloudinaryPublicId', 'pdfTitle'
           ])
         )
       );
-      
-      allow delete: if isAdmin() || (
-        isSignedIn() && (
-          (
-            exists(/databases/$(database)/documents/dealers/$(existing().dealerId)) &&
-            getDealer(existing().dealerId).ownerUid == request.auth.uid
-          ) ||
-          existing().assignedSalesRepId == request.auth.uid ||
-          existing().dealerId == request.auth.uid
-        )
-      );
-      
+      allow delete: if isAdmin() || (isSignedIn() && (
+        (exists(/databases/$(database)/documents/dealers/$(existing().dealerId)) &&
+         getDealer(existing().dealerId).ownerUid == request.auth.uid) ||
+        existing().assignedSalesRepId == request.auth.uid || existing().dealerId == request.auth.uid
+      ));
+
       match /comments/{commentId} {
         allow get: if true;
         allow list: if request.query.limit == null || request.query.limit <= 100;
-        allow create: if isSignedIn();
+        allow create: if isSignedIn() && incoming().userId == request.auth.uid;
         allow delete: if isAdmin() || isOwner(existing().userId);
       }
-      
       match /likes/{userId} {
         allow get: if true;
         allow list: if request.query.limit == null || request.query.limit <= 100;
@@ -172,75 +115,41 @@ service cloud.firestore {
       }
     }
 
-    // ==========================================
-    // 3. USERS & PROFILES
-    // ==========================================
-    
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && 
-                    (!('role' in incoming()) || (incoming().role != 'Admin' && incoming().role != 'Super Admin'));
-      allow update: if isOwner(userId) && (
-        incoming().diff(existing()).affectedKeys().hasOnly([
-          'displayName', 'phoneNumber', 'city', 'state', 'socials', 'socialMedia', 
-          'profilePhoto', 'photoURL', 'logoUrl', 'coverImage', 'preferredLanguage', 'preferredTheme', 
-          'whatsappNumber', 'updatedAt', 'lastLogin', 'notificationSettings', 'privacySettings',
-          'address', 'dob', 'gender', 'bio', 'status', 'email'
-        ])
-      ) || isAdmin();
+      allow create: if isOwner(userId) && (!('role' in incoming()) || (incoming().role != 'Admin' && incoming().role != 'Super Admin'));
+      allow update: if (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly([
+        'displayName', 'phoneNumber', 'city', 'state', 'socials', 'socialMedia', 'profilePhoto', 'photoURL',
+        'logoUrl', 'coverImage', 'preferredLanguage', 'preferredTheme', 'whatsappNumber', 'updatedAt', 'lastLogin',
+        'notificationSettings', 'privacySettings', 'address', 'dob', 'gender', 'bio', 'status', 'email'
+      ])) || isAdmin();
       allow delete: if isAdmin();
     }
-    
+
     match /profiles/{userId} {
       allow read, write: if isOwner(userId) || isAdmin();
     }
 
-    // ==========================================
-    // 4. CRM: LEADS & BARGAINS
-    // ==========================================
-    
     match /leads/{leadId} {
-      allow read: if isSignedIn() && (
-        isOwner(resource.data.customerId) || 
-        isOwner(resource.data.showroomOwnerId) || 
-        isAdmin()
-      );
-      allow create: if isSignedIn() && (
-        isOwner(incoming().customerId) || 
-        incoming().customerId == 'guest'
-      );
-      allow update: if isSignedIn() && (
-        isOwner(resource.data.showroomOwnerId) || 
-        isAdmin()
-      );
+      allow read: if isSignedIn() && (isOwner(resource.data.customerId) || isOwner(resource.data.showroomOwnerId) || isAdmin());
+      allow create: if isSignedIn() && (isOwner(incoming().customerId) || incoming().customerId == 'guest');
+      allow update: if isSignedIn() && (isOwner(resource.data.showroomOwnerId) || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /bargains/{bargainId} {
-      allow read: if isSignedIn() && (
-        isOwner(resource.data.buyerUid) || 
-        isOwner(resource.data.dealerOwnerUid) || 
-        isAdmin()
-      );
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow read: if isSignedIn() && (isOwner(resource.data.buyerUid) || isOwner(resource.data.dealerOwnerUid) || isAdmin());
+      allow create: if isSignedIn() && (incoming().buyerUid == request.auth.uid || incoming().dealerOwnerUid == request.auth.uid);
+      allow update: if isSignedIn() && (isOwner(resource.data.buyerUid) || isOwner(resource.data.dealerOwnerUid) || isAdmin());
+      allow delete: if isAdmin();
     }
 
-    // ==========================================
-    // 4b. SOCIAL COMMUNITY FEED
-    // ==========================================
-    
     match /posts/{postId} {
       allow get: if true;
       allow list: if request.query.limit == null || request.query.limit <= 100;
       allow create: if isSignedIn() && incoming().userId == request.auth.uid;
-      allow update: if isSignedIn() && (
-        isAdmin() || 
-        isOwner(existing().userId) || 
-        incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'commentsCount'])
-      );
+      allow update: if isSignedIn() && (isAdmin() || isOwner(existing().userId) || incoming().diff(existing()).affectedKeys().hasOnly(['likes', 'commentsCount']));
       allow delete: if isAdmin() || isOwner(existing().userId);
-
       match /comments/{commentId} {
         allow get: if true;
         allow list: if request.query.limit == null || request.query.limit <= 100;
@@ -249,76 +158,55 @@ service cloud.firestore {
       }
     }
 
-    // ==========================================
-    // 5. SYSTEM & ANALYTICS
-    // ==========================================
-    
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update, delete: if false;
     }
-    
+
     match /suggestions/{suggestionId} {
       allow read: if isAdmin();
-      allow create: if true;
+      allow create: if isSignedIn() && incoming().keys().size() <= 20;
+      allow update, delete: if isAdmin();
     }
 
-    // ==========================================
-    // 6. CONVERSATIONS & MESSAGING
-    // ==========================================
-    
     match /conversations/{conversationId} {
-      allow read: if isSignedIn() && (
-        request.auth.uid in resource.data.participants ||
-        isAdmin()
-      );
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        request.auth.uid in resource.data.participants ||
-        isAdmin()
-      );
-      
+      allow read: if isSignedIn() && (request.auth.uid in resource.data.participants || isAdmin());
+      allow create: if isSignedIn() && incoming().participants is list && request.auth.uid in incoming().participants;
+      allow update: if isSignedIn() && (request.auth.uid in resource.data.participants || isAdmin());
       match /messages/{messageId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn();
+        allow read: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants || isAdmin());
+        allow create: if isSignedIn() && incoming().senderId == request.auth.uid &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
         allow update, delete: if isAdmin() || isOwner(existing().senderId);
       }
     }
 
-    // ==========================================
-    // 7. UNIFIED NOTIFICATIONS
-    // ==========================================
-    
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && (incoming().userId == request.auth.uid || isAdmin());
       allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ==========================================
-    // 8. SERVICE BOOKINGS & WORKSHOP JOBS
-    // ==========================================
-    
     match /service_bookings/{bookingId} {
       allow get: if true;
-      allow list: if request.query.limit == null || request.query.limit <= 100;
-      allow create: if true;
-      allow update: if true;
-      allow delete: if isAdmin();
+      allow list: if isSignedIn() && (isAdmin() || request.query.limit == null || request.query.limit <= 100);
+      allow create: if isSignedIn() && (incoming().customerId == request.auth.uid || incoming().userId == request.auth.uid || isAdmin());
+      allow update: if isSignedIn() && (isAdmin() || resource.data.customerId == request.auth.uid || resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (isSignedIn() && (resource.data.customerId == request.auth.uid || resource.data.userId == request.auth.uid));
     }
 
     match /systemLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if true;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
       allow update, delete: if false;
     }
 
     match /searchHistory/{searchId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     match /system/{docId} {
