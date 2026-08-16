@@ -2,9 +2,10 @@
 /**
  * Bazar360 production data-integrity audit.
  *
- * This is intentionally conservative. It does not modify source files.
- * It fails CI when marketplace code contains known factual fallback values
- * or production code appears to depend on development seed data.
+ * Conservative, source-level CI gate. It does not modify application data.
+ * It fails when production marketplace code contains known factual fallbacks,
+ * synthetic seller identity, special-case showroom identity, or artificial
+ * listing deduplication that can hide real records.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,8 +13,11 @@ import path from 'node:path';
 const root = process.cwd();
 const files = [
   'src/lib/dbService.ts',
+  'src/lib/inventoryRepository.ts',
   'src/types.ts',
   'src/App.tsx',
+  'src/components/ShowroomView.tsx',
+  'src/hooks/useVehicles.ts',
   'server.ts',
 ];
 
@@ -26,6 +30,11 @@ const forbidden = [
   { pattern: /bodyCondition:\s*data\.bodyCondition\s*\|\|\s*['\"]Total Genuine['\"]/, reason: 'body condition fallback to Total Genuine' },
   { pattern: /documentType:\s*data\.documentType\s*\|\|\s*['\"]Smart Card['\"]/, reason: 'document type fallback to Smart Card' },
   { pattern: /tokenTaxPaid:\s*data\.tokenTaxPaid\s*!==\s*false/, reason: 'missing token-tax status treated as paid' },
+  { pattern: /['\"]auto-choice-peshawar['\"]/, reason: 'special-case Auto Choice identity in marketplace code' },
+  { pattern: /['\"]auto-choice['\"]/, reason: 'special-case Auto Choice identity in marketplace code' },
+  { pattern: /['\"]Individual Seller['\"]/, reason: 'synthetic seller identity fallback' },
+  { pattern: /title_price_year_dealer/, reason: 'artificial listing deduplication key' },
+  { pattern: /cleanAndDeduplicateListings/, reason: 'legacy artificial listing deduplication path' },
 ];
 
 const violations = [];
