@@ -14,7 +14,7 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "audit:data": "node scripts/production-audit.mjs",
+    "audit:data": "node scripts/audit-production-integrity.mjs",
     "verify": "npm run lint && npm run audit:data && npm run build"
   },
   "dependencies": {
