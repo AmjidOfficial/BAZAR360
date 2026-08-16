@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { AnimatePresence } from 'motion/react';
 import { Dealer, CarListing, Review } from '../types';
 import { dbFetchDealers, dbFetchReviews, dbAddReview } from '../lib/dbService';
-import { fetchInventoryPage } from '../lib/inventoryRepository';
+import { fetchShowroomInventoryPage } from '../lib/inventoryRepository';
 import { useAuth } from './AuthContext';
 import { ShowroomLoading } from './ShowroomLoading';
 import { VehicleDetail } from './VehicleDetail';
@@ -42,20 +42,15 @@ export function ShowroomView() {
         if (cancelled) return;
         setDealer(foundDealer || null);
         setLoading(false);
-
         if (!foundDealer) return;
 
-        // Secondary data loads after the critical showroom identity is interactive.
-        const dealerId = foundDealer.id;
+        const showroomId = foundDealer.id;
 
+        // Inventory and reviews are non-blocking secondary requests.
         void (async () => {
           try {
-            const firstPage = await fetchInventoryPage(24);
-            if (cancelled) return;
-            const showroomListings = firstPage.listings.filter(
-              listing => listing.dealerId === dealerId || listing.showroomId === dealerId,
-            );
-            setListings(showroomListings);
+            const firstPage = await fetchShowroomInventoryPage(showroomId, 24);
+            if (!cancelled) setListings(firstPage.listings);
           } catch (err) {
             console.error('[ShowroomView] inventory load failed:', err);
           }
@@ -63,7 +58,7 @@ export function ShowroomView() {
 
         void (async () => {
           try {
-            const revs = await dbFetchReviews(dealerId);
+            const revs = await dbFetchReviews(showroomId);
             if (!cancelled) setReviews(revs || []);
           } catch (err) {
             console.warn('[ShowroomView] reviews load failed:', err);
