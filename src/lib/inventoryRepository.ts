@@ -9,6 +9,7 @@ import {
   startAfter,
   where,
   type DocumentData,
+  type QueryConstraint,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -138,10 +139,8 @@ export interface InventoryPage {
   hasMore: boolean;
 }
 
-type QueryConstraintList = Parameters<typeof query> extends [unknown, ...infer Rest] ? Rest : never;
-
 async function fetchPage(
-  constraints: QueryConstraintList,
+  constraints: QueryConstraint[],
   pageSize: number,
   cursor?: QueryDocumentSnapshot<DocumentData> | null,
 ): Promise<InventoryPage> {
