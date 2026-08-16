@@ -66,7 +66,7 @@ __export(seoGenerator_exports, {
   generateVehicleSeo: () => generateVehicleSeo
 });
 function ensureAbsoluteUrl(url) {
-  if (!url) return "https://bazar360.online/auto_choice_logo_dark.jpg";
+  if (!url) return "";
   if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
     return url;
   }
@@ -360,7 +360,7 @@ async function executeWithRetry(apiCall, retries = 3, delayMs = 1e3) {
 async function startServer() {
   const app2 = (0, import_express.default)();
   const PORT = 3e3;
-  app2.use(import_express.default.json());
+  app2.use(import_express.default.json({ limit: "25mb" }));
   app2.use("/api", appCheckVerification);
   app2.post("/api/ai/marketing-engine", async (req, res) => {
     try {
@@ -478,22 +478,15 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
         return res.status(400).json({ success: false, error: "Showroom name is required" });
       }
       const curatedCoverImages = [
-        "https://images.unsplash.com/photo-1562141983-f32fdfa2bcfa?auto=format&fit=crop&q=80&w=1200",
-        // Modern showroom
-        "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&q=80&w=1200",
-        // Prestige lineup
-        "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1200",
-        // Cyberpunk neon showroom
-        "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&q=80&w=1200"
-        // Luxury dealership
+        "",
+        "",
+        "",
+        ""
       ];
       const curatedLogos = [
-        "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=300",
-        // Dark shield logo
-        "https://images.unsplash.com/photo-1560179707-f14e90ef3623?auto=format&fit=crop&q=80&w=300",
-        // Minimal monogram
-        "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=300"
-        // Elegant brand
+        "",
+        "",
+        ""
       ];
       const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const coverImage = curatedCoverImages[hash % curatedCoverImages.length];
@@ -504,7 +497,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
           id: `act-tiktok-${Date.now()}`,
           timestamp: "Just now",
           badge: "TikTok Reel",
-          imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600",
+          imageUrl: "",
           title: `Trending TikTok walkaround on @${name.toLowerCase().replace(/\s+/g, "")}`,
           description: `Watch our high-engagement video walkaround and exhaust sound review of our newly imported premium sports touring model.`,
           price: "Available PKR"
@@ -515,7 +508,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
           id: `act-social-${Date.now() + 1}`,
           timestamp: "3 hours ago",
           badge: instagram ? "Instagram Showcase" : "Facebook Active Campaign",
-          imageUrl: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=80&w=600",
+          imageUrl: "",
           title: "Prestige Fleet Campaign Spotlight",
           description: `Meticulously pre-purchased diagnostics passed. Spotlighting the luxury specifications of our highest-grade SUVs this month.`,
           price: "Elite Specs"
@@ -526,7 +519,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
           id: `act-web-${Date.now() + 2}`,
           timestamp: "Yesterday",
           badge: "Web Direct Port",
-          imageUrl: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600",
+          imageUrl: "",
           title: "Interactive Web Portal Online",
           description: `Check out our newly optimized digital dealership website. Browse full certificates, schedule on-site inspections, or request direct transportation.`,
           price: "Online Booking"
@@ -537,7 +530,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
           id: `act-fallback-${Date.now()}`,
           timestamp: "Just now",
           badge: "Launch Event",
-          imageUrl: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600",
+          imageUrl: "",
           title: `Welcome to ${name} Showroom floor`,
           description: `We are live on BAZAR360! Stop by our physical collection or use WhatsApp to request personalized walkarounds with verified specs.`,
           price: "Direct Access"
@@ -770,8 +763,9 @@ Your task is to translate any incoming text block beautifully and accurately int
       const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || "me634xd0";
       const uploadPreset = process.env.VITE_CLOUDINARY_UPLOAD_PRESET || "bazar360_upload";
       const apiKey = process.env.VITE_CLOUDINARY_API_KEY || "165721653511945";
+      const apiSecret = process.env.CLOUDINARY_API_SECRET;
       const cloudUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
-      const response = await fetch(cloudUrl, {
+      let response = await fetch(cloudUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -784,6 +778,32 @@ Your task is to translate any incoming text block beautifully and accurately int
           ...tags ? { tags } : {}
         })
       });
+      if (!response.ok && apiSecret) {
+        try {
+          const timestamp = Math.floor(Date.now() / 1e3);
+          const paramsToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
+          const signature = import_crypto.default.createHash("sha1").update(paramsToSign).digest("hex");
+          const signedResponse = await fetch(cloudUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              file: fileData,
+              api_key: apiKey,
+              timestamp,
+              folder,
+              signature,
+              ...tags ? { tags } : {}
+            })
+          });
+          if (signedResponse.ok) {
+            response = signedResponse;
+          }
+        } catch (signErr) {
+          console.warn("[Cloudinary Proxy] Signed upload attempt failed:", signErr);
+        }
+      }
       if (!response.ok) {
         const errText = await response.text();
         console.warn(`[Cloudinary Proxy] Upload failed with status ${response.status}: ${errText}`);
@@ -796,7 +816,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       return res.json({
         success: true,
         url: result.url,
-        secure_url: result.secure_url,
+        secure_url: result.secure_url || result.url,
         public_id: result.public_id,
         format: result.format,
         resource_type: result.resource_type,
