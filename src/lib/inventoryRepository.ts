@@ -17,7 +17,7 @@ import { CarListing } from '../types';
 const LISTINGS_COLLECTION = 'listings';
 
 function optionalString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value : undefined;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
 function optionalNumber(value: unknown): number | undefined {
@@ -29,8 +29,25 @@ function optionalNumber(value: unknown): number | undefined {
   return undefined;
 }
 
+function optionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined;
+}
+
+function optionalStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const values = value
+    .filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    .map(item => item.trim());
+  return values.length ? values : undefined;
+}
+
+/** A listing is public only when it has an explicit publication approval. */
 function isPublished(data: DocumentData): boolean {
-  return data.approved !== false && data.isArchived !== true && data.isPaused !== true && data.isSold !== true && data.status !== 'Sold';
+  return data.approved === true &&
+    data.isArchived !== true &&
+    data.isPaused !== true &&
+    data.isSold !== true &&
+    data.status !== 'Sold';
 }
 
 /** Maps Firestore data without inventing factual marketplace values. */
@@ -39,6 +56,9 @@ export function mapCanonicalListing(id: string, data: DocumentData): CarListing 
   const price = optionalNumber(data.price);
   const mileage = optionalNumber(data.mileage);
   const engineCC = optionalNumber(data.engineCC);
+  const imageUrl = optionalString(data.imageUrl);
+  const images = optionalStringArray(data.images) || (imageUrl ? [imageUrl] : undefined);
+  const horsepower = optionalString(data.horsepower) || optionalString(data.horspower);
 
   return {
     id,
@@ -50,22 +70,22 @@ export function mapCanonicalListing(id: string, data: DocumentData): CarListing 
     mileage,
     fuelType: optionalString(data.fuelType) as CarListing['fuelType'],
     transmission: optionalString(data.transmission) as CarListing['transmission'],
-    imageUrl: optionalString(data.imageUrl),
-    verified: data.verified === true,
-    featured: data.featured === true,
-    approved: data.approved !== false,
+    imageUrl,
+    verified: optionalBoolean(data.verified),
+    featured: optionalBoolean(data.featured),
+    approved: optionalBoolean(data.approved),
     dealerId: optionalString(data.dealerId),
     showroomId: optionalString(data.showroomId),
     ownerId: optionalString(data.ownerId),
     description: optionalString(data.description),
     createdAt: optionalString(data.createdAt),
     updatedAt: optionalString(data.updatedAt),
-    tags: Array.isArray(data.tags) ? data.tags.filter((v: unknown) => typeof v === 'string') : undefined,
+    tags: optionalStringArray(data.tags),
     specs: {
       color: optionalString(data.exteriorColor),
       engineSize: engineCC === undefined ? undefined : `${engineCC} CC`,
-      horsepower: optionalString(data.horsepower) || optionalString(data.horspower),
-      horspower: optionalString(data.horsepower) || optionalString(data.horspower),
+      horsepower,
+      horspower: horsepower,
       regionalSpecs: optionalString(data.assemblyType),
     },
     createdBy: optionalString(data.createdBy),
@@ -83,22 +103,20 @@ export function mapCanonicalListing(id: string, data: DocumentData): CarListing 
     bodyCondition: optionalString(data.bodyCondition) as CarListing['bodyCondition'],
     registrationCity: optionalString(data.registrationCity),
     documentType: optionalString(data.documentType) as CarListing['documentType'],
-    tokenTaxPaid: data.tokenTaxPaid === true,
-    images: Array.isArray(data.images)
-      ? data.images.filter((v: unknown) => typeof v === 'string')
-      : (optionalString(data.imageUrl) ? [data.imageUrl as string] : undefined),
+    tokenTaxPaid: optionalBoolean(data.tokenTaxPaid),
+    images,
     primaryImage: optionalString(data.primaryImage),
-    verifiedBadge: data.verifiedBadge === true,
+    verifiedBadge: optionalBoolean(data.verifiedBadge),
     assemblyType: optionalString(data.assemblyType) as CarListing['assemblyType'],
-    features: Array.isArray(data.features) ? data.features.filter((v: unknown) => typeof v === 'string') : undefined,
+    features: optionalStringArray(data.features),
     dentPaintDescription: optionalString(data.dentPaintDescription),
     tokenTaxStatus: optionalString(data.tokenTaxStatus) as CarListing['tokenTaxStatus'],
-    isSold: data.isSold === true,
-    isPaused: data.isPaused === true,
-    isArchived: data.isArchived === true,
+    isSold: optionalBoolean(data.isSold),
+    isPaused: optionalBoolean(data.isPaused),
+    isArchived: optionalBoolean(data.isArchived),
     status: optionalString(data.status) as CarListing['status'],
     cloudinaryPublicId: optionalString(data.cloudinaryPublicId),
-    cloudinaryPublicIds: Array.isArray(data.cloudinaryPublicIds) ? data.cloudinaryPublicIds.filter((v: unknown) => typeof v === 'string') : undefined,
+    cloudinaryPublicIds: optionalStringArray(data.cloudinaryPublicIds),
     videoUrl: optionalString(data.videoUrl),
     videoCloudinaryPublicId: optionalString(data.videoCloudinaryPublicId),
     pdfUrl: optionalString(data.pdfUrl),
@@ -120,8 +138,10 @@ export interface InventoryPage {
   hasMore: boolean;
 }
 
+type QueryConstraintList = Parameters<typeof query> extends [unknown, ...infer Rest] ? Rest : never;
+
 async function fetchPage(
-  constraints: ReturnType<typeof query> extends infer _ ? any[] : never,
+  constraints: QueryConstraintList,
   pageSize: number,
   cursor?: QueryDocumentSnapshot<DocumentData> | null,
 ): Promise<InventoryPage> {
@@ -130,12 +150,11 @@ async function fetchPage(
     : query(collection(db, LISTINGS_COLLECTION), ...constraints);
   const snap = await getDocs(q);
   const docs = snap.docs;
-  const hasMore = docs.length > pageSize;
-  const visibleDocs = docs.slice(0, pageSize).filter(d => isPublished(d.data()));
+  const visibleDocs = docs.filter(d => isPublished(d.data())).slice(0, pageSize);
   return {
     listings: visibleDocs.map(d => mapCanonicalListing(d.id, d.data())),
     lastVisible: visibleDocs.length ? visibleDocs[visibleDocs.length - 1] : null,
-    hasMore,
+    hasMore: docs.length > pageSize,
   };
 }
 
