@@ -1,45 +1,28 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function userRole() {
       return isSignedIn()
         ? firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
         : null;
     }
-
     function isAdmin() {
-      return isSignedIn() && userRole() == 'admin';
+      return isSignedIn() && (userRole() == 'Admin' || userRole() == 'Super Admin');
     }
-
-    function isVehicleOwner(vehicleId) {
-      return isSignedIn()
-        && firestore.get(/databases/(default)/documents/vehicles/$(vehicleId)).data.ownerId == request.auth.uid;
+    function isListingOwner(listingId) {
+      return isSignedIn() && firestore.get(/databases/(default)/documents/listings/$(listingId)).data.ownerId == request.auth.uid;
     }
-
-    function isShowroomOwner(showroomId) {
-      return isSignedIn()
-        && firestore.get(/databases/(default)/documents/showrooms/$(showroomId)).data.ownerUid == request.auth.uid;
+    function isDealerOwner(dealerId) {
+      return isSignedIn() && firestore.get(/databases/(default)/documents/dealers/$(dealerId)).data.ownerUid == request.auth.uid;
     }
-
     function isValidImage() {
-      return request.resource.contentType.matches('image/.*')
-        && request.resource.size < 10 * 1024 * 1024;
+      return request.resource.contentType.matches('image/.*') && request.resource.size < 10 * 1024 * 1024;
     }
-
     function isValidVideo() {
-      return request.resource.contentType.matches('video/.*')
-        && request.resource.size < 100 * 1024 * 1024;
+      return request.resource.contentType.matches('video/.*') && request.resource.size < 100 * 1024 * 1024;
     }
-
     function isValidDocument() {
       return (
         request.resource.contentType == 'application/pdf' ||
@@ -50,44 +33,41 @@ service firebase.storage {
       ) && request.resource.size < 25 * 1024 * 1024;
     }
 
-    // Public media remains readable, but writes are ownership-controlled.
     match /profile-photos/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if isOwner(userId) && isValidImage();
     }
 
-    match /showroom-logos/{showroomId}/{allPaths=**} {
+    match /showroom-logos/{dealerId}/{allPaths=**} {
       allow read: if true;
-      allow write: if (isShowroomOwner(showroomId) || isAdmin()) && isValidImage();
+      allow write: if (isDealerOwner(dealerId) || isAdmin()) && isValidImage();
     }
 
-    match /showroom-banners/{showroomId}/{allPaths=**} {
+    match /showroom-banners/{dealerId}/{allPaths=**} {
       allow read: if true;
-      allow write: if (isShowroomOwner(showroomId) || isAdmin()) && isValidImage();
+      allow write: if (isDealerOwner(dealerId) || isAdmin()) && isValidImage();
     }
 
-    match /vehicle-images/{vehicleId}/{allPaths=**} {
+    match /vehicle-images/{listingId}/{allPaths=**} {
       allow read: if true;
-      allow write: if (isVehicleOwner(vehicleId) || isAdmin()) && isValidImage();
+      allow write: if (isListingOwner(listingId) || isAdmin()) && isValidImage();
     }
 
-    match /vehicle-videos/{vehicleId}/{allPaths=**} {
+    match /vehicle-videos/{listingId}/{allPaths=**} {
       allow read: if true;
-      allow write: if (isVehicleOwner(vehicleId) || isAdmin()) && isValidVideo();
+      allow write: if (isListingOwner(listingId) || isAdmin()) && isValidVideo();
     }
 
-    // Verification and business documents are private.
     match /documents/{userId}/{allPaths=**} {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if (isOwner(userId) || isAdmin()) && isValidDocument();
     }
 
-    match /inspection-reports/{vehicleId}/{allPaths=**} {
-      allow read: if isVehicleOwner(vehicleId) || isAdmin();
-      allow write: if (isVehicleOwner(vehicleId) || isAdmin()) && isValidDocument();
+    match /inspection-reports/{listingId}/{allPaths=**} {
+      allow read: if isListingOwner(listingId) || isAdmin();
+      allow write: if (isListingOwner(listingId) || isAdmin()) && isValidDocument();
     }
 
-    // Only administrators can publish or replace platform-controlled media.
     match /advertisements/{adId}/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin() && isValidImage();
@@ -100,13 +80,6 @@ service firebase.storage {
 
     match /temporary/{userId}/{allPaths=**} {
       allow read, write: if isOwner(userId);
-    }
-
-    match /showrooms/{ownerId}/vehicles/{vehicleId}/{fileName} {
-      allow read: if true;
-      allow write: if isOwner(ownerId)
-        && isVehicleOwner(vehicleId)
-        && isValidImage();
     }
   }
 }
