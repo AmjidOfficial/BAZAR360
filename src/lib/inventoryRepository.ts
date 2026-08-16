@@ -42,7 +42,7 @@ function optionalStringArray(value: unknown): string[] | undefined {
   return values.length ? values : undefined;
 }
 
-/** A listing is public only when it has an explicit publication approval. */
+/** Public inventory requires explicit approval. */
 function isPublished(data: DocumentData): boolean {
   return data.approved === true &&
     data.isArchived !== true &&
@@ -159,10 +159,14 @@ async function fetchPage(
 
 export async function fetchInventoryPage(pageSize = 24, cursor?: QueryDocumentSnapshot<DocumentData> | null): Promise<InventoryPage> {
   const safePageSize = Math.min(Math.max(Math.floor(pageSize), 1), 48);
-  return fetchPage([orderBy('createdAt', 'desc'), limit(safePageSize + 1)], safePageSize, cursor);
+  return fetchPage(
+    [where('approved', '==', true), orderBy('createdAt', 'desc'), limit(safePageSize + 1)],
+    safePageSize,
+    cursor,
+  );
 }
 
-/** Fetch only one showroom's inventory. This avoids reading unrelated marketplace vehicles. */
+/** Fetch only one showroom's approved inventory. */
 export async function fetchShowroomInventoryPage(
   showroomId: string,
   pageSize = 24,
@@ -172,7 +176,7 @@ export async function fetchShowroomInventoryPage(
   if (!id) return { listings: [], lastVisible: null, hasMore: false };
   const safePageSize = Math.min(Math.max(Math.floor(pageSize), 1), 48);
   return fetchPage(
-    [where('showroomId', '==', id), orderBy('createdAt', 'desc'), limit(safePageSize + 1)],
+    [where('showroomId', '==', id), where('approved', '==', true), orderBy('createdAt', 'desc'), limit(safePageSize + 1)],
     safePageSize,
     cursor,
   );
