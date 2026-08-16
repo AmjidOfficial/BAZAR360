@@ -43,12 +43,23 @@ export interface VisitorLog { id:string; timestamp:string; visitorId:string; sea
 export interface RegisteredUserLog { id:string; timestamp:string; userId:string; userEmail:string; savedAlerts:string[]; activityType:'profile_view'|'save_car'|'message_sent'|'comparative_eval'; queryDetails?:string; }
 export interface BargainOwnerLog { id:string; timestamp:string; dealerId:string; ownerEmail:string; action:'monetize_analytics'|'inventory_health_update'|'buyer_log_accessed'|'uploaded_listing'; details:string; inventoryCountSnapshot:number; }
 
-/** Legacy/admin record types retained as compatibility contracts while those modules are migrated. */
+/** Compatibility contracts for legacy/admin modules while they are migrated. */
 export interface ServiceBooking { id:string; [key:string]: any; }
-export interface Conversation { id:string; [key:string]: any; }
+export interface Conversation {
+  id:string;
+  participants?: string[];
+  participantDetails?: Record<string, { name?: string; avatar?: string; role?: string }>;
+  unreadCount?: Record<string, number>;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  relatedListingId?: string;
+  relatedListingTitle?: string;
+  relatedServiceId?: string;
+  [key:string]: any;
+}
 export interface DirectMessage { id:string; [key:string]: any; }
 export interface UserNotification { id:string; [key:string]: any; }
-export interface DetailedReview extends Review { [key:string]: any; }
+export interface DetailedReview { id:string; author?:string; rating?:number; comment?:string; date?:string; [key:string]: any; }
 export interface SocialPost { id:string; [key:string]: any; }
 export interface SocialComment { id:string; [key:string]: any; }
 
