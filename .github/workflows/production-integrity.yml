@@ -23,5 +23,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Type check
+        run: npm run lint
+
       - name: Audit production marketplace data
-        run: node scripts/audit-production-integrity.mjs
+        run: npm run audit:data
+
+      - name: Production build
+        run: npm run build
