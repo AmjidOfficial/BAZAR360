@@ -83,27 +83,25 @@ export async function dbFetchListingsPaginated(lastDocSnap?: any, limitCount: nu
 
 db = db.slice(0, start) + replacement + db.slice(end);
 
-// Remove any remaining legacy hard-coded showroom identity comparisons without
-// creating a new identity or fallback. Marketplace identity must come from data.
+// Marketplace ownership and showroom identity must never be fabricated.
 db = db.replace(/['\"]auto-choice-peshawar['\"]/gi, "''");
 db = db.replace(/['\"]auto-choice['\"]/gi, "''");
-
+db = db.replace(/dealerId:\s*userRole\s*===\s*['\"]Dealer['\"]\s*\?\s*['\"]['\"]\s*:\s*['\"]private['\"],?/gi, '');
 fs.writeFileSync(dbPath, db);
 
 const appPath = 'src/App.tsx';
 let app = fs.readFileSync(appPath, 'utf8');
 app = app.replace(/const METRIC_TABS_DATA = \{[\s\S]*?\n\};\n/, 'const METRIC_TABS_DATA: Record<string, Array<{label: string; value: string}>> = {};\n');
 app = app.replace(/\bauto-choice-peshawar\b/gi, '');
-// Never invent seller identity or guest ownership. Preserve the real value when
-// supplied and otherwise leave the field absent for Firestore validation.
-app = app.replace(/newListing\.sellerName \|\| currentUser\?\.displayName \|\| ['\"]Individual Seller['\"]/g, 'newListing.sellerName || currentUser?.displayName');
-app = app.replace(/currentUser\?\.uid \|\| ['\"]guest-seller['\"]/g, 'currentUser?.uid');
+app = app.replace(/['\"]Individual Seller['\"]/g, "''");
+app = app.replace(/newListing\.sellerName\s*\|\|\s*currentUser\?\.displayName/g, 'newListing.sellerName || currentUser?.displayName');
+app = app.replace(/currentUser\?\.uid\s*\|\|\s*['\"]guest-seller['\"]/g, 'currentUser?.uid');
 fs.writeFileSync(appPath, app);
 
 const serverPath = 'server.ts';
 let server = fs.readFileSync(serverPath, 'utf8');
 server = server.replace(/auto-choice-peshawar/gi, '');
+server = server.replace(/\bauto-choice\b/gi, '');
 fs.writeFileSync(serverPath, server);
 
-// CI marker: rerun the full production gate after the cleanup pass.
 console.log('Production marketplace legacy read/fallback cleanup applied.');
