@@ -1,0 +1,21 @@
+name: Remove Confirmed Fake Inventory
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Remove only confirmed hardcoded seed records
+        env:
+          FIREBASE_SERVICE_ACCOUNT_BAZAR360: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
+        run: node scripts/cleanup-known-fake-inventory.mjs
