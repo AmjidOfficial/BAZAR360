@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build_and_deploy:
@@ -14,40 +14,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Restore App shell only when the source is truncated
-        run: |
-          set -e
-          APP_SIZE=$(wc -c < src/App.tsx)
-          if [ "$APP_SIZE" -lt 100000 ]; then
-            echo "App.tsx is unexpectedly small (${APP_SIZE} bytes). Restoring the last known-good App shell."
-            git fetch --no-tags origin 58a8dda3b39d39dc8f7276cf16dc258e871b3121
-            git checkout 58a8dda3b39d39dc8f7276cf16dc258e871b3121 -- src/App.tsx
-            python - <<'PY'
-            from pathlib import Path
-            p = Path('src/App.tsx')
-            s = p.read_text()
-            marker = "import AdminShowroomCreator from './components/AdminShowroomCreator';"
-            if "ShowroomOwnerPortal" not in s:
-                s = s.replace(marker, marker + "\nimport ShowroomOwnerPortal from './components/ShowroomOwnerPortal';")
-            route = '<Route path="/portal" element={<App />} />'
-            owner_route = route + '\n            <Route path="/owner" element={<ShowroomOwnerPortal />} />\n            <Route path="/showroom-owner" element={<ShowroomOwnerPortal />} />'
-            if '<Route path="/owner"' not in s:
-                s = s.replace(route, owner_route)
-            p.write_text(s)
-            PY
-            git add src/App.tsx
-            if ! git diff --cached --quiet; then
-              git config user.name "BAZAR360 Automation"
-              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-              git commit -m "fix: restore App after accidental truncation [skip ci]"
-              git push origin HEAD:main
-            else
-              echo "Restored App content already matches main; no source commit required."
-            fi
-          else
-            echo "App.tsx size ${APP_SIZE} bytes. Source looks healthy; no restore needed."
-          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
