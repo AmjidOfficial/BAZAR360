@@ -5,12 +5,41 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Restore App shell and owner portal wiring
+        run: |
+          set -e
+          git fetch --no-tags origin 58a8dda3b39d39dc8f7276cf16dc258e871b3121
+          git checkout 58a8dda3b39d39dc8f7276cf16dc258e871b3121 -- src/App.tsx
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/App.tsx')
+          s = p.read_text()
+          marker = "import AdminShowroomCreator from './components/AdminShowroomCreator';"
+          if "ShowroomOwnerPortal" not in s:
+              s = s.replace(marker, marker + "\nimport ShowroomOwnerPortal from './components/ShowroomOwnerPortal';")
+          route = '<Route path="/portal" element={<App />} />'
+          owner_route = route + '\n            <Route path="/owner" element={<ShowroomOwnerPortal />} />\n            <Route path="/showroom-owner" element={<ShowroomOwnerPortal />} />'
+          if '<Route path="/owner"' not in s:
+              s = s.replace(route, owner_route)
+          p.write_text(s)
+          PY
+          if ! git diff --quiet -- src/App.tsx; then
+            git config user.name "BAZAR360 Automation"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/App.tsx
+            git commit -m "fix: restore App and wire showroom owner portal [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
