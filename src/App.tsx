@@ -106,6 +106,7 @@ const HOTSPOTS_LIST = [
 
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import ShowroomProfile from "./pages/ShowroomProfile";
+import AdminShowroomCreator from './components/AdminShowroomCreator';
 import { VehicleDetail } from "./components/VehicleDetail";
 
 import { RoleProvider } from './contexts/RoleContext';
@@ -126,6 +127,7 @@ export default function AppWrapper() {
             <Route path="/portal" element={<App />} />
             <Route path="/search" element={<App />} />
             <Route path="/favorites" element={<App />} />
+            <Route path="/admin/showrooms" element={<AdminShowroomCreator />} />
             <Route path="/admin" element={<App />} />
             <Route path="/community" element={<App />} />
             <Route path="/dealers/:showroomSlug" element={<ShowroomProfile />} />
