@@ -42,13 +42,25 @@ function optionalStringArray(value: unknown): string[] | undefined {
   return values.length ? values : undefined;
 }
 
-/** Public inventory requires explicit approval. */
+/** Public inventory requires explicit approval and excludes withdrawn/sold records. */
 function isPublished(data: DocumentData): boolean {
   return data.approved === true &&
     data.isArchived !== true &&
     data.isPaused !== true &&
     data.isSold !== true &&
     data.status !== 'Sold';
+}
+
+function timestampMs(value: unknown): number {
+  if (typeof value === 'string') {
+    const ms = Date.parse(value);
+    return Number.isFinite(ms) ? ms : 0;
+  }
+  if (value && typeof value === 'object' && 'toMillis' in value && typeof (value as any).toMillis === 'function') {
+    return (value as any).toMillis();
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  return 0;
 }
 
 /** Maps Firestore data without inventing factual marketplace values. */
@@ -159,14 +171,24 @@ async function fetchPage(
 
 export async function fetchInventoryPage(pageSize = 24, cursor?: QueryDocumentSnapshot<DocumentData> | null): Promise<InventoryPage> {
   const safePageSize = Math.min(Math.max(Math.floor(pageSize), 1), 48);
-  return fetchPage(
-    [where('approved', '==', true), orderBy('createdAt', 'desc'), limit(safePageSize + 1)],
-    safePageSize,
-    cursor,
-  );
+  try {
+    return await fetchPage(
+      [where('approved', '==', true), orderBy('updatedAt', 'desc'), limit(safePageSize + 1)],
+      safePageSize,
+      cursor,
+    );
+  } catch (error) {
+    // Older listings may not have updatedAt. Preserve access to those records without inventing values.
+    console.warn('[Inventory] updatedAt query unavailable; falling back to createdAt:', error);
+    return fetchPage(
+      [where('approved', '==', true), orderBy('createdAt', 'desc'), limit(safePageSize + 1)],
+      safePageSize,
+      cursor,
+    );
+  }
 }
 
-/** Fetch only one showroom's approved inventory. */
+/** Fetch only one showroom's approved inventory, preferring the latest admin/user update. */
 export async function fetchShowroomInventoryPage(
   showroomId: string,
   pageSize = 24,
@@ -175,13 +197,45 @@ export async function fetchShowroomInventoryPage(
   const id = showroomId.trim();
   if (!id) return { listings: [], lastVisible: null, hasMore: false };
   const safePageSize = Math.min(Math.max(Math.floor(pageSize), 1), 48);
-  return fetchPage(
-    [where('showroomId', '==', id), where('approved', '==', true), orderBy('createdAt', 'desc'), limit(safePageSize + 1)],
-    safePageSize,
-    cursor,
-  );
+  try {
+    return await fetchPage(
+      [where('showroomId', '==', id), where('approved', '==', true), orderBy('updatedAt', 'desc'), limit(safePageSize + 1)],
+      safePageSize,
+      cursor,
+    );
+  } catch (error) {
+    console.warn('[Inventory] showroom updatedAt query unavailable; falling back to createdAt:', error);
+    return fetchPage(
+      [where('showroomId', '==', id), where('approved', '==', true), orderBy('createdAt', 'desc'), limit(safePageSize + 1)],
+      safePageSize,
+      cursor,
+    );
+  }
 }
 
+/** Public first-page inventory, sorted by the latest real Firestore update. */
 export async function fetchPublishedInventory(): Promise<InventoryPage> {
   return fetchInventoryPage(24);
+}
+
+/**
+ * Merge two lightweight Firestore views so an older listing edited by a user/admin
+ * can surface again without replacing the source of truth or creating mock data.
+ */
+export async function fetchLatestPublishedInventory(pageSize = 48): Promise<CarListing[]> {
+  const safePageSize = Math.min(Math.max(Math.floor(pageSize), 1), 48);
+  const [updated, created] = await Promise.all([
+    fetchPage([where('approved', '==', true), orderBy('updatedAt', 'desc'), limit(safePageSize)], safePageSize).catch(() => null),
+    fetchPage([where('approved', '==', true), orderBy('createdAt', 'desc'), limit(safePageSize)], safePageSize).catch(() => null),
+  ]);
+
+  const merged = new Map<string, CarListing>();
+  [...(updated?.listings || []), ...(created?.listings || [])].forEach(listing => merged.set(listing.id, listing));
+  return [...merged.values()]
+    .sort((a, b) => {
+      const aTime = timestampMs(a.updatedAt) || timestampMs(a.createdAt);
+      const bTime = timestampMs(b.updatedAt) || timestampMs(b.createdAt);
+      return bTime - aTime;
+    })
+    .slice(0, safePageSize);
 }
