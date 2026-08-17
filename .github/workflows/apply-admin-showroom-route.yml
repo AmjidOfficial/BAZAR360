@@ -1,4 +1,4 @@
-name: Apply Admin Showroom Route
+name: Apply Production Data and Admin Hardening
 
 on:
   push:
@@ -9,36 +9,47 @@ permissions:
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message, '[admin-route]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[production-hardening]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Add admin showroom route safely
+      - name: Apply safe frontend and media hardening
         run: |
           node <<'NODE'
           const fs = require('fs');
-          const path = 'src/App.tsx';
-          let s = fs.readFileSync(path, 'utf8');
+          const appPath = 'src/App.tsx';
+          let app = fs.readFileSync(appPath, 'utf8');
           const importNeedle = 'import ShowroomProfile from "./pages/ShowroomProfile";';
           const importLine = "import AdminShowroomCreator from './components/AdminShowroomCreator';";
-          if (!s.includes(importLine)) {
-            if (!s.includes(importNeedle)) throw new Error('ShowroomProfile import anchor not found');
-            s = s.replace(importNeedle, `${importNeedle}\n${importLine}`);
+          if (!app.includes(importLine)) {
+            if (!app.includes(importNeedle)) throw new Error('ShowroomProfile import anchor not found');
+            app = app.replace(importNeedle, `${importNeedle}\n${importLine}`);
           }
           const routeNeedle = '            <Route path="/admin" element={<App />} />';
           const routeLine = '            <Route path="/admin/showrooms" element={<AdminShowroomCreator />} />';
-          if (!s.includes(routeLine)) {
-            if (!s.includes(routeNeedle)) throw new Error('Admin route anchor not found');
-            s = s.replace(routeNeedle, `${routeLine}\n${routeNeedle}`);
+          if (!app.includes(routeLine)) {
+            if (!app.includes(routeNeedle)) throw new Error('Admin route anchor not found');
+            app = app.replace(routeNeedle, `${routeLine}\n${routeNeedle}`);
           }
-          fs.writeFileSync(path, s);
+          app = app.replace(/const HOTSPOTS_LIST = \[[\s\S]*?\];\n\n/, 'const HOTSPOTS_LIST: any[] = [];\n\n');
+          fs.writeFileSync(appPath, app);
+
+          const adminPath = 'src/components/AdminDashboard.tsx';
+          let admin = fs.readFileSync(adminPath, 'utf8');
+          admin = admin.replace(/car\.imageUrl \|\| 'https:\/\/images\.unsplash\.com\/[^']*'/g, 'car.imageUrl');
+          admin = admin.replace("car.registrationCity || 'Peshawar'", "car.registrationCity || 'Not provided'");
+          admin = admin.replace("car.engineCC ? `${car.engineCC} CC` : 'Standard'", "car.engineCC ? `${car.engineCC} CC` : 'Not provided'");
+          fs.writeFileSync(adminPath, admin);
           NODE
-      - name: Commit route patch
+      - name: Remove AI-generated image assets
+        run: |
+          find public -maxdepth 1 -type f -name 'Gemini_Generated_Image*' -delete
+      - name: Commit hardening changes
         run: |
           git config user.name 'BAZAR360 Automation'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/App.tsx
-          git diff --cached --quiet || git commit -m 'feat(admin): add live showroom creation route [admin-route]'
+          git add src/App.tsx src/components/AdminDashboard.tsx public
+          git diff --cached --quiet || git commit -m 'chore(production): remove AI media and hardcoded UI data [production-hardening]'
           git push origin main
