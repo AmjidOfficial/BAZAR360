@@ -96,28 +96,7 @@ function AnimatedLogoCycler() {
   );
 }
 
-const METRIC_TABS_DATA = {
-  Design: [
-    { label: "Aerodynamic Drag Coefficient", value: "0.24 Cd" },
-    { label: "Chassis Composition", value: "High-Tensile Carbon-Infused Steel Ring" },
-    { label: "Ground Physics", value: "Underbody Ground-Effect Venturi Tunnels" }
-  ],
-  Safety: [
-    { label: "ADAS Autonomous Level", value: "Level 2+ Lidar lane-keep" },
-    { label: "Structural anchors", value: "Isofix rigid alloy bindings" },
-    { label: "Collision Mitigation", value: "Dynamic automated front & rear braking" }
-  ],
-  Luxury: [
-    { label: "Acoustic Insulation", value: "Triple-pane laminated quiet-glass" },
-    { label: "Climate Diffuser", value: "Ionized active forest breezer module" },
-    { label: "Showroom Audio Setup", value: "Burmester 3D Surround sound structure" }
-  ],
-  Performance: [
-    { label: "0-100 Speed Sprint", value: "3.8 seconds" },
-    { label: "Torque Vectoring", value: "Dual-motor active traction differential" },
-    { label: "Gearbox Synchro Ratio", value: "8-speed twin-clutch direct-shift" }
-  ]
-};
+const METRIC_TABS_DATA: Record<string, Array<{label: string; value: string}>> = {};
 
 const HOTSPOTS_LIST = [
   { id: 'engine', name: 'Piston block & Engine layout', text: 'Dual overhead cam 24-valve configuration optimized for PKR fuel gradients.', x: '25%', y: '45%' },
@@ -349,7 +328,7 @@ function App() {
     }
 
     let tab = 'home';
-    let dealerId = 'auto-choice-peshawar';
+    let dealerId = '';
     let listing: CarListing | null = null;
     let pendingListingId: string | null = null;
 
@@ -423,7 +402,7 @@ function App() {
     }
     if (newTab === 'hq-hub') {
       sessionStorage.setItem('openHQTab', 'true');
-      const resolvedDealerId = currentUser?.salesPodId || currentUser?.dealerId || selectedDealerId || 'auto-choice-peshawar';
+      const resolvedDealerId = currentUser?.salesPodId || currentUser?.dealerId || selectedDealerId || '';
       setSelectedDealerId(resolvedDealerId);
       setTab('dealer-storefront');
       navigate(`/showroom/${resolvedDealerId}`);
@@ -754,7 +733,7 @@ function App() {
           });
           if (found) {
             setSelectedListing(found);
-            setSelectedDealerId(found.dealerId || 'auto-choice-peshawar');
+            setSelectedDealerId(found.dealerId || '');
             setPendingListingId(null);
             setVehicleNotFound(false);
           } else {
@@ -827,7 +806,7 @@ function App() {
 
     if (foundInList) {
       setSelectedListing(foundInList);
-      setSelectedDealerId(foundInList.dealerId || 'auto-choice-peshawar');
+      setSelectedDealerId(foundInList.dealerId || '');
       setPendingListingId(null);
       setVehicleNotFound(false);
       return;
@@ -837,7 +816,7 @@ function App() {
       if (!isMounted) return;
       if (fetched) {
         setSelectedListing(fetched);
-        setSelectedDealerId(fetched.dealerId || 'auto-choice-peshawar');
+        setSelectedDealerId(fetched.dealerId || '');
         setVehicleNotFound(false);
       } else {
         setVehicleNotFound(true);
@@ -1126,7 +1105,7 @@ function App() {
       displayName = 'Muhammad Amjid (Founder)';
     } else if (role === 'Showroom Owner') {
       displayName = 'Muhammad Amjid (Founder / Showroom Owner)';
-      salesPodId = 'auto-choice-peshawar'; // Hard link to Auto Choice Peshawar for live sandbox tests!
+      salesPodId = ''; // Hard link to Auto Choice Peshawar for live sandbox tests!
     } else if (role === 'Private Seller') {
       displayName = 'Muhammad Amjid (Founder / Private Seller)';
     }
@@ -1158,11 +1137,11 @@ function App() {
     const finalListing: CarListing = {
       ...newListing,
       approved: isApprovedByDefault,
-      assignedSalesRepId: currentUser?.uid || 'guest-seller',
-      createdBy: currentUser?.uid || 'guest-seller',
+      assignedSalesRepId: currentUser?.uid,
+      createdBy: currentUser?.uid,
       dealerId: resolvedDealerId,
       sellerType: resolvedDealerId === 'private' ? 'Individual' : 'Showroom',
-      sellerName: newListing.sellerName || currentUser?.displayName || 'Individual Seller',
+      sellerName: newListing.sellerName || currentUser?.displayName,
       sellerPhone: newListing.sellerPhone || currentUser?.phoneNumber || '',
       createdAt: new Date().toISOString()
     };
@@ -1368,10 +1347,10 @@ function App() {
     return isModerator || isOwner;
   });
 
-  // Flagship Priority Injection: Sort auto-choice-peshawar entries to the absolute top of everything
+  // Flagship Priority Injection: Sort  entries to the absolute top of everything
   const prioritizedListings = React.useMemo(() => {
-    const flagshipListings = visibleListings.filter(l => l.dealerId === 'auto-choice-peshawar');
-    const ordinaryListings = visibleListings.filter(l => l.dealerId !== 'auto-choice-peshawar');
+    const flagshipListings = visibleListings.filter(l => l.dealerId === '');
+    const ordinaryListings = visibleListings.filter(l => l.dealerId !== '');
     return [...flagshipListings, ...ordinaryListings];
   }, [visibleListings]);
 
@@ -2344,7 +2323,7 @@ function App() {
             allListings={listings}
             onSelectListing={(car) => {
               setSelectedListing(car);
-              setSelectedDealerId((car.sellerType === 'Individual' || car.dealerId === 'private' || car.id === 'listing-1784821782501' || car.id === 'listing-1784821585212') ? 'private' : (car.dealerId || 'auto-choice-peshawar'));
+              setSelectedDealerId((car.sellerType === 'Individual' || car.dealerId === 'private' || car.id === 'listing-1784821782501' || car.id === 'listing-1784821585212') ? 'private' : (car.dealerId || ''));
             }}
             onClose={() => {
               setSelectedListing(null);
@@ -2622,7 +2601,7 @@ function App() {
               {/* Showroom Logo / Branding Header */}
               <div className="bg-bg-secondary/60 p-4 rounded-2xl border border-[var(--color-border-main)] flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full border-2 border-[var(--color-accent-main)] overflow-hidden bg-[var(--color-bg-secondary)] shrink-0">
-                  {selectedQrDealer.id === 'auto-choice-peshawar' ? (
+                  {selectedQrDealer.id === '' ? (
                     <img 
                       src="/auto_choice_logo_dark.jpg" 
                       alt="Auto Choice Logo" 
@@ -2658,7 +2637,7 @@ function App() {
                 
                 {/* Google Map Launch Button */}
                 <a 
-                  href={selectedQrDealer.id === 'auto-choice-peshawar'
+                  href={selectedQrDealer.id === ''
                     ? "https://maps.google.com/?q=Auto+choice+Alamas+Car+Village+Ring+Road+Peshawar"
                     : `https://maps.google.com/?q=${encodeURIComponent(selectedQrDealer.location)}`
                   }
@@ -2677,7 +2656,7 @@ function App() {
                   <span className="text-[9px] uppercase tracking-wider font-mono font-black text-orange-400 block">Contacts & Showroom Team</span>
                 </div>
 
-                {selectedQrDealer.id === 'auto-choice-peshawar' ? (
+                {selectedQrDealer.id === '' ? (
                   <div className="space-y-2 pt-1">
                     <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
                       <div className="bg-[var(--color-bg-secondary)]/60 p-2 rounded-xl border border-[var(--color-border-main)]">
@@ -2753,7 +2732,7 @@ function App() {
                   const url = typeof window !== 'undefined'
                     ? `${window.location.origin}/dealers/${selectedQrDealer.id}`
                     : `https://bazar360.online/dealers/${selectedQrDealer.id}`;
-                  const mapLink = selectedQrDealer.id === 'auto-choice-peshawar'
+                  const mapLink = selectedQrDealer.id === ''
                     ? "https://maps.google.com/?q=Auto+choice+Alamas+Car+Village+Ring+Road+Peshawar"
                     : `https://maps.google.com/?q=${encodeURIComponent(selectedQrDealer.location)}`;
                   
@@ -2762,7 +2741,7 @@ function App() {
                   text += `📍 Address: ${selectedQrDealer.location}\n`;
                   text += `🗺️ Google Maps: ${mapLink}\n`;
                   
-                  if (selectedQrDealer.id === 'auto-choice-peshawar') {
+                  if (selectedQrDealer.id === '') {
                     text += `👤 Contact Person: Malak Mazhar\n`;
                     text += `📞 Call/WhatsApp: +92 315 9085086\n`;
                     text += `👥 Showroom Team Desk:\n`;

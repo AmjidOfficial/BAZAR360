@@ -1,33 +1,28 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function userRole() {
+      return isSignedIn()
+        ? firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role
+        : null;
     }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function isAdmin() {
+      return isSignedIn() && (userRole() == 'Admin' || userRole() == 'Super Admin');
     }
-
-    function isSuperUser() {
-      return isSignedIn() && (
-        request.auth.token.email == 'khattakghani94@gmail.com' ||
-        request.auth.token.email == 'amjid.bisconni@gmail.com'
-      );
+    function isListingOwner(listingId) {
+      return isSignedIn() && firestore.get(/databases/(default)/documents/listings/$(listingId)).data.ownerId == request.auth.uid;
     }
-
+    function isDealerOwner(dealerId) {
+      return isSignedIn() && firestore.get(/databases/(default)/documents/dealers/$(dealerId)).data.ownerUid == request.auth.uid;
+    }
     function isValidImage() {
-      return request.resource.contentType.matches('image/.*')
-        && request.resource.size < 10 * 1024 * 1024; // Limit to 10MB
+      return request.resource.contentType.matches('image/.*') && request.resource.size < 10 * 1024 * 1024;
     }
-
     function isValidVideo() {
-      return request.resource.contentType.matches('video/.*')
-        && request.resource.size < 100 * 1024 * 1024; // Limit to 100MB
+      return request.resource.contentType.matches('video/.*') && request.resource.size < 100 * 1024 * 1024;
     }
-
     function isValidDocument() {
       return (
         request.resource.contentType == 'application/pdf' ||
@@ -35,77 +30,56 @@ service firebase.storage {
         request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
         request.resource.contentType == 'image/jpeg' ||
         request.resource.contentType == 'image/png'
-      ) && request.resource.size < 25 * 1024 * 1024; // Limit to 25MB
+      ) && request.resource.size < 25 * 1024 * 1024;
     }
 
-    // 0. Global Unrestricted Override for Super Users (Ghani & Amjid)
-    match /{allPaths=**} {
-      allow read, write: if isSuperUser();
-    }
-
-    // 1. Profile Photos (Owners write/update, public read)
     match /profile-photos/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if isOwner(userId) && isValidImage();
     }
 
-    // 2. Showroom Logos
-    match /showroom-logos/{showroomId}/{allPaths=**} {
+    match /showroom-logos/{dealerId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow write: if (isDealerOwner(dealerId) || isAdmin()) && isValidImage();
     }
 
-    // 3. Showroom Banners
-    match /showroom-banners/{showroomId}/{allPaths=**} {
+    match /showroom-banners/{dealerId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow write: if (isDealerOwner(dealerId) || isAdmin()) && isValidImage();
     }
 
-    // 4. Vehicle Images (Public read, authenticated users write)
-    match /vehicle-images/{vehicleId}/{allPaths=**} {
+    match /vehicle-images/{listingId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow write: if (isListingOwner(listingId) || isAdmin()) && isValidImage();
     }
 
-    // 5. Vehicle Videos (Public read, authenticated users write)
-    match /vehicle-videos/{vehicleId}/{allPaths=**} {
+    match /vehicle-videos/{listingId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidVideo();
+      allow write: if (isListingOwner(listingId) || isAdmin()) && isValidVideo();
     }
 
-    // 6. Verification and Business Documents (Private: only owner or authenticated staff read/write)
     match /documents/{userId}/{allPaths=**} {
-      allow read: if isOwner(userId) || isSignedIn();
-      allow write: if isOwner(userId) && isValidDocument();
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if (isOwner(userId) || isAdmin()) && isValidDocument();
     }
 
-    // 7. Inspection Reports
-    match /inspection-reports/{vehicleId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidDocument();
+    match /inspection-reports/{listingId}/{allPaths=**} {
+      allow read: if isListingOwner(listingId) || isAdmin();
+      allow write: if (isListingOwner(listingId) || isAdmin()) && isValidDocument();
     }
 
-    // 8. Advertisements Banners
     match /advertisements/{adId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow write: if isAdmin() && isValidImage();
     }
 
-    // 9. Blog and News Images
     match /blog-images/{blogId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow write: if isAdmin() && isValidImage();
     }
 
-    // 10. Temporary uploads
     match /temporary/{userId}/{allPaths=**} {
       allow read, write: if isOwner(userId);
-    }
-
-    // 11. Showroom Dynamic Structured Media Gallery Sourcing
-    match /showrooms/{ownerId}/vehicles/{vehicleId}/{fileName} {
-      allow read: if true;
-      allow write: if isOwner(ownerId) && isValidImage();
     }
   }
 }

@@ -7,27 +7,46 @@ on:
     branches:
       - owner/10-10-production-hardening
 
+permissions:
+  contents: write
+
 jobs:
   production-integrity:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Apply production hardening cleanup
+        if: github.event_name == 'push' && github.ref == 'refs/heads/owner/10-10-production-hardening'
+        run: node scripts/apply-production-hardening.mjs
+
+      - name: Persist production hardening cleanup
+        if: github.event_name == 'push' && github.ref == 'refs/heads/owner/10-10-production-hardening'
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/lib/dbService.ts src/App.tsx server.ts
+          git commit -m "P0: remove legacy marketplace fallbacks"
+          git push origin HEAD:owner/10-10-production-hardening
+
       - name: Type check
         run: npm run lint
 
+      - name: Audit production marketplace data
+        run: npm run audit:data
+
       - name: Production build
         run: npm run build
-
-      - name: Audit production marketplace data
-        run: node scripts/audit-production-integrity.mjs

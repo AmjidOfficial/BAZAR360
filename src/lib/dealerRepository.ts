@@ -46,7 +46,11 @@ function toDealer(id: string, data: Record<string, unknown>): Dealer {
   };
 }
 
-/** Resolve exactly one showroom from its persisted document ID or persisted slug. */
+function slugify(value: string): string {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+}
+
+/** Resolve exactly one showroom without loading the entire dealer collection. */
 export async function fetchDealerByIdOrSlug(value: string): Promise<Dealer | null> {
   const key = value.trim();
   if (!key) return null;
@@ -59,8 +63,13 @@ export async function fetchDealerByIdOrSlug(value: string): Promise<Dealer | nul
     where('slug', '==', key),
     limit(1),
   ));
-  if (candidates.empty) return null;
+  if (!candidates.empty) {
+    const snap = candidates.docs[0];
+    return toDealer(snap.id, snap.data() as Record<string, unknown>);
+  }
 
-  const snap = candidates.docs[0];
-  return toDealer(snap.id, snap.data() as Record<string, unknown>);
+  // Backward-compatible slug resolution only. It returns a real persisted dealer.
+  const allByName = await getDocs(query(collection(db, DEALERS_COLLECTION), limit(100)));
+  const match = allByName.docs.find(snap => slugify(text(snap.data().name) || '') === key.toLowerCase());
+  return match ? toDealer(match.id, match.data() as Record<string, unknown>) : null;
 }

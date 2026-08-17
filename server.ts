@@ -764,9 +764,9 @@ Your task is to translate any incoming text block beautifully and accurately int
         xml += `  </url>\n`;
       });
 
-      // Dealers / Showrooms (e.g. auto-choice-peshawar)
+      // Dealers / Showrooms (e.g. )
       dealersList.forEach(d => {
-        const dId = d.id || 'auto-choice-peshawar';
+        const dId = d.id || '';
         xml += `  <url>\n`;
         xml += `    <loc>https://bazar360.online/dealers/${dId}</loc>\n`;
         xml += `    <changefreq>weekly</changefreq>\n`;
@@ -796,7 +796,7 @@ Your task is to translate any incoming text block beautifully and accurately int
       let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
       xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
       xml += `  <url>\n    <loc>https://bazar360.online/</loc>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>\n`;
-      xml += `  <url>\n    <loc>https://bazar360.online/dealers/auto-choice-peshawar</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
+      xml += `  <url>\n    <loc>https://bazar360.online/dealers/</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.9</priority>\n  </url>\n`;
       xml += `</urlset>`;
       res.header('Content-Type', 'application/xml');
       res.status(200).send(xml);
