@@ -2,12 +2,12 @@ import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, wh
 import { db } from '../firebase';
 import { CarListing } from '../types';
 const LISTINGS_COLLECTION = 'listings';
-const TRUSTED_MEDIA_HOSTS = ['cloudinary.com', 'res.cloudinary.com', 'firebasestorage.googleapis.com', 'storage.googleapis.com'];
+const TRUSTED_MEDIA_HOSTS = ['cloudinary.com', 'res.cloudinary.app', 'res.cloudinary.com', 'firebasestorage.googleapis.com', 'storage.googleapis.com'];
 const BLOCKED_STOCK_HOSTS = ['images.unsplash.com', 'unsplash.com', 'pexels.com', 'pixabay.com', 'shutterstock.com', 'freepik.com'];
 function optionalString(value: unknown): string | undefined { return typeof value === 'string' && value.trim() ? value.trim() : undefined; }
 function optionalNumber(value: unknown): number | undefined { if (typeof value === 'number' && Number.isFinite(value)) return value; if (typeof value === 'string' && value.trim()) { const n = Number(value); return Number.isFinite(n) ? n : undefined; } return undefined; }
 function optionalBoolean(value: unknown): boolean | undefined { return typeof value === 'boolean' ? value : undefined; }
-function optionalStringArray(value: unknown): string[] | undefined { if (!Array.isArray(value)) return undefined; const values = value.filter((x): x is string => typeof x === 'string' && x.trim()).map(x => x.trim()); return values.length ? values : undefined; }
+function optionalStringArray(value: unknown): string[] | undefined { if (!Array.isArray(value)) return undefined; const values = value.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map(x => x.trim()); return values.length ? values : undefined; }
 function isTrustedMediaUrl(value: string): boolean { try { const host = new URL(value).hostname.toLowerCase(); if (BLOCKED_STOCK_HOSTS.some(x => host === x || host.endsWith(`.${x}`))) return false; return TRUSTED_MEDIA_HOSTS.some(x => host === x || host.endsWith(`.${x}`)); } catch { return false; } }
 function trustedMedia(value: unknown): string | undefined { const url = optionalString(value); return url && isTrustedMediaUrl(url) ? url : undefined; }
 function trustedMediaArray(value: unknown): string[] | undefined { if (!Array.isArray(value)) return undefined; const values = value.map(x => typeof x === 'string' ? trustedMedia(x) : undefined).filter((x): x is string => Boolean(x)); return values.length ? [...new Set(values)] : undefined; }
