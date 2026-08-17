@@ -23,6 +23,7 @@ import { validateLead } from './leadValidator';
 
 import { toast } from 'react-hot-toast';
 import { uploadBase64ToCloudinary } from './cloudinaryService';
+import { fetchListingById, fetchInventoryPage } from './inventoryRepository';
 
 // Standard User Profiles
 export interface UserProfile {
@@ -109,95 +110,34 @@ export function dbInvalidateCache() {
 
 // 1. Fetch Dealers
 export async function dbFetchDealers(forceRefresh = true): Promise<Dealer[]> {
-  if (!forceRefresh && cachedDealers && cachedDealers.length > 0) {
-    return cachedDealers;
-  }
+  if (!forceRefresh && cachedDealers) return cachedDealers;
   try {
     const snap = await getDocs(query(collection(db, DEALERS_COLLECTION), limit(100)));
-    if (snap.empty) {
-      return [];
-    }
-    
-    const list: Dealer[] = [];
-    let autoChoiceMerged: Dealer | null = null;
-
-    snap.forEach((doc) => {
-      const data = doc.data();
-      const rawAvatar = data.avatarUrl || '';
-      
-      const isAutoChoice = doc.id === 'auto-choice-peshawar' || doc.id === 'auto-choice' || (data.name && data.name.toLowerCase().includes('auto choice'));
-      
-      const docLogo = data.logoUrl || data.logo || data.avatarUrl;
-      
-      const avatarUrl = docLogo
-        ? (docLogo.startsWith('.') ? docLogo.substring(1) : docLogo)
-        : (isAutoChoice ? '/auto_choice_logo_dark.jpg' : '');
-
-      const logo = docLogo || (isAutoChoice ? '/auto_choice_logo_dark.jpg' : '');
-      const logoUrl = logo;
-
-      const currentDealer: Dealer = {
+    const list: Dealer[] = snap.docs.map((dealerDoc) => {
+      const data = dealerDoc.data();
+      const logoUrl = typeof data.logoUrl === 'string' ? data.logoUrl : undefined;
+      const avatarUrl = typeof data.avatarUrl === 'string' ? data.avatarUrl : logoUrl;
+      return {
         ...data,
-        id: doc.id,
-        name: data.name || '',
-        avatarLetter: data.avatarLetter || data.name?.substring(0, 2).toUpperCase() || 'D',
+        id: dealerDoc.id,
+        name: typeof data.name === 'string' ? data.name : '',
+        avatarLetter: typeof data.avatarLetter === 'string' ? data.avatarLetter : (typeof data.name === 'string' && data.name ? data.name.substring(0, 2).toUpperCase() : 'D'),
         avatarUrl,
-        logo,
+        logo: typeof data.logo === 'string' ? data.logo : logoUrl,
         logoUrl,
-        subtitle: data.subtitle || '',
-        location: data.location || '',
-        rating: typeof data.rating === 'number' ? data.rating : 4.9,
+        subtitle: typeof data.subtitle === 'string' ? data.subtitle : '',
+        location: typeof data.location === 'string' ? data.location : '',
+        rating: typeof data.rating === 'number' ? data.rating : 0,
         vehiclesCount: typeof data.vehiclesCount === 'number' ? data.vehiclesCount : 0,
-        followersCount: data.followersCount || '0',
-        coverImage: data.coverImage || '/src/assets/images/bab_e_khyber_sunset_1783593379683.jpg',
-        description: data.description || '',
-        phone: data.phone || '',
-        whatsapp: data.whatsapp || '',
+        followersCount: typeof data.followersCount === 'string' || typeof data.followersCount === 'number' ? data.followersCount : '0',
+        coverImage: typeof data.coverImage === 'string' ? data.coverImage : undefined,
+        description: typeof data.description === 'string' ? data.description : '',
+        phone: typeof data.phone === 'string' ? data.phone : '',
+        whatsapp: typeof data.whatsapp === 'string' ? data.whatsapp : '',
         socials: data.socials || {},
         activityFeed: Array.isArray(data.activityFeed) ? data.activityFeed : []
-      };
-
-      if (isAutoChoice) {
-        if (!autoChoiceMerged) {
-          autoChoiceMerged = {
-            ...currentDealer,
-            id: 'auto-choice-peshawar',
-            name: 'Auto Choice',
-            avatarUrl: currentDealer.avatarUrl || '/auto_choice_logo_dark.jpg',
-            logo: currentDealer.logo || '/auto_choice_logo_dark.jpg',
-            logoUrl: currentDealer.logoUrl || currentDealer.logo || '/auto_choice_logo_dark.jpg',
-            flagshipVerified: true
-          };
-        } else {
-          // Consolidate the data metrics gracefully
-          autoChoiceMerged.vehiclesCount = Math.max(autoChoiceMerged.vehiclesCount, currentDealer.vehiclesCount);
-          if (currentDealer.phone) autoChoiceMerged.phone = currentDealer.phone;
-          if (currentDealer.whatsapp) autoChoiceMerged.whatsapp = currentDealer.whatsapp;
-          if (currentDealer.location && currentDealer.location.includes('Ring Road')) {
-            autoChoiceMerged.location = currentDealer.location;
-          }
-          if (currentDealer.description && currentDealer.description.length > autoChoiceMerged.description.length) {
-            autoChoiceMerged.description = currentDealer.description;
-          }
-          if (currentDealer.activityFeed && currentDealer.activityFeed.length > 0) {
-            const existingIds = new Set(autoChoiceMerged.activityFeed.map(act => act.id));
-            currentDealer.activityFeed.forEach(act => {
-              if (!existingIds.has(act.id)) {
-                autoChoiceMerged!.activityFeed.push(act);
-              }
-            });
-          }
-        }
-      } else {
-        list.push(currentDealer);
-      }
+      } as Dealer;
     });
-
-    // Ensure Auto Choice is at the front of the list and verified
-    if (autoChoiceMerged) {
-      list.unshift(autoChoiceMerged);
-    }
-
     cachedDealers = list;
     return list;
   } catch (err) {
@@ -206,97 +146,16 @@ export async function dbFetchDealers(forceRefresh = true): Promise<Dealer[]> {
   }
 }
 
-// 2. Fetch Listings (all approved, as well as unapproved if requestor has permission)
-export async function dbFetchListingById(idOrSlug: string): Promise<CarListing | null> {
-  if (!idOrSlug) return null;
-  try {
-    // 1. Direct document ID lookup
-    const docRef = doc(db, LISTINGS_COLLECTION, idOrSlug);
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      return mapListingDoc(snap.id, snap.data());
-    }
-
-    // 2. Fallback: Search all listings in collection by slug, title-slug, or normalized title match
-    const allListings = await dbFetchListings();
-    const targetSlug = idOrSlug.toLowerCase().trim();
-    const targetNormalized = targetSlug.replace(/[^a-z0-9]/g, '');
-
-    const matched = allListings.find(car => {
-      if (!car) return false;
-      if (car.id === idOrSlug) return true;
-      const carSlug = `${car.make || ''}-${car.model || ''}-${car.year || ''}`.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      if (carSlug === targetSlug) return true;
-      const titleSlug = (car.title || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      if (titleSlug === targetSlug) return true;
-      const titleNorm = (car.title || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (titleNorm && targetNormalized && (titleNorm === targetNormalized || titleNorm.includes(targetNormalized))) return true;
-      return false;
-    });
-
-    if (matched) return matched;
-  } catch (err) {
-    console.error('dbFetchListingById Error:', err);
-  }
-  return null;
-}
-
-function cleanAndDeduplicateListings(listings: CarListing[]): CarListing[] {
-  const seenKeys = new Set<string>();
-  const cleaned: CarListing[] = [];
-
-  for (const car of listings) {
-    if (!car) continue;
-    const titleLower = (car.title || '').toLowerCase();
-    const descLower = (car.description || '').toLowerCase();
-    const makeLower = (car.make || '').toLowerCase();
-    const modelLower = (car.model || '').toLowerCase();
-    
-    // Filter out dummy/test/draft/placeholder/mock/duplicate elements
-    const isDummy = 
-      titleLower.includes('dummy') || titleLower.includes('test') || titleLower.includes('placeholder') || titleLower.includes('demo') || titleLower.includes('draft') || titleLower.includes('sample') || titleLower.includes('duplicate') ||
-      descLower.includes('dummy') || descLower.includes('test') || descLower.includes('placeholder') || descLower.includes('demo') || descLower.includes('draft') || descLower.includes('sample') || descLower.includes('duplicate') ||
-      makeLower.includes('dummy') || makeLower.includes('test') || makeLower.includes('placeholder') || makeLower.includes('demo') || makeLower.includes('duplicate') ||
-      modelLower.includes('dummy') || modelLower.includes('test') || modelLower.includes('placeholder') || modelLower.includes('demo') || modelLower.includes('duplicate') ||
-      (car.tags && car.tags.some(t => {
-        const tl = (t || '').toLowerCase();
-        return tl.includes('dummy') || tl.includes('test') || tl.includes('placeholder') || tl.includes('demo') || tl.includes('draft') || tl.includes('duplicate');
-      }));
-
-    if (isDummy) {
-      continue;
-    }
-
-    // Deduplicate by key: "title_price_year_dealer"
-    const normTitle = titleLower.replace(/\s+/g, '');
-    const uniqueKey = `${normTitle}_${car.price}_${car.year}_${car.dealerId || 'private'}`;
-    
-    if (seenKeys.has(uniqueKey)) {
-      continue;
-    }
-    
-    seenKeys.add(uniqueKey);
-    cleaned.push(car);
-  }
-
-  return cleaned;
+// 2. Canonical marketplace reads. Listing identity and factual fields come only from Firestore.
+export async function dbFetchListingById(id: string): Promise<CarListing | null> {
+  return fetchListingById(id);
 }
 
 export async function dbFetchListings(forceRefresh = true): Promise<CarListing[]> {
-  if (!forceRefresh && cachedListings && cachedListings.length > 0) {
-    return cachedListings;
-  }
+  if (!forceRefresh && cachedListings) return cachedListings;
   try {
-    const snap = await getDocs(query(collection(db, LISTINGS_COLLECTION), limit(100)));
-    if (snap.empty) {
-      return [];
-    }
-    const list: CarListing[] = [];
-    snap.forEach((doc) => {
-      const data = doc.data();
-      list.push(mapListingDoc(doc.id, data));
-    });
-    cachedListings = cleanAndDeduplicateListings(list);
+    const page = await fetchInventoryPage(48);
+    cachedListings = page.listings;
     return cachedListings;
   } catch (err) {
     console.error('dbFetchListings Error:', err);
@@ -304,91 +163,14 @@ export async function dbFetchListings(forceRefresh = true): Promise<CarListing[]
   }
 }
 
-export async function dbFetchListingsPaginated(lastDocSnap?: any, limitCount: number = 8): Promise<{ listings: CarListing[], lastVisible: any }> {
+export async function dbFetchListingsPaginated(lastDocSnap?: any, limitCount: number = 24): Promise<{ listings: CarListing[], lastVisible: any }> {
   try {
-    let q = query(collection(db, LISTINGS_COLLECTION), orderBy('createdAt', 'desc'), limit(limitCount));
-    
-    if (lastDocSnap) {
-      q = query(collection(db, LISTINGS_COLLECTION), orderBy('createdAt', 'desc'), startAfter(lastDocSnap), limit(limitCount));
-    }
-    
-    const snap = await getDocs(q);
-    if (snap.empty) {
-      if (!lastDocSnap) {
-        return { listings: [], lastVisible: null };
-      }
-      return { listings: [], lastVisible: null };
-    }
-    
-    const list: CarListing[] = [];
-    snap.forEach((doc) => {
-      list.push(mapListingDoc(doc.id, doc.data()));
-    });
-    
-    const lastVisible = snap.docs[snap.docs.length - 1];
-    return { listings: cleanAndDeduplicateListings(list), lastVisible };
+    const page = await fetchInventoryPage(limitCount, lastDocSnap || null);
+    return { listings: page.listings, lastVisible: page.lastVisible };
   } catch (err) {
     console.error('dbFetchListingsPaginated Error:', err);
     return { listings: [], lastVisible: null };
   }
-}
-
-function mapListingDoc(id: string, data: any): CarListing {
-  const isExplicitIndividual = 
-    data.sellerType === 'Individual' || 
-    data.sellerType === 'individual' || 
-    data.dealerId === 'private' || 
-    data.dealerId === 'private-seller' || 
-    data.dealerId === 'individual' ||
-    id === 'listing-1784821782501' ||
-    id === 'listing-1784821585212';
-
-  const resolvedDealerId = isExplicitIndividual 
-    ? 'private' 
-    : ((data.dealerId === 'auto-choice' || (data.dealerId && data.dealerId.includes('auto-choice'))) ? 'auto-choice-peshawar' : (data.dealerId || 'private'));
-
-  const resolvedSellerType = isExplicitIndividual ? 'Individual' : (data.sellerType || (resolvedDealerId === 'private' ? 'Individual' : 'Showroom'));
-
-  return {
-    id,
-    title: data.title || '',
-    make: data.make || '',
-    model: data.model || '',
-    year: Number(data.year) || 2024,
-    price: Number(data.price) || 0,
-    mileage: Number(data.mileage) || 0,
-    fuelType: data.fuelType || 'Petrol',
-    transmission: data.transmission || 'Automatic',
-    imageUrl: data.imageUrl || '',
-    verified: !!data.verified,
-    featured: !!data.featured,
-    approved: data.approved !== false,
-    dealerId: resolvedDealerId,
-    sellerType: resolvedSellerType,
-    sellerName: data.sellerName || data.createdBy || 'Individual Seller',
-    sellerPhone: data.sellerPhone || data.phone || '',
-    sellerWhatsApp: data.sellerWhatsApp || data.whatsapp || data.sellerPhone || data.phone || '',
-    description: data.description || '',
-    createdAt: data.createdAt || new Date().toISOString(),
-    tags: Array.isArray(data.tags) ? data.tags : [],
-    specs: data.specs || {
-      color: data.exteriorColor || 'Standard',
-      engineSize: data.engineCC ? `${data.engineCC} CC` : '2000 CC',
-      horspower: '150 hp',
-      regionalSpecs: data.assemblyType || 'Local'
-    },
-    condition: data.condition || 'Used',
-    engineCC: Number(data.engineCC) || 2000,
-    exteriorColor: data.exteriorColor || data.specs?.color || 'Standard White',
-    bodyCondition: data.bodyCondition || 'Total Genuine',
-    registrationCity: data.registrationCity || 'Peshawar',
-    documentType: data.documentType || 'Smart Card',
-    tokenTaxPaid: data.tokenTaxPaid !== false,
-    images: Array.isArray(data.images) ? data.images : (data.imageUrl ? [data.imageUrl] : []),
-    assemblyType: data.assemblyType || 'Local',
-    dentPaintDescription: data.dentPaintDescription || '',
-    tokenTaxStatus: data.tokenTaxStatus || 'Paid'
-  };
 }
 
 // Helper to recursively remove undefined fields and sanitize raw base64 data strings from Firestore payloads to satisfy 1MB doc limits
