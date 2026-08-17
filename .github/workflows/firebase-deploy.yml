@@ -39,7 +39,6 @@ jobs:
         run: |
           test -n "$FIREBASE_SERVICE_ACCOUNT" || { echo "Missing FIREBASE_SERVICE_ACCOUNT_BAZAR360 repository secret"; exit 1; }
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
-          node -e "const c=require(process.env.HOME + '/.firebase/config.json'); console.log('Firebase CLI config available:', !!c)" 2>/dev/null || true
 
       - name: Install Firebase CLI
         run: npm install --global firebase-tools@latest
@@ -48,6 +47,11 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:rules --project bazar360-2026 --non-interactive
+
+      - name: Recover historical Auto Choice Peshawar showroom
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
+        run: node scripts/recover-auto-choice-showroom.mjs
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
