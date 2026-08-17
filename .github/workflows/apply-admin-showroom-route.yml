@@ -1,0 +1,44 @@
+name: Apply Admin Showroom Route
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: ${{ !contains(github.event.head_commit.message, '[admin-route]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Add admin showroom route safely
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'src/App.tsx';
+          let s = fs.readFileSync(path, 'utf8');
+          const importNeedle = 'import ShowroomProfile from "./pages/ShowroomProfile";';
+          const importLine = "import AdminShowroomCreator from './components/AdminShowroomCreator';";
+          if (!s.includes(importLine)) {
+            if (!s.includes(importNeedle)) throw new Error('ShowroomProfile import anchor not found');
+            s = s.replace(importNeedle, `${importNeedle}\n${importLine}`);
+          }
+          const routeNeedle = '            <Route path="/admin" element={<App />} />';
+          const routeLine = '            <Route path="/admin/showrooms" element={<AdminShowroomCreator />} />';
+          if (!s.includes(routeLine)) {
+            if (!s.includes(routeNeedle)) throw new Error('Admin route anchor not found');
+            s = s.replace(routeNeedle, `${routeLine}\n${routeNeedle}`);
+          }
+          fs.writeFileSync(path, s);
+          NODE
+      - name: Commit route patch
+        run: |
+          git config user.name 'BAZAR360 Automation'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/App.tsx
+          git diff --cached --quiet || git commit -m 'feat(admin): add live showroom creation route [admin-route]'
+          git push origin main
