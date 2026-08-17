@@ -8,6 +8,7 @@ import AdminShowroomCreator from './components/AdminShowroomCreator';
 import { toast as hotToast } from 'react-hot-toast';
 import { toast as sonnerToast } from 'sonner';
 import './index.css';
+import './components/ResponsiveHardening.css';
 
 if (typeof window !== 'undefined') {
   const forbiddenKeywords = ['success','saved','updated','published','changed','registered','uploaded','deleted','copied','downloaded','exported','added','removed','marked','sent','cleared','selected','applied','authenticated','logged','confirmed','verified','vcard','pdf','signage','clipboard','whatsapp','liked'];
