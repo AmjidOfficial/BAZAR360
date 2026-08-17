@@ -44,21 +44,23 @@ service cloud.firestore {
         return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
           data.ownerUid is string && data.ownerUid.size() > 0 && data.description is string && data.description.size() <= 2000;
       }
-      allow create: if isSignedIn() && isValidId(dealerId) && isValidDealer(incoming()) &&
-        incoming().keys().hasAll(['name', 'ownerUid', 'description']) &&
-        (isAdmin() || incoming().ownerUid == request.auth.uid);
+      // Showrooms are platform entities. Only an authorized Admin can create one.
+      // A showroom owner receives management rights only after Admin assignment.
+      allow create: if isAdmin() && isValidId(dealerId) && isValidDealer(incoming()) &&
+        incoming().keys().hasAll(['name', 'ownerUid', 'description']);
       allow update: if isSignedIn() && isValidId(dealerId) && (
         isAdmin() || (
           existing().ownerUid == request.auth.uid && isValidDealer(incoming()) &&
           incoming().ownerUid == existing().ownerUid &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'name','subtitle','description','about','location','phone','whatsapp','landline',
-            'contactPerson','logo','coverImage','tagline','taglineCategory','socials',
-            'theme_choice','themeSettings','gallery','media','updatedAt','likesCount','likes_count'
+            'contactPerson','logo','coverImage','tagline','taglineCategory','socials','socialMedia',
+            'theme_choice','themeSettings','gallery','media','updatedAt','likesCount','likes_count',
+            'website','email','openingHours','amenities','services','businessCard','logoUrl','avatarUrl'
           ])
         )
       );
-      allow delete: if isAdmin() || (isSignedIn() && existing().ownerUid == request.auth.uid);
+      allow delete: if isAdmin();
 
       match /reviews/{reviewId} {
         allow get: if true;
@@ -79,13 +81,13 @@ service cloud.firestore {
           data.ownerId is string && data.ownerId.size() > 0 && data.ownerId == request.auth.uid &&
           data.dealerId is string && data.dealerId.size() > 0 && data.dealerId.size() <= 128;
       }
-      allow create: if isSignedIn() && isValidId(listingId) && isValidListing(incoming()) && (
-        isAdmin() || incoming().dealerId == request.auth.uid || ownsDealer(incoming().dealerId)
-      );
+      // A showroom owner can create, edit, mark sold/paused/archived, or delete only their own listing.
+      allow create: if isSignedIn() && isValidId(listingId) && isValidListing(incoming()) && ownsDealer(incoming().dealerId);
       allow update: if isSignedIn() && isValidId(listingId) && (
         isAdmin() || (
           isValidListing(incoming()) && ownsExistingListing() &&
           incoming().ownerId == existing().ownerId &&
+          incoming().dealerId == existing().dealerId &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'title','description','price','mileage','images','imageUrl','videoUrl','specs',
             'isSold','isPaused','isArchived','updatedAt','make','model','year','condition',
