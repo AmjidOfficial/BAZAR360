@@ -555,7 +555,7 @@ export default function AdminDashboard({
                       <div key={car.id} className="bg-bg-primary border border-border-main hover:border-amber-500/40 rounded-2xl p-5 space-y-4 shadow-xl transition-all relative overflow-hidden group text-left">
                         <div className="flex flex-col sm:flex-row gap-4">
                           <img
-                            src={car.imageUrl || 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&q=80&w=300'}
+                            src={car.imageUrl}
                             alt={car.title}
                             className="w-full sm:w-36 h-28 object-cover rounded-xl border border-border-main shrink-0"
                             referrerPolicy="no-referrer"
@@ -579,8 +579,8 @@ export default function AdminDashboard({
                               <div><span className="text-text-muted">Make:</span> {car.make}</div>
                               <div><span className="text-text-muted">Model:</span> {car.model}</div>
                               <div><span className="text-text-muted">Year:</span> {car.year}</div>
-                              <div><span className="text-text-muted">City:</span> {car.registrationCity || 'Peshawar'}</div>
-                              <div><span className="text-text-muted">Engine:</span> {car.engineCC ? `${car.engineCC} CC` : 'Standard'}</div>
+                              <div><span className="text-text-muted">City:</span> {car.registrationCity || 'Not provided'}</div>
+                              <div><span className="text-text-muted">Engine:</span> {car.engineCC ? `${car.engineCC} CC` : 'Not provided'}</div>
                               <div><span className="text-text-muted">Seller Type:</span> {car.sellerType || 'Individual'}</div>
                             </div>
                           </div>
@@ -745,7 +745,7 @@ export default function AdminDashboard({
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <img 
-                              src={car.imageUrl || 'https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&q=80&w=100'} 
+                              src={car.imageUrl} 
                               alt={car.title}
                               className="w-12 h-8 object-cover rounded-lg border border-border-main shrink-0"
                               referrerPolicy="no-referrer"
