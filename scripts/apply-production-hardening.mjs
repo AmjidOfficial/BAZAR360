@@ -105,4 +105,5 @@ let server = fs.readFileSync(serverPath, 'utf8');
 server = server.replace(/auto-choice-peshawar/gi, '');
 fs.writeFileSync(serverPath, server);
 
+// CI marker: rerun the full production gate after the cleanup pass.
 console.log('Production marketplace legacy read/fallback cleanup applied.');
