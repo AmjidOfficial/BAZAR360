@@ -82,17 +82,27 @@ export async function dbFetchListingsPaginated(lastDocSnap?: any, limitCount: nu
 `;
 
 db = db.slice(0, start) + replacement + db.slice(end);
+
+// Remove any remaining legacy hard-coded showroom identity comparisons without
+// creating a new identity or fallback. Marketplace identity must come from data.
+db = db.replace(/['\"]auto-choice-peshawar['\"]/gi, "''");
+db = db.replace(/['\"]auto-choice['\"]/gi, "''");
+
 fs.writeFileSync(dbPath, db);
 
 const appPath = 'src/App.tsx';
 let app = fs.readFileSync(appPath, 'utf8');
 app = app.replace(/const METRIC_TABS_DATA = \{[\s\S]*?\n\};\n/, 'const METRIC_TABS_DATA: Record<string, Array<{label: string; value: string}>> = {};\n');
-app = app.replace(/\bauto-choice-peshawar\b/g, '');
+app = app.replace(/\bauto-choice-peshawar\b/gi, '');
+// Never invent seller identity or guest ownership. Preserve the real value when
+// supplied and otherwise leave the field absent for Firestore validation.
+app = app.replace(/newListing\.sellerName \|\| currentUser\?\.displayName \|\| ['\"]Individual Seller['\"]/g, 'newListing.sellerName || currentUser?.displayName');
+app = app.replace(/currentUser\?\.uid \|\| ['\"]guest-seller['\"]/g, 'currentUser?.uid');
 fs.writeFileSync(appPath, app);
 
 const serverPath = 'server.ts';
 let server = fs.readFileSync(serverPath, 'utf8');
-server = server.replace(/auto-choice-peshawar/g, '');
+server = server.replace(/auto-choice-peshawar/gi, '');
 fs.writeFileSync(serverPath, server);
 
 console.log('Production marketplace legacy read/fallback cleanup applied.');
