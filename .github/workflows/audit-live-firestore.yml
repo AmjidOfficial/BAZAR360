@@ -1,19 +1,23 @@
 name: Audit Live Firestore Inventory
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Remove Confirmed Fake Inventory"]
+    types: [completed]
 
 permissions:
   contents: read
 
 jobs:
   audit:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
