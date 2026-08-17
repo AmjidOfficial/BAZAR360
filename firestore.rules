@@ -42,10 +42,11 @@ service cloud.firestore {
       allow list: if request.query.limit == null || request.query.limit <= 100;
       function isValidDealer(data) {
         return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
-          data.ownerUid == request.auth.uid && data.description is string && data.description.size() <= 2000;
+          data.ownerUid is string && data.ownerUid.size() > 0 && data.description is string && data.description.size() <= 2000;
       }
       allow create: if isSignedIn() && isValidId(dealerId) && isValidDealer(incoming()) &&
-        incoming().keys().hasAll(['name', 'ownerUid', 'description']);
+        incoming().keys().hasAll(['name', 'ownerUid', 'description']) &&
+        (isAdmin() || incoming().ownerUid == request.auth.uid);
       allow update: if isSignedIn() && isValidId(dealerId) && (
         isAdmin() || (
           existing().ownerUid == request.auth.uid && isValidDealer(incoming()) &&
