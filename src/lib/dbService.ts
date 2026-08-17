@@ -1697,7 +1697,7 @@ export async function dbClaimListingsByPhone(phoneNumber: string, userId: string
         await updateDoc(ref, {
           assignedSalesRepId: userId,
           createdBy: userId,
-          dealerId: userRole === 'Dealer' ? 'auto-choice-peshawar' : 'private',
+          dealerId: userRole === 'Dealer' ? '' : 'private',
           updatedAt: new Date().toISOString()
         });
         claimedCount++;

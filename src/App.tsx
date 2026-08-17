@@ -1137,11 +1137,11 @@ function App() {
     const finalListing: CarListing = {
       ...newListing,
       approved: isApprovedByDefault,
-      assignedSalesRepId: currentUser?.uid || 'guest-seller',
-      createdBy: currentUser?.uid || 'guest-seller',
+      assignedSalesRepId: currentUser?.uid,
+      createdBy: currentUser?.uid,
       dealerId: resolvedDealerId,
       sellerType: resolvedDealerId === 'private' ? 'Individual' : 'Showroom',
-      sellerName: newListing.sellerName || currentUser?.displayName || 'Individual Seller',
+      sellerName: newListing.sellerName || currentUser?.displayName,
       sellerPhone: newListing.sellerPhone || currentUser?.phoneNumber || '',
       createdAt: new Date().toISOString()
     };
