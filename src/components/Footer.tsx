@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  Send, 
-  Facebook, 
-  Instagram, 
-  Linkedin, 
+import {
+  Facebook,
+  Instagram,
+  Linkedin,
   MessageCircle,
-  Sparkles
+  Send,
+  Youtube,
+  ShieldCheck,
+  BadgeCheck,
+  Headphones,
+  ArrowUpRight,
 } from 'lucide-react';
 import { dbSaveSuggestion, Suggestion } from '../lib/dbService';
-import Bazar360Logo from './Bazar360Logo';
 
 interface FooterProps {
   lang?: 'en' | 'ur';
@@ -16,277 +19,185 @@ interface FooterProps {
   onOpenSupportDrawer?: () => void;
 }
 
-export default function Footer({ lang = 'en', setTab }: FooterProps) {
-  const [suggestionText, setSuggestionText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+const footerLinkClass =
+  'group inline-flex items-center gap-2 text-sm text-slate-300 hover:text-white transition-colors duration-200';
 
-  const handleSuggestionSubmit = async (e: React.FormEvent) => {
+export default function Footer({ lang = 'en', setTab, onOpenSupportDrawer }: FooterProps) {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const isUrdu = lang === 'ur';
+
+  const navigate = (tab: string) => {
+    setTab?.(tab);
+    window?.scrollTo?.({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!suggestionText.trim()) return;
+    const value = email.trim().toLowerCase();
+    if (!value || !/^\S+@\S+\.\S+$/.test(value)) {
+      setMessage(isUrdu ? 'براہ کرم درست ای میل درج کریں۔' : 'Please enter a valid email address.');
+      return;
+    }
 
     setIsSubmitting(true);
-    setSubmitSuccess(false);
-    setSubmitError('');
+    setMessage('');
 
     try {
-      const newSuggestion: Suggestion = {
-        id: 'sug_' + Math.random().toString(36).substr(2, 9),
+      const subscription: Suggestion = {
+        id: `newsletter_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         user_id: null,
-        suggestion_text: suggestionText.trim(),
+        suggestion_text: `Newsletter subscription: ${value}`,
         submitted_at: new Date().toISOString(),
       };
-
-      await dbSaveSuggestion(newSuggestion);
-      setSuggestionText('');
-      setSubmitSuccess(true);
-      setTimeout(() => setSubmitSuccess(false), 5000);
-    } catch (err: any) {
-      console.error('Error submitting suggestion:', err);
-      setSubmitError(lang === 'ur' ? 'تجاویز جمع کرنے میں خرابی پیش آئی۔' : 'Failed to submit suggestion. Please try again.');
+      await dbSaveSuggestion(subscription);
+      setEmail('');
+      setMessage(isUrdu ? 'آپ سبسکرائب ہو گئے ہیں۔ شکریہ!' : 'You are subscribed. Thank you!');
+    } catch (error) {
+      console.error('Newsletter subscription failed:', error);
+      setMessage(isUrdu ? 'ابھی سبسکرائب نہیں ہو سکا۔ دوبارہ کوشش کریں۔' : 'Could not subscribe right now. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isUrdu = lang === 'ur';
-
   return (
-    <footer id="bazar360-main-footer" className="w-full bg-[#0B192C] border-t border-[#1E293B] text-[#94A3B8] pt-16 pb-12 px-4 sm:px-6 lg:px-8 font-sans select-none">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Main Grid: Clean & Well-Spaced 12-Column Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 mb-12 text-left">
-          
-          {/* Column 1: Brand & Vision */}
-          <div className="space-y-4 md:col-span-5 lg:col-span-4">
-            <Bazar360Logo variant="full" size="lg" theme="dark" showTagline={true} />
-            
-            <p className="text-sm text-[#94A3B8] leading-relaxed max-w-sm">
-              {isUrdu 
-                ? 'پاکستان کا سب سے معتبر آٹوموٹو نیٹ ورک۔ تصدیق شدہ شو رومز، معائنہ اور براہ راست خریداروں اور بااعتماد بائعین کا نیٹ ورک۔'
-                : "Pakistan's premier direct automotive network. Find verified cars, connect with certified showrooms, and buy or sell with 100% confidence."}
+    <footer
+      id="bazar360-main-footer"
+      className="w-full overflow-hidden border-t border-white/10 bg-[#050F1D] text-slate-300"
+    >
+      <div className="mx-auto w-full max-w-[1500px] px-5 py-12 sm:px-8 sm:py-14 lg:px-10 lg:py-16">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-12">
+          {/* Brand */}
+          <section className="lg:col-span-4">
+            <a href="/" aria-label="Bazar360.online home" className="inline-flex flex-col gap-4">
+              <img
+                src="/Bazar360.online Logo.png"
+                alt="Bazar360.online - Everything You Need"
+                className="h-auto max-h-28 w-auto max-w-[330px] object-contain object-left drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
+                loading="lazy"
+              />
+            </a>
+
+            <p className="mt-5 max-w-md text-sm leading-7 text-slate-400">
+              {isUrdu
+                ? 'پاکستان کا آسان، تیز اور قابلِ اعتماد آن لائن مارکیٹ پلیس۔ گاڑیاں، بائیکس، شو رومز اور آٹو پارٹس ایک جگہ۔'
+                : "Pakistan's simple, fast and trusted automotive marketplace. Buy, sell and discover cars, bikes, showrooms and auto parts in one place."}
             </p>
 
-            {/* Social Links */}
-            <div className="flex items-center gap-2 pt-2">
-              <a 
-                href="https://facebook.com/bazar360.online" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl border border-white/10 bg-[#0F172A] flex items-center justify-center hover:bg-[#F97316] hover:border-[#F97316] text-[#94A3B8] hover:text-white transition-all duration-200"
-                title="Facebook"
-              >
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a 
-                href="https://instagram.com/bazar360.online" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl border border-white/10 bg-[#0F172A] flex items-center justify-center hover:bg-[#F97316] hover:border-[#F97316] text-[#94A3B8] hover:text-white transition-all duration-200"
-                title="Instagram"
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-              <a 
-                href="https://linkedin.com/company/bazar360" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl border border-white/10 bg-[#0F172A] flex items-center justify-center hover:bg-[#F97316] hover:border-[#F97316] text-[#94A3B8] hover:text-white transition-all duration-200"
-                title="LinkedIn"
-              >
-                <Linkedin className="w-4 h-4" />
-              </a>
-              <a 
-                href="https://wa.me/923149198403" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-xl border border-white/10 bg-[#0F172A] flex items-center justify-center hover:bg-[#22C55E] hover:border-[#22C55E] text-[#94A3B8] hover:text-white transition-all duration-200"
-                title="WhatsApp"
-              >
-                <MessageCircle className="w-4 h-4" />
-              </a>
+            <div className="mt-6 flex items-center gap-2.5" aria-label="Bazar360 social links">
+              <a href="https://facebook.com/bazar360.online" target="_blank" rel="noreferrer" aria-label="Facebook" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:-translate-y-0.5 hover:border-[#1877F2]/60 hover:bg-[#1877F2] hover:text-white"><Facebook size={18} /></a>
+              <a href="https://instagram.com/bazar360.online" target="_blank" rel="noreferrer" aria-label="Instagram" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:-translate-y-0.5 hover:border-[#E4405F]/60 hover:bg-[#E4405F] hover:text-white"><Instagram size={18} /></a>
+              <a href="https://www.youtube.com/@bazar360online" target="_blank" rel="noreferrer" aria-label="YouTube" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:-translate-y-0.5 hover:border-[#FF0000]/60 hover:bg-[#FF0000] hover:text-white"><Youtube size={18} /></a>
+              <a href="https://linkedin.com/company/bazar360" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:-translate-y-0.5 hover:border-[#0A66C2]/60 hover:bg-[#0A66C2] hover:text-white"><Linkedin size={18} /></a>
+              <a href="https://wa.me/923149198403" target="_blank" rel="noreferrer" aria-label="WhatsApp" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition hover:-translate-y-0.5 hover:border-[#22C55E]/60 hover:bg-[#22C55E] hover:text-white"><MessageCircle size={18} /></a>
             </div>
-          </div>
+          </section>
 
-          {/* Column 2: Buy & Explore */}
-          <div className="space-y-3 md:col-span-3 lg:col-span-2">
-            <h4 className="text-xs font-mono font-bold text-white uppercase tracking-widest mb-3">Buy Cars</h4>
-            <ul className="space-y-2 text-xs font-semibold">
-              <li>
-                <button onClick={() => setTab && setTab('search')} className="hover:text-white transition-colors cursor-pointer">
-                  Browse All Cars
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setTab && setTab('search')} className="hover:text-white transition-colors cursor-pointer">
-                  Certified Pre-Owned
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setTab && setTab('dealers')} className="hover:text-white transition-colors cursor-pointer">
-                  Verified Showrooms
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setTab && setTab('search')} className="hover:text-white transition-colors cursor-pointer">
-                  SUVs & 4x4s
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setTab && setTab('search')} className="hover:text-white transition-colors cursor-pointer">
-                  Electric & Hybrid Cars
-                </button>
-              </li>
+          {/* Buy */}
+          <nav aria-label="Buy" className="lg:col-span-2">
+            <h3 className="mb-5 text-sm font-bold uppercase tracking-[0.18em] text-[#55A8E8]">Buy</h3>
+            <ul className="space-y-3.5">
+              <li><button onClick={() => navigate('search')} className={footerLinkClass}>Browse Cars <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('search')} className={footerLinkClass}>Browse Bikes <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('search')} className={footerLinkClass}>Spare Parts <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('dealers')} className={footerLinkClass}>Showrooms <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('search')} className={footerLinkClass}>New Cars <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('search')} className={footerLinkClass}>Used Cars <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Column 3: Sell & Showrooms */}
-          <div className="space-y-3 md:col-span-2 lg:col-span-2">
-            <h4 className="text-xs font-mono font-bold text-white uppercase tracking-widest mb-3">Sell & Network</h4>
-            <ul className="space-y-2 text-xs font-semibold">
-              <li>
-                <button onClick={() => setTab && setTab('sell')} className="hover:text-[#F97316] transition-colors cursor-pointer flex items-center gap-1">
-                  <span>Post Your Car</span>
-                  <Sparkles size={12} className="text-[#F97316]" />
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setTab && setTab('sell')} className="hover:text-white transition-colors cursor-pointer">
-                  Dealer Registration
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setTab && setTab('services')} className="hover:text-white transition-colors cursor-pointer">
-                  Car Inspection
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setTab && setTab('community')} className="hover:text-white transition-colors cursor-pointer">
-                  Community Hub
-                </button>
-              </li>
+          {/* Sell */}
+          <nav aria-label="Sell" className="lg:col-span-2">
+            <h3 className="mb-5 text-sm font-bold uppercase tracking-[0.18em] text-[#55A8E8]">Sell</h3>
+            <ul className="space-y-3.5">
+              <li><button onClick={() => navigate('sell')} className={footerLinkClass}>Post Your Ad <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('sell')} className={footerLinkClass}>Dealer Signup <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('services')} className={footerLinkClass}>How It Works <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('sell')} className={footerLinkClass}>Pricing <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('sell')} className={footerLinkClass}>Ad Packages <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
             </ul>
-          </div>
+          </nav>
 
-          {/* Column 4: Our Team Section */}
-          <div className="space-y-4 md:col-span-6 lg:col-span-4">
-            <div className="mb-4">
-              <h3 className="text-sm font-mono font-extrabold text-white uppercase tracking-widest inline-block pb-1 border-b-2 border-[#F97316]">
-                OUR TEAM
-              </h3>
-            </div>
-            
-            <div className="space-y-4">
-              {/* Member 1: Muhammad Amjid */}
-              <div className="flex items-start gap-3.5 group">
-                <div className="w-10 h-10 rounded-full bg-[#0F172A] border border-white/10 flex items-center justify-center text-[#F97316] font-extrabold text-xs shrink-0 shadow-inner">
-                  MA
-                </div>
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-white">Muhammad Amjid</span>
-                    <span className="text-white/20">|</span>
-                    <a href="tel:03149198403" className="text-xs font-mono text-[#94A3B8] hover:text-[#F97316] transition-colors">
-                      03149198403
-                    </a>
-                  </div>
-                  <p className="text-[11px] font-mono font-bold text-[#F97316] uppercase tracking-wider">FOUNDER</p>
-                  <p className="text-[11px] text-[#94A3B8]">Product Strategy • Technology • Platform Development</p>
-                </div>
-              </div>
+          {/* Company */}
+          <nav aria-label="Company" className="lg:col-span-2">
+            <h3 className="mb-5 text-sm font-bold uppercase tracking-[0.18em] text-[#55A8E8]">Company</h3>
+            <ul className="space-y-3.5">
+              <li><button onClick={() => navigate('about')} className={footerLinkClass}>About Us <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('blog')} className={footerLinkClass}>Blog <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('contact')} className={footerLinkClass}>Contact Us <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('guides')} className={footerLinkClass}>Terms of Use <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+              <li><button onClick={() => navigate('guides')} className={footerLinkClass}>Privacy Policy <ArrowUpRight size={14} className="opacity-0 transition group-hover:opacity-100" /></button></li>
+            </ul>
+          </nav>
 
-              {/* Member 2: Malak Mazhar */}
-              <div className="flex items-start gap-3.5 group">
-                <div className="w-10 h-10 rounded-full bg-[#0F172A] border border-white/10 flex items-center justify-center text-[#F97316] font-extrabold text-xs shrink-0 shadow-inner">
-                  MM
-                </div>
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-white">Malak Mazhar</span>
-                    <span className="text-white/20">|</span>
-                    <a href="tel:03159085086" className="text-xs font-mono text-[#94A3B8] hover:text-[#F97316] transition-colors">
-                      03159085086
-                    </a>
-                  </div>
-                  <p className="text-[11px] font-mono font-bold text-[#F97316] uppercase tracking-wider">HEAD OF AUTOMOTIVE SALES</p>
-                  <p className="text-[11px] text-[#94A3B8]">Vehicle Sales • Negotiations • Customer Advisory</p>
-                </div>
-              </div>
+          {/* Support + newsletter */}
+          <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6 shadow-2xl shadow-black/10 lg:col-span-2">
+            <h3 className="text-lg font-bold text-white">Stay Updated</h3>
+            <div className="mt-2 h-px w-12 bg-gradient-to-r from-[#55A8E8] to-[#F97316]" />
+            <p className="mt-4 text-sm leading-6 text-slate-400">Subscribe for new listings, market updates and useful automotive news.</p>
 
-              {/* Member 3: Ghani Khan */}
-              <div className="flex items-start gap-3.5 group">
-                <div className="w-10 h-10 rounded-full bg-[#0F172A] border border-white/10 flex items-center justify-center text-[#F97316] font-extrabold text-xs shrink-0 shadow-inner">
-                  GK
-                </div>
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-white">Ghani Khan</span>
-                    <span className="text-white/20">|</span>
-                    <a href="tel:03556908996" className="text-xs font-mono text-[#94A3B8] hover:text-[#F97316] transition-colors">
-                      03556908996
-                    </a>
-                  </div>
-                  <p className="text-[11px] font-mono font-bold text-[#F97316] uppercase tracking-wider">MEDIA & INVENTORY MANAGER</p>
-                  <p className="text-[11px] text-[#94A3B8]">Vehicle Listings • Media Management • Marketplace Operations</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Column 5: Feedback / Suggestions */}
-          <div className="space-y-3 md:col-span-4 lg:col-span-2">
-            <h4 className="text-xs font-mono font-bold text-white uppercase tracking-widest mb-3">Improve Bazar360</h4>
-            <p className="text-xs text-[#94A3B8]">Have feedback or feature requests? Let our tech team know directly.</p>
-            
-            <form onSubmit={handleSuggestionSubmit} className="space-y-2">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={suggestionText}
-                  onChange={(e) => setSuggestionText(e.target.value)}
-                  placeholder={isUrdu ? "اپنی تجاویز دیں..." : "Your suggestion or feedback..."}
-                  className="w-full px-3.5 py-2.5 bg-[#0F172A] border border-white/10 rounded-xl text-xs text-white placeholder-[#64748B] focus:outline-none focus:border-[#F97316]"
-                  disabled={isSubmitting}
-                />
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !suggestionText.trim()}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#F97316] hover:bg-[#EA580C] text-white text-[11px] font-bold rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  {isSubmitting ? '...' : <Send size={12} />}
-                </button>
-              </div>
-              {submitSuccess && (
-                <p className="text-[11px] text-[#22C55E] font-semibold">Thank you for your feedback!</p>
-              )}
-              {submitError && (
-                <p className="text-[11px] text-rose-400 font-semibold">{submitError}</p>
-              )}
+            <form onSubmit={handleNewsletterSubmit} className="mt-5 space-y-3">
+              <label htmlFor="bazar360-newsletter" className="sr-only">Email address</label>
+              <input
+                id="bazar360-newsletter"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                autoComplete="email"
+                className="h-12 w-full rounded-xl border border-white/10 bg-[#0B1524] px-4 text-sm text-white outline-none placeholder:text-slate-500 focus:border-[#55A8E8]/70 focus:ring-2 focus:ring-[#55A8E8]/10"
+                disabled={isSubmitting}
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#087FAE] to-[#F97316] px-4 text-sm font-bold text-white shadow-lg shadow-orange-950/10 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Send size={15} />
+                {isSubmitting ? 'Subscribing...' : 'Subscribe Now'}
+              </button>
+              {message && <p className="text-xs leading-5 text-slate-300" role="status">{message}</p>}
             </form>
-          </div>
 
+            <div className="mt-5 space-y-2 border-t border-white/10 pt-4">
+              <button onClick={() => onOpenSupportDrawer ? onOpenSupportDrawer() : navigate('contact')} className="flex w-full items-center gap-2 text-left text-xs font-semibold text-slate-300 hover:text-white"><Headphones size={15} /> Help & Support</button>
+              <button onClick={() => navigate('faq')} className="flex w-full items-center gap-2 text-left text-xs font-semibold text-slate-300 hover:text-white"><ShieldCheck size={15} /> Safety & FAQ</button>
+            </div>
+          </section>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium">
-          <p className="text-[#64748B]">
-            © {new Date().getFullYear()} Bazar360.online • All rights reserved.
-          </p>
-          <div className="flex items-center gap-6 text-[#94A3B8]">
-            <button onClick={() => setTab && setTab('faq')} className="hover:text-white transition-colors cursor-pointer">
-              FAQ & Help
-            </button>
-            <button onClick={() => setTab && setTab('contact')} className="hover:text-white transition-colors cursor-pointer">
-              Support
-            </button>
-            <button onClick={() => setTab && setTab('guides')} className="hover:text-white transition-colors cursor-pointer">
-              Terms & Safety
-            </button>
+        {/* Auto Choice */}
+        <div className="mt-12 border-t border-white/10 pt-10">
+          <div className="flex min-h-40 items-center justify-center rounded-3xl bg-[#071423] px-6 py-8">
+            <img
+              src="/Auto Choice logo.png"
+              alt="Auto Choice - The Right Choice"
+              className="max-h-36 w-auto max-w-[420px] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.45)]"
+              loading="lazy"
+            />
           </div>
         </div>
 
+        {/* Trust + legal bar */}
+        <div className="mt-8 flex flex-col gap-6 border-t border-white/10 pt-7 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-slate-500">© {new Date().getFullYear()} Bazar360.online - All Rights Reserved.</p>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-slate-400">
+            <span className="inline-flex items-center gap-2"><ShieldCheck size={16} /> Secure Payments</span>
+            <span className="inline-flex items-center gap-2"><BadgeCheck size={16} /> Verified Sellers</span>
+            <span className="inline-flex items-center gap-2"><Headphones size={16} /> 24/7 Support</span>
+          </div>
+
+          <div className="flex items-center gap-2" aria-label="Payment methods">
+            <span className="rounded-md bg-white px-3 py-1.5 font-black italic text-[#1A3D8F]">VISA</span>
+            <span className="rounded-md bg-white px-3 py-1.5 font-black text-[#111827]">MC</span>
+            <span className="rounded-md bg-white px-3 py-1.5 font-bold text-[#157A57]">easypaisa</span>
+            <span className="rounded-md bg-white px-3 py-1.5 font-bold text-[#A21D22]">JazzCash</span>
+          </div>
+        </div>
       </div>
     </footer>
   );
