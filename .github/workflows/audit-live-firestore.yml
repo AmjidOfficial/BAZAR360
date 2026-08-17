@@ -1,0 +1,30 @@
+name: Audit Live Firestore Inventory
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit live Firestore inventory
+        env:
+          FIREBASE_SERVICE_ACCOUNT_BAZAR360: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
+        run: node scripts/audit-live-firestore-inventory.mjs
