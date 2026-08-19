@@ -1,0 +1,49 @@
+name: Bazar360 10/10 Gate
+
+on:
+  push:
+    branches:
+      - main
+      - owner/10-10-production-hardening
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  certify:
+    name: Production certification gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run lint
+
+      - name: Production data-integrity audit
+        run: npm run audit:data
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify release output
+        run: test -f dist/index.html
+
+      - name: Release gate summary
+        run: |
+          echo "Bazar360 10/10 automated gates passed: typecheck, data integrity, production build."
+          echo "Manual gates remain required for security rules, Firebase permissions, mobile UX, accessibility, performance and live smoke testing."
