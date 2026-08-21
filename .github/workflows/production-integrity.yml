@@ -5,6 +5,7 @@ on:
     branches: [main]
   push:
     branches:
+      - main
       - owner/10-10-production-hardening
 
 permissions:

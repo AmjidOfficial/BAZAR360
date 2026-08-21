@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type ThemeClassType = 'theme-cosmic-dark' | 'theme-luxury-light' | 'theme-emerald' | 'theme-gold';
+/** Bazar360 production uses one consistent visual design system. */
+export type ThemeClassType = 'theme-luxury-light';
 type ThemeSelection = ThemeClassType | 'light' | 'dark';
 
 interface ThemeContextType {
-  theme: 'light' | 'dark';
+  theme: 'light';
   currentTheme: ThemeClassType;
   setTheme: (theme: ThemeSelection) => void;
   toggleTheme: () => void;
@@ -28,12 +30,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     } else {
       setCurrentThemeState(selection);
     }
+  const [currentTheme] = useState<ThemeClassType>('theme-luxury-light');
+
+  const setTheme = (_selection: ThemeSelection) => {
+    // Production deliberately uses one theme. Ignore legacy theme-switch requests.
   };
 
   const toggleTheme = () => {
-    const themes: ThemeClassType[] = ['theme-luxury-light', 'theme-cosmic-dark', 'theme-emerald', 'theme-gold'];
-    const nextIndex = (themes.indexOf(currentTheme) + 1) % themes.length;
-    setTheme(themes[nextIndex]);
+    // Deliberately disabled so every page uses the same design system.
   };
 
   useEffect(() => {
@@ -46,9 +50,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [currentTheme]);
 
   const isDark = currentTheme === 'theme-cosmic-dark' || currentTheme === 'theme-gold';
+    root.classList.add('theme-luxury-light', 'light');
+    localStorage.setItem('bazar360_theme', 'theme-luxury-light');
+  }, []);
 
   return (
-    <ThemeContext.Provider value={{ theme: isDark ? 'dark' : 'light', currentTheme, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: 'light', currentTheme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );

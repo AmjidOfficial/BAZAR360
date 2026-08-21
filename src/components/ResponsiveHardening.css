@@ -1,0 +1,52 @@
+/* Bazar360 production responsive hardening */
+*, *::before, *::after { box-sizing: border-box; }
+
+@media (max-width: 640px) {
+  html, body, #root { max-width: 100%; overflow-x: hidden; }
+
+  table { width: 100%; max-width: 100%; }
+
+  .admin-table-scroll,
+  .report-table-scroll,
+  .responsive-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .admin-table-scroll table,
+  .report-table-scroll table,
+  .responsive-table-wrapper table {
+    min-width: 760px;
+  }
+
+  [data-responsive-card], .card, .panel, .modal-container {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  input, select, textarea, button { max-width: 100%; }
+
+  .mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+}
+
+@media (min-width: 641px) {
+  .admin-table-scroll,
+  .report-table-scroll,
+  .responsive-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

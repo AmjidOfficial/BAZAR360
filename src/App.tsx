@@ -98,14 +98,12 @@ function AnimatedLogoCycler() {
 
 const METRIC_TABS_DATA: Record<string, Array<{label: string; value: string}>> = {};
 
-const HOTSPOTS_LIST = [
-  { id: 'engine', name: 'Piston block & Engine layout', text: 'Dual overhead cam 24-valve configuration optimized for PKR fuel gradients.', x: '25%', y: '45%' },
-  { id: 'suspension', name: 'Suspension compression ratio', text: 'Adaptive pneumatic damping ring with dynamic rebound control on broken roads.', x: '65%', y: '55%' },
-  { id: 'exhaust', name: 'Exhaust airflow channel', text: 'Quad low-back-pressure active exhaust ports with carbon acoustic resonators.', x: '88%', y: '65%' },
-];
+const HOTSPOTS_LIST: any[] = [];
 
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import ShowroomProfile from "./pages/ShowroomProfile";
+import AdminShowroomCreator from './components/AdminShowroomCreator';
+import ShowroomOwnerPortal from './components/ShowroomOwnerPortal';
 import { VehicleDetail } from "./components/VehicleDetail";
 
 import { RoleProvider } from './contexts/RoleContext';
@@ -124,8 +122,11 @@ export default function AppWrapper() {
             <Route path="/dealers" element={<App />} />
             <Route path="/sell" element={<App />} />
             <Route path="/portal" element={<App />} />
+            <Route path="/owner" element={<ShowroomOwnerPortal />} />
+            <Route path="/showroom-owner" element={<ShowroomOwnerPortal />} />
             <Route path="/search" element={<App />} />
             <Route path="/favorites" element={<App />} />
+            <Route path="/admin/showrooms" element={<AdminShowroomCreator />} />
             <Route path="/admin" element={<App />} />
             <Route path="/community" element={<App />} />
             <Route path="/dealers/:showroomSlug" element={<ShowroomProfile />} />

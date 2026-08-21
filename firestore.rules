@@ -6,6 +6,7 @@ service cloud.firestore {
     }
 
     function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
@@ -36,6 +37,21 @@ service cloud.firestore {
     function ownsIncomingListing() {
       return isSignedIn() && ('ownerId' in incoming()) && incoming().ownerId == request.auth.uid;
     }
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function ownsDealer(dealerId) {
+      return isVerified() && exists(/databases/$(database)/documents/dealers/$(dealerId)) &&
+        get(/databases/$(database)/documents/dealers/$(dealerId)).data.ownerUid == request.auth.uid;
+    }
+    function ownsExistingListing() {
+      return isVerified() && (
+        (('ownerId' in existing()) && existing().ownerId == request.auth.uid) ||
+        (('dealerId' in existing()) && existing().dealerId == request.auth.uid) ||
+        (('dealerId' in existing()) && ownsDealer(existing().dealerId)) ||
+        (('assignedSalesRepId' in existing()) && existing().assignedSalesRepId == request.auth.uid)
+      );
+    }
 
     match /dealers/{dealerId} {
       allow get: if true;
@@ -58,6 +74,25 @@ service cloud.firestore {
         )
       );
       allow delete: if isAdmin() || (isSignedIn() && existing().ownerUid == request.auth.uid);
+          data.ownerUid is string && data.ownerUid.size() > 0 && data.description is string && data.description.size() <= 2000;
+      }
+      // Only Admin creates or deletes showroom entities. Owners receive access after Admin assignment.
+      allow create: if isAdmin() && isValidId(dealerId) && isValidDealer(incoming()) &&
+        incoming().keys().hasAll(['name', 'ownerUid', 'description']);
+      allow update: if isSignedIn() && isValidId(dealerId) && (
+        isAdmin() || (
+          isVerified() && existing().ownerUid == request.auth.uid && isValidDealer(incoming()) &&
+          incoming().ownerUid == existing().ownerUid &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name','subtitle','description','about','location','phone','whatsapp','landline',
+            'contactPerson','logo','coverImage','tagline','taglineCategory','socials','socialMedia',
+            'theme_choice','themeSettings','gallery','media','updatedAt','likesCount','likes_count',
+            'website','email','openingHours','amenities','services','businessCard','logoUrl','avatarUrl',
+            'activityFeed','teamMembers'
+          ])
+        )
+      );
+      allow delete: if isAdmin();
 
       match /reviews/{reviewId} {
         allow get: if true;
@@ -85,6 +120,12 @@ service cloud.firestore {
         isAdmin() || (
           isValidListing(incoming()) && ownsExistingListing() &&
           incoming().ownerId == existing().ownerId &&
+      allow create: if isVerified() && isValidId(listingId) && isValidListing(incoming()) && ownsDealer(incoming().dealerId);
+      allow update: if isSignedIn() && isValidId(listingId) && (
+        isAdmin() || (
+          isVerified() && isValidListing(incoming()) && ownsExistingListing() &&
+          incoming().ownerId == existing().ownerId &&
+          incoming().dealerId == existing().dealerId &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'title','description','price','mileage','images','imageUrl','videoUrl','specs',
             'isSold','isPaused','isArchived','updatedAt','make','model','year','condition',
@@ -97,6 +138,11 @@ service cloud.firestore {
         )
       );
       allow delete: if isAdmin() || ownsExistingListing();
+            'pdfCloudinaryPublicId','pdfTitle','status','primaryImage','showroomId','sellerWhatsApp'
+          ])
+        )
+      );
+      allow delete: if isAdmin() || (isVerified() && ownsExistingListing());
 
       match /comments/{commentId} {
         allow get: if true;
@@ -174,6 +220,7 @@ service cloud.firestore {
         allow read: if isSignedIn() && (request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants || isAdmin());
         allow create: if isSignedIn() && incoming().senderId == request.auth.uid &&
           request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if isSignedIn() && incoming().senderId == request.auth.uid && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
         allow update, delete: if isAdmin() || isOwner(existing().senderId);
       }
     }
