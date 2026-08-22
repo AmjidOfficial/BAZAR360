@@ -12,7 +12,6 @@
   --color-action: #F59E0B;
 }
 
-/* Ensure focus visibility for interactive keyboard controls */
 button:focus-visible, 
 input:focus-visible, 
 select:focus-visible, 
@@ -21,22 +20,16 @@ textarea:focus-visible {
   outline-offset: 2px !important;
 }
 
-/* Strong readable input field values */
 input, select, textarea {
   color: #0F172A !important;
   background-color: #FFFFFF !important;
 }
 
-/* Overrule standard washed-out styles */
-.text-gray-400, .text-zinc-400, .text-slate-400 {
-  color: var(--color-text-muted) !important;
-}
-
+.text-gray-400, .text-zinc-400, .text-slate-400,
 .text-gray-500, .text-zinc-500, .text-slate-500 {
   color: var(--color-text-muted) !important;
 }
 
-/* WCAG AAA/AA Check for input placeholders */
 ::placeholder {
   color: #94A3B8 !important;
   opacity: 1 !important;
@@ -46,3 +39,5 @@ input, select, textarea {
   opacity: 1 !important;
 }
 
+/* Bazar360 automotive reference visual layer */
+@import "../bazar360-reference-theme.css";
