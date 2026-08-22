@@ -1,0 +1,107 @@
+/* Bazar360 automotive reference theme
+   Inspired by the supplied premium/neumorphic automotive references.
+   This layer is intentionally additive and keeps existing application logic/data intact. */
+
+:root {
+  --b360-surface: #f5f6f7;
+  --b360-surface-2: #eef0f2;
+  --b360-ink: #111315;
+  --b360-muted: #6f767d;
+  --b360-border: rgba(17,19,21,.08);
+  --b360-shadow-out: 12px 12px 28px rgba(32,36,40,.10), -10px -10px 24px rgba(255,255,255,.95);
+  --b360-shadow-soft: 6px 6px 16px rgba(32,36,40,.08), -6px -6px 16px rgba(255,255,255,.9);
+  --b360-radius: 24px;
+}
+
+body {
+  background: var(--b360-surface) !important;
+}
+
+main, #root > div {
+  background: var(--b360-surface);
+}
+
+section {
+  border-color: var(--b360-border) !important;
+}
+
+section > div {
+  border-radius: 0;
+}
+
+[class*="rounded-3xl"],
+[class*="rounded-2xl"],
+[class*="rounded-xl"] {
+  border-color: var(--b360-border) !important;
+}
+
+[class*="rounded-3xl"].bg-white,
+[class*="rounded-2xl"].bg-white,
+[class*="rounded-xl"].bg-white,
+[class*="rounded-3xl"].bg-\[\#FFFFFF\],
+[class*="rounded-2xl"].bg-\[\#FFFFFF\] {
+  background: linear-gradient(145deg, #ffffff, var(--b360-surface-2)) !important;
+  box-shadow: var(--b360-shadow-soft);
+}
+
+img {
+  border-radius: inherit;
+}
+
+input, select, textarea {
+  background: #f7f8f9 !important;
+  border-color: var(--b360-border) !important;
+  box-shadow: inset 2px 2px 6px rgba(25,28,31,.05), inset -2px -2px 6px rgba(255,255,255,.85) !important;
+}
+
+.btn-primary-orange,
+.btn-primary-purple,
+[class*="bg-\[#007979\]"] {
+  background: var(--b360-ink) !important;
+  color: #fff !important;
+  box-shadow: 5px 5px 12px rgba(17,19,21,.16), -3px -3px 9px rgba(255,255,255,.7) !important;
+}
+
+.btn-primary-orange:hover,
+.btn-primary-purple:hover,
+[class*="bg-\[#007979\]"]:hover {
+  background: #25282b !important;
+}
+
+h1, h2, h3, h4 {
+  color: var(--b360-ink);
+  letter-spacing: -0.04em !important;
+}
+
+@media (max-width: 640px) {
+  section {
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+
+  section > div {
+    padding-left: .75rem !important;
+    padding-right: .75rem !important;
+  }
+
+  [class*="grid-cols-1"] {
+    gap: .75rem !important;
+  }
+
+  [class*="rounded-3xl"] {
+    border-radius: 20px !important;
+  }
+
+  [class*="rounded-2xl"] {
+    border-radius: 18px !important;
+  }
+}
+
+.shadow-xs, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
+  box-shadow: var(--b360-shadow-soft) !important;
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(17,19,21,.25) !important;
+  outline-offset: 2px;
+}
