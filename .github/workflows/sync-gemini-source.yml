@@ -1,0 +1,52 @@
+name: Sync Gemini AI Studio source into BAZAR360
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bazar360-gemini-source-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    if: ${{ !contains(github.event.head_commit.message, '[gemini-sync]') || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout BAZAR360
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout latest Gemini AI Studio line
+        uses: actions/checkout@v4
+        with:
+          repository: AmjidOfficial/Bazar360.online
+          ref: main
+          path: _gemini_source
+          fetch-depth: 1
+
+      - name: Sync source updates
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --exclude='.git/' --exclude='.github/' --exclude='src/components/AuthContext.tsx' --exclude='src/components/AuthModal.tsx' _gemini_source/ ./
+          rm -rf _gemini_source
+
+      - name: Commit source sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          if git diff --cached --quiet; then
+            echo 'No new Gemini source changes to sync.'
+            exit 0
+          fi
+          git commit -m 'Sync latest Gemini AI Studio source updates [gemini-sync] [skip ci]'
+          git push origin HEAD:main
