@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -56,7 +57,7 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
         run: node scripts/recover-auto-choice-showroom.mjs
 
-      - name: Deploy to Firebase Hosting
+      - name: Deploy to Firebase Hosting LIVE
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
