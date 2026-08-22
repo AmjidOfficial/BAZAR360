@@ -97,6 +97,8 @@ The custom-designed SEO component (`src/components/SEO.tsx`) handles advanced me
 ## 🌍 Global Production Deployment
 Bazar360 is optimized for static deployment to GitHub Pages or container deployment to Cloud Run.
 
+The production source of truth is this `main` branch. Pushes to `main` trigger the Firebase Hosting live deployment workflow for `bazar360-2026`.
+
 To deploy static branches to GitHub Pages:
 ```bash
 npm run deploy
