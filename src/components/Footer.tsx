@@ -191,11 +191,9 @@ export default function Footer({ lang = 'en', setTab, onOpenSupportDrawer }: Foo
             <span className="inline-flex items-center gap-2"><Headphones size={16} /> 24/7 Support</span>
           </div>
 
-          <div className="flex items-center gap-2" aria-label="Payment methods">
-            <span className="rounded-md bg-white px-3 py-1.5 font-black italic text-[#1A3D8F]">VISA</span>
-            <span className="rounded-md bg-white px-3 py-1.5 font-black text-[#111827]">MC</span>
-            <span className="rounded-md bg-white px-3 py-1.5 font-bold text-[#157A57]">easypaisa</span>
-            <span className="rounded-md bg-white px-3 py-1.5 font-bold text-[#A21D22]">JazzCash</span>
+          <div className="flex items-center gap-2" aria-label="Trust highlights">
+            <span className="rounded-md bg-white/5 border border-white/10 px-3 py-1.5 font-bold text-slate-300">Certified Dealerships</span>
+            <span className="rounded-md bg-white/5 border border-white/10 px-3 py-1.5 font-bold text-slate-300">200+ Pt Inspection</span>
           </div>
         </div>
       </div>

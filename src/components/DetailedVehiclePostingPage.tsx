@@ -1667,7 +1667,7 @@ export default function DetailedVehiclePostingPage({
                     {formatPricePKR(price)}
                   </div>
                   <div className="absolute top-3 right-3 bg-emerald-500 text-slate-950 font-mono font-black text-[10px] uppercase px-2.5 py-1 rounded-full shadow">
-                    Verified Seller Ad
+                    Verified Listing
                   </div>
                 </div>
 
@@ -1718,7 +1718,7 @@ export default function DetailedVehiclePostingPage({
                       <span className="font-bold text-[var(--color-text-header)]">{sellerName} ({sellerPhone})</span>
                     </div>
                     <span className="px-2.5 py-1 bg-orange-500/10 text-orange-500 border border-orange-500/20 rounded-xl text-[10px] uppercase font-bold">
-                      {postingMode === 'showroom' ? 'Showroom Ad' : 'Individual Ad'}
+                      {postingMode === 'showroom' ? 'Showroom Listing' : 'Individual Listing'}
                     </span>
                   </div>
                 </div>

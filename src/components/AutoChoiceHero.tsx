@@ -103,7 +103,7 @@ export default function AutoChoiceHero({ lang, onSearch, setTab, listings = [], 
   };
 
   return (
-    <div className="relative w-full bg-[#0B192C] text-white overflow-hidden pt-24 pb-12 lg:pt-32 lg:pb-20 border-b border-[#1E293B]">
+    <div className="hero-section relative w-full bg-[var(--color-bg-primary)] text-[var(--color-text-header)] overflow-hidden pt-24 pb-12 lg:pt-32 lg:pb-20 border-b border-[var(--color-border)]">
       
       {/* Subtle Automotive Orange Ambient Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-[#F97316]/10 via-[#0F172A]/30 to-transparent rounded-full blur-[100px] pointer-events-none" />
@@ -133,7 +133,7 @@ export default function AutoChoiceHero({ lang, onSearch, setTab, listings = [], 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.05 }}
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 leading-[1.15]"
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[var(--color-text-header)] mb-3 leading-[1.15]"
             >
               {isUrdu ? 'اپنی اگلی گاڑی' : 'Find Your Next'}{' '}
               <span className="text-[#F97316]">
@@ -146,7 +146,7 @@ export default function AutoChoiceHero({ lang, onSearch, setTab, listings = [], 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="text-sm sm:text-base text-[#94A3B8] max-w-xl mb-6 leading-relaxed font-normal"
+              className="text-sm sm:text-base text-[var(--color-text-muted)] max-w-xl mb-6 leading-relaxed font-normal"
             >
               {isUrdu
                 ? 'پاکستان بھر سے تصدیق شدہ گاڑیوں، شو رومز اور معائنے کے ساتھ آسانی سے خریدیں اور بیچیں۔'

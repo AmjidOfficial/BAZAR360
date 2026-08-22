@@ -770,7 +770,7 @@ export function ShowroomProfile({ showroom, inventory }: ShowroomProfileProps) {
                       lat={33.9972} 
                       lng={71.4862} 
                       showroomName={name} 
-                      isDark={theme === 'dark'}
+                      isDark={(theme as string) === 'dark'}
                     />
                   </div>
                 </div>

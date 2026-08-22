@@ -30,7 +30,7 @@ export function CustomerMyServices({ userPhoneOrUid, userName, lang = 'en' }: Cu
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [chatMessage, setChatMessage] = useState('');
   const [isPaying, setIsPaying] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'easypaisa' | 'jazzcash' | 'bank' | 'card'>('easypaisa');
+  const [paymentMethod, setPaymentMethod] = useState<'bank' | 'card'>('bank');
   const [userRating, setUserRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -534,18 +534,16 @@ export function CustomerMyServices({ userPhoneOrUid, userName, lang = 'en' }: Cu
 
                   {selectedBooking.invoice?.status !== 'Paid' ? (
                     <div className="space-y-3 pt-2">
-                      <span className="text-[10px] font-mono text-text-muted uppercase font-black tracking-wider block">Choose Digital Payment Method</span>
-                      <div className="grid grid-cols-4 gap-2">
+                      <span className="text-[10px] font-mono text-text-muted uppercase font-black tracking-wider block">Service Settlement Method</span>
+                      <div className="grid grid-cols-2 gap-2">
                         {[
-                          { id: 'easypaisa', label: 'EasyPaisa' },
-                          { id: 'jazzcash', label: 'JazzCash' },
-                          { id: 'bank', label: 'Bank Tran' },
-                          { id: 'card', label: 'Card' }
+                          { id: 'bank', label: 'Online Bank Transfer' },
+                          { id: 'card', label: 'Direct Invoice Settlement' }
                         ].map(m => (
                           <button
                             key={m.id}
                             onClick={() => setPaymentMethod(m.id as any)}
-                            className={`py-2 px-1 text-[9px] font-mono font-black uppercase rounded-lg border cursor-pointer transition-all ${
+                            className={`py-2 px-1 text-[10px] font-mono font-black uppercase rounded-lg border cursor-pointer transition-all ${
                               paymentMethod === m.id 
                                 ? 'bg-orange-500 text-slate-950 border-orange-500' 
                                 : 'bg-[#0f172a] border-white/5 text-text-muted hover:text-white'

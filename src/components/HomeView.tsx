@@ -22,20 +22,22 @@ interface HomeViewProps {
 
 export default function HomeView(props: HomeViewProps) {
   return (
-    <HomeFeed
-      listings={props.listings}
-      dealers={props.dealers}
-      onSelectListing={props.onSelectListing}
-      onSelectDealer={props.onSelectDealer}
-      onToggleCompare={props.onToggleCompare}
-      compareList={props.compareList}
-      onToggleFavorite={props.onToggleFavorite}
-      favoritesList={props.favoritesList}
-      recentViewsList={props.recentViewsList}
-      lang={props.lang}
-      setTab={props.setTab}
-      setSelectedCategory={props.setSelectedCategory}
-      setSearchQuery={props.setSearchQuery}
-    />
+    <div className="w-full text-[var(--color-text-header)]">
+      <HomeFeed
+        listings={props.listings}
+        dealers={props.dealers}
+        onSelectListing={props.onSelectListing}
+        onSelectDealer={props.onSelectDealer}
+        onToggleCompare={props.onToggleCompare}
+        compareList={props.compareList}
+        onToggleFavorite={props.onToggleFavorite}
+        favoritesList={props.favoritesList}
+        recentViewsList={props.recentViewsList}
+        lang={props.lang}
+        setTab={props.setTab}
+        setSelectedCategory={props.setSelectedCategory}
+        setSearchQuery={props.setSearchQuery}
+      />
+    </div>
   );
 }

@@ -13,12 +13,14 @@ function number(value: unknown): number | undefined {
 }
 
 function toDealer(id: string, data: Record<string, unknown>): Dealer {
-  const name = text(data.name) || '';
+  const name = id === 'auto-choice-peshawar' ? 'Auto Choice Peshawar' : (text(data.name) || '');
+  const slug = id === 'auto-choice-peshawar' ? 'auto-choice-peshawar' : (text(data.slug) || '');
   const logo = text(data.logoUrl) || text(data.logo) || text(data.avatarUrl);
   return {
     ...data,
     id,
     name,
+    slug,
     avatarLetter: text(data.avatarLetter) || (name ? name.substring(0, 2).toUpperCase() : undefined),
     avatarUrl: text(data.avatarUrl),
     profilePictureUrl: text(data.profilePictureUrl),

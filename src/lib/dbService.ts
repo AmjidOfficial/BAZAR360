@@ -117,11 +117,15 @@ export async function dbFetchDealers(forceRefresh = true): Promise<Dealer[]> {
       const data = dealerDoc.data();
       const logoUrl = typeof data.logoUrl === 'string' ? data.logoUrl : undefined;
       const avatarUrl = typeof data.avatarUrl === 'string' ? data.avatarUrl : logoUrl;
+      const id = dealerDoc.id;
+      const name = id === 'auto-choice-peshawar' ? 'Auto Choice Peshawar' : (typeof data.name === 'string' ? data.name : '');
+      const slug = id === 'auto-choice-peshawar' ? 'auto-choice-peshawar' : (typeof data.slug === 'string' ? data.slug : '');
       return {
         ...data,
-        id: dealerDoc.id,
-        name: typeof data.name === 'string' ? data.name : '',
-        avatarLetter: typeof data.avatarLetter === 'string' ? data.avatarLetter : (typeof data.name === 'string' && data.name ? data.name.substring(0, 2).toUpperCase() : 'D'),
+        id,
+        name,
+        slug,
+        avatarLetter: typeof data.avatarLetter === 'string' ? data.avatarLetter : (name ? name.substring(0, 2).toUpperCase() : 'D'),
         avatarUrl,
         logo: typeof data.logo === 'string' ? data.logo : logoUrl,
         logoUrl,

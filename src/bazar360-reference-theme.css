@@ -17,10 +17,12 @@ body {
   background: var(--b360-surface) !important;
 }
 
+/* Main app surfaces */
 main, #root > div {
   background: var(--b360-surface);
 }
 
+/* Existing marketplace sections become softer and more compact */
 section {
   border-color: var(--b360-border) !important;
 }
@@ -29,6 +31,7 @@ section > div {
   border-radius: 0;
 }
 
+/* Cards and common interactive surfaces */
 [class*="rounded-3xl"],
 [class*="rounded-2xl"],
 [class*="rounded-xl"] {
@@ -44,16 +47,19 @@ section > div {
   box-shadow: var(--b360-shadow-soft);
 }
 
+/* Vehicle imagery: preserve source images, improve presentation */
 img {
   border-radius: inherit;
 }
 
+/* Search and filter controls */
 input, select, textarea {
   background: #f7f8f9 !important;
   border-color: var(--b360-border) !important;
   box-shadow: inset 2px 2px 6px rgba(25,28,31,.05), inset -2px -2px 6px rgba(255,255,255,.85) !important;
 }
 
+/* Primary orange accents are softened into Bazar360 black/graphite CTA style */
 .btn-primary-orange,
 .btn-primary-purple,
 [class*="bg-\[#007979\]"] {
@@ -68,11 +74,13 @@ input, select, textarea {
   background: #25282b !important;
 }
 
+/* Hero titles */
 h1, h2, h3, h4 {
   color: var(--b360-ink);
   letter-spacing: -0.04em !important;
 }
 
+/* Mobile-first spacing and touch targets */
 @media (max-width: 640px) {
   section {
     padding-top: 1.25rem !important;
@@ -97,10 +105,12 @@ h1, h2, h3, h4 {
   }
 }
 
+/* Reduce visual noise from old heavy shadows */
 .shadow-xs, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
   box-shadow: var(--b360-shadow-soft) !important;
 }
 
+/* Keep focus states accessible */
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
   outline: 3px solid rgba(17,19,21,.25) !important;
   outline-offset: 2px;

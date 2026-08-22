@@ -115,7 +115,7 @@ export default function ThemeEngine() {
   const applyVariablesToRoot = (vars: typeof DEFAULT_THEME_VARIABLES) => {
     const root = document.documentElement;
     
-    if (theme === 'dark') {
+    if ((theme as string) === 'dark') {
       // In dark mode, we let standard dark classes handle colors
       root.style.removeProperty('--color-bg-primary');
       root.style.removeProperty('--color-bg-secondary');

@@ -198,7 +198,7 @@ export default async function ShowroomServerPage({ params }: PageProps) {
   const schemas = generateBusinessSchemas(showroom);
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300">
+    <main className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-main)] font-sans antialiased transition-colors duration-300">
       {schemas && (
         <script
           type="application/ld+json"
@@ -210,30 +210,30 @@ export default async function ShowroomServerPage({ params }: PageProps) {
       <ShowroomHeaderAnimated showroom={showroom} />
 
       {/* Showroom Fleet Display Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-slate-200 dark:border-slate-800 pb-4 mb-6 sm:mb-8 gap-2">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-[var(--color-border-main)] pb-6 mb-6 sm:mb-10 gap-4">
           <div>
-            <h2 className="text-lg sm:text-xl font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-black uppercase tracking-wider text-[var(--color-text-header)] flex items-center gap-2">
               <span>Showroom Fleet Stock</span>
               <span className="text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-2.5 py-0.5 rounded-full font-bold border border-orange-500/20">
                 {listings.length} {listings.length === 1 ? 'Vehicle' : 'Vehicles'}
               </span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+            <p className="text-xs text-[var(--color-text-muted)] font-medium mt-0.5">
               Direct inventory available on showroom floor at {showroom?.name}
             </p>
           </div>
         </div>
 
         {listings.length === 0 ? (
-          <div className="text-center py-12 sm:py-16 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md mx-auto shadow-sm my-6">
+          <div className="text-center py-12 sm:py-16 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-3xl p-6 sm:p-8 max-w-md mx-auto shadow-sm my-6">
             <div className="w-14 h-14 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner border border-orange-500/20">
               🚘
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+            <h3 className="text-base sm:text-lg font-bold text-[var(--color-text-header)] mb-1">
               No Active Vehicles in Fleet
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium mb-6">
+            <p className="text-[var(--color-text-muted)] text-xs sm:text-sm font-medium mb-6">
               This showroom does not have any active vehicle listings currently available.
             </p>
             <a
@@ -245,7 +245,7 @@ export default async function ShowroomServerPage({ params }: PageProps) {
             </a>
           </div>
         ) : (
-          <div id="showroom-inventory-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div id="showroom-inventory-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 items-stretch w-full">
             {listings.map((car, idx) => {
               const displayPrice = typeof car.priceRaw === 'number' 
                 ? `PKR ${car.priceRaw.toLocaleString()}` 
@@ -257,10 +257,10 @@ export default async function ShowroomServerPage({ params }: PageProps) {
                 <AnimatedVehicleCard 
                   key={car.id} 
                   index={idx}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-500/50 motion-reduce:transform-none transition-colors duration-300 flex flex-col group h-full cursor-pointer relative"
+                  className="bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-orange-500/10 hover:border-orange-500/50 motion-reduce:transform-none transition-colors duration-300 flex flex-col group h-full cursor-pointer relative"
                 >
                   {/* Aspect Ratio Controlled Image Container (CLS Prevention) */}
-                  <div className="w-full aspect-[16/10] bg-slate-100 dark:bg-slate-800 relative overflow-hidden shrink-0">
+                  <div className="w-full aspect-[16/10] bg-[var(--color-bg-tertiary)] relative overflow-hidden shrink-0">
                     {firstImage ? (
                       <img 
                         src={getOptimizedUrl(firstImage, { width: 600, quality: 'auto', format: 'auto' })} 
@@ -274,7 +274,7 @@ export default async function ShowroomServerPage({ params }: PageProps) {
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100 dark:bg-slate-800 font-mono text-xs gap-1 aspect-[16/10]">
+                      <div className="w-full h-full flex flex-col items-center justify-center text-[var(--color-text-muted)] bg-[var(--color-bg-tertiary)] font-mono text-xs gap-1 aspect-[16/10]">
                         <span className="text-2xl">🚗</span>
                         <span>No Image</span>
                       </div>
@@ -300,24 +300,24 @@ export default async function ShowroomServerPage({ params }: PageProps) {
                   {/* Vehicle Meta & Pricing Info */}
                   <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
                     <div>
-                      <h3 className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      <h3 className="text-sm sm:text-base font-bold text-[var(--color-text-header)] line-clamp-1 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                         {car.title || `${car.make} ${car.model}`}
                       </h3>
                       {car.location && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+                        <p className="text-xs text-[var(--color-text-muted)] mt-1 line-clamp-1">
                           📍 {car.location}
                         </p>
                       )}
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                    <div className="pt-2 border-t border-[var(--color-border-subtle)] flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Asking Price</span>
-                        <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate block">
+                        <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider block">Asking Price</span>
+                        <span className="text-sm sm:text-base font-black text-[var(--color-text-header)] truncate block">
                           {displayPrice}
                         </span>
                       </div>
-                      <span className="text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-lg font-bold shrink-0 border border-slate-200/60 dark:border-slate-700">
+                      <span className="text-xs bg-[var(--color-bg-tertiary)] text-[var(--color-text-main)] px-2.5 py-1 rounded-lg font-bold shrink-0 border border-[var(--color-border-main)]">
                         {car.year}
                       </span>
                     </div>

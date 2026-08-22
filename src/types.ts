@@ -1,3 +1,5 @@
+export const NO_IMAGE_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-family="sans-serif" font-size="16">No Image Available</text></svg>';
+
 export type { UserProfile } from './lib/dbService';
 
 export type FuelType = 'Petrol' | 'Diesel' | 'Hybrid' | 'Electric';
@@ -30,7 +32,7 @@ export interface Dealer {
   id: string; slug?: string; ownerUid?: string; name: string; avatarLetter?: string; avatarUrl?: string; profilePictureUrl?: string;
   logoUrl?: string; logo?: string; subtitle?: string; location?: string; rating?: number; vehiclesCount?: number; followersCount?: string;
   coverImage?: string; description?: string; about?: string; phone?: string; whatsapp?: string; landline?: string; contactPerson?: string; email?: string;
-  flagshipVerified?: boolean; verified?: boolean; likes_count?: number; likesCount?: number; socials?: SocialMedia; socialAccounts?: SocialAccount[];
+  flagshipVerified?: boolean; verified?: boolean; likes_count?: number; likesCount?: number; socials?: SocialMedia; socialMedia?: SocialMedia; website?: string; socialAccounts?: SocialAccount[];
   activityFeed?: ActivityPost[]; teamMembers?: ShowroomMember[]; theme_choice?: 'Cosmic'|'Bone'|'Emerald'|'Gold'; themeSettings?: ShowroomThemeSettings;
   gallery?: string[]; media?: string[]; tagline?: string; taglineCategory?: 'Professional'|'Dynamic'|'Convenience'|'Short'; updatedAt?: string;
 }

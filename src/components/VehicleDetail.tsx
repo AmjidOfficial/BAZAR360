@@ -262,7 +262,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
       startY += 10;
       const dealerInfo = isPrivateSeller ? [
         ['Seller Category:', 'Individual User / External Seller'],
-        ['Ad Owner Name:', resolvedSellerName],
+        ['Listing Owner:', resolvedSellerName],
         ['Owner Phone:', resolvedSellerPhone],
         ['Owner WhatsApp:', resolvedSellerWhatsApp ? `+${formattedWhatsapp}` : 'N/A'],
         ['Listing URL:', `https://bazar360.online/listings/${car.id}`]
@@ -707,7 +707,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 {isPrivateSeller ? (
                   <div className="space-y-1">
                     <span className="inline-block bg-sky-500/10 text-sky-500 dark:text-sky-400 text-[10px] font-mono font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-sky-500/20">
-                      Individual Seller Ad
+                      Individual Seller Listing
                     </span>
                     <h3 className="text-lg font-black text-[#26344F] dark:text-[var(--color-text-header)] uppercase tracking-tight">{resolvedSellerName}</h3>
                     <p className="text-xs text-[var(--color-text-muted)] flex items-center justify-center gap-1">
@@ -728,7 +728,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
 
                 <div className="pt-3 flex flex-col items-center justify-center gap-2">
                   <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-wider">
-                    {isPrivateSeller ? 'Direct Ad Owner Contact:' : 'Showroom Main Phone:'}
+                    {isPrivateSeller ? 'Direct Seller Contact:' : 'Showroom Main Phone:'}
                   </p>
                   <a 
                     href={`tel:${resolvedSellerPhone}`}

@@ -4,7 +4,6 @@ import { CarListing, Dealer } from '../types';
 import { VehicleCard } from './VehicleCard';
 import AutoChoiceHero from './AutoChoiceHero';
 import { TopBrandsRail } from './homepage/TopBrandsRail';
-import { BrowseByBodyType } from './homepage/BrowseByBodyType';
 import { ShowroomsSection } from './homepage/ShowroomsSection';
 import { ServicesSection } from './homepage/ServicesSection';
 import { TrustSafetySection } from './homepage/TrustSafetySection';
@@ -112,15 +111,17 @@ export function HomeFeed({
       className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-main)] overflow-x-hidden font-sans pb-24"
     >
       {/* 1. Hero & Fast Search Engine */}
-      <AutoChoiceHero 
-        lang={lang} 
-        onSearch={(query) => {
-          if (setSearchQuery) setSearchQuery(query);
-        }} 
-        setTab={setTab} 
-        listings={listings}
-        onSelectListing={onSelectListing}
-      />
+      <div className="w-full text-[var(--color-text-header)]">
+        <AutoChoiceHero 
+          lang={lang} 
+          onSearch={(query) => {
+            if (setSearchQuery) setSearchQuery(query);
+          }} 
+          setTab={setTab} 
+          listings={listings}
+          onSelectListing={onSelectListing}
+        />
+      </div>
 
       {/* 2. Top Brands Rail */}
       <TopBrandsRail
@@ -128,23 +129,6 @@ export function HomeFeed({
         selectedBrand={selectedBrand}
         lang={lang}
       />
-
-      {/* 3. Browse Categories by Body Type (Hidden on Mobile View per requirements) */}
-      <div className="hidden md:block">
-        <BrowseByBodyType 
-          onSelectType={(type) => {
-            if (type === 'all') {
-              setActiveTabFilter('all');
-            } else if (type === 'suv' || type === 'pickup') {
-              setActiveTabFilter('suv');
-            } else {
-              if (setSearchQuery) setSearchQuery(type);
-              setTab('search');
-            }
-          }} 
-          lang={lang} 
-        />
-      </div>
 
       {/* 3. Featured Vehicles (Rendered ONLY when verified/featured listings exist) */}
       {featuredListings.length > 0 && (
