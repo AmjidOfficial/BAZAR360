@@ -105,7 +105,7 @@ export default async function ShowroomPortalPage({ params }: ShowroomPageProps) 
     <main className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-main)] font-sans antialiased">
       {schemas && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }} />}
       <ShowroomHeaderAnimated showroom={showroom} />
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 lg:px-16 py-8 sm:py-12">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <ShowroomFilterableInventory inventory={inventory} />
       </section>
     </main>
