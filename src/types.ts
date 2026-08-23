@@ -1,7 +1,6 @@
-export const NO_IMAGE_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%231e293b"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-family="sans-serif" font-size="16">No Image Available</text></svg>';
+export const NO_IMAGE_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="%23f1f5f9"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%2364748b" font-family="sans-serif" font-size="16">No Image Available</text></svg>';
 
 export type { UserProfile } from './lib/dbService';
-
 export type FuelType = 'Petrol' | 'Diesel' | 'Hybrid' | 'Electric';
 export type Transmission = 'Automatic' | 'Manual';
 export type VehicleCondition = 'New' | 'Used';
@@ -14,6 +13,7 @@ export interface CarListing {
   id: string; title: string; make: string; model: string;
   year?: number; price?: number; mileage?: number; fuelType?: FuelType; transmission?: Transmission;
   imageUrl?: string; verified?: boolean; featured?: boolean; dealerId?: string; showroomId?: string; ownerId?: string;
+  postingType?: 'individual' | 'showroom'; postedOnBehalfOfShowroomId?: string; moderationStatus?: 'draft' | 'pending_review' | 'published' | 'rejected' | 'flagged' | 'archived' | 'deleted';
   description?: string; createdAt?: string; updatedAt?: string; tags?: string[];
   specs?: { color?: string; engineSize?: string; horsepower?: string; horspower?: string; regionalSpecs?: string };
   approved?: boolean; assignedSalesRepId?: string; createdBy?: string; region?: string; location?: string;
@@ -44,27 +44,13 @@ export interface IndustryConfig { activeIndustry:'Automotive'|'Footwear'|'Appare
 export interface VisitorLog { id:string; timestamp:string; visitorId:string; searchQueries:string[]; filterChanges:{make?:string;city?:string;maxPrice?:number;transmission?:string}; deviceMetrics:{viewportWidth:number;viewportHeight:number;userAgent:string}; }
 export interface RegisteredUserLog { id:string; timestamp:string; userId:string; userEmail:string; savedAlerts:string[]; activityType:'profile_view'|'save_car'|'message_sent'|'comparative_eval'; queryDetails?:string; }
 export interface BargainOwnerLog { id:string; timestamp:string; dealerId:string; ownerEmail:string; action:'monetize_analytics'|'inventory_health_update'|'buyer_log_accessed'|'uploaded_listing'; details:string; inventoryCountSnapshot:number; }
-
-/** Compatibility contracts for legacy/admin modules while they are migrated. */
 export interface ServiceBooking { id:string; [key:string]: any; }
-export interface Conversation {
-  id:string;
-  participants?: string[];
-  participantDetails?: Record<string, { name?: string; avatar?: string; role?: string }>;
-  unreadCount?: Record<string, number>;
-  lastMessage?: string;
-  lastMessageTime?: string;
-  relatedListingId?: string;
-  relatedListingTitle?: string;
-  relatedServiceId?: string;
-  [key:string]: any;
-}
+export interface Conversation { id:string; participants?: string[]; participantDetails?: Record<string, { name?: string; avatar?: string; role?: string }>; unreadCount?: Record<string, number>; lastMessage?: string; lastMessageTime?: string; relatedListingId?: string; relatedListingTitle?: string; relatedServiceId?: string; [key:string]: any; }
 export interface DirectMessage { id:string; [key:string]: any; }
 export interface UserNotification { id:string; [key:string]: any; }
 export interface DetailedReview { id:string; author?:string; rating?:number; comment?:string; date?:string; [key:string]: any; }
 export interface SocialPost { id:string; [key:string]: any; }
 export interface SocialComment { id:string; [key:string]: any; }
-
 export interface Lead { id:string; [key:string]: any; }
 export interface SocialMedia { [key:string]: string | undefined; }
 export interface SocialAccount { id?:string; platform:string; url:string; username?:string; [key:string]: any; }
