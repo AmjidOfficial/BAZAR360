@@ -10,6 +10,9 @@ const KNOWN_FAKE_IDS = new Set([
   'honda-civic-oriel-2025',
   'honda-deluxe-125-2014',
   'suzuki-wagon-r-2013',
+  'car-bmw-m4-comp',
+  'yamaha-ybr-125g-2024',
+  'car-porsche-911-carrera'
 ]);
 
 const raw = process.env.FIREBASE_SERVICE_ACCOUNT_BAZAR360;
@@ -25,15 +28,9 @@ for (const databaseId of DATABASE_IDS) {
     const ref = db.collection('listings').doc(id);
     const snap = await ref.get();
     if (!snap.exists) continue;
-    const data = snap.data() || {};
-    const fingerprint = `${data.title ?? ''} ${data.name ?? ''} ${data.sellerName ?? ''} ${data.dealerId ?? ''} ${JSON.stringify(data.images ?? [])}`.toLowerCase();
-    const isKnownSeedShape = id === 'toyota-corolla-grande-2020' || id === 'haval-h6-hev-2024' || id === 'honda-civic-rs-2026' || id === 'honda-civic-oriel-2025' || id === 'honda-deluxe-125-2014' || id === 'suzuki-wagon-r-2013';
-    const hasStockMedia = /unsplash|pexels|pixabay|shutterstock|freepik/.test(fingerprint);
-    if (isKnownSeedShape && hasStockMedia) {
-      await ref.delete();
-      removed++;
-      console.log(`Removed confirmed fake seed listing ${databaseId}/listings/${id}`);
-    }
+    await ref.delete();
+    removed++;
+    console.log(`Removed confirmed fake listing ${databaseId}/listings/${id}`);
   }
 }
-console.log(`Known fake inventory cleanup complete. Removed ${removed} confirmed seed records.`);
+console.log(`Known fake inventory cleanup complete. Removed ${removed} confirmed records.`);
