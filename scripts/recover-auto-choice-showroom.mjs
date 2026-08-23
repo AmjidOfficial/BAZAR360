@@ -4,7 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 const PROJECT_ID = 'bazar360-2026';
 const DATABASE_IDS = ['(default)', 'ai-studio-bazar360online-90162156-c190-465e-a44d-d2853657a61e'];
 const TARGET_DB_ID = '(default)';
-const CANONICAL_ID = 'auto-choice-peshawer';
+const CANONICAL_ID = 'auto-choice-peshawar';
 const SEARCH_TERMS = ['auto choice', 'peshawar'];
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT) throw new Error('Missing FIREBASE_SERVICE_ACCOUNT');
@@ -46,6 +46,7 @@ if (existing.exists && !existing.data()?.recoveredFromDatabase) {
 const restored = clean(source.data);
 await targetRef.set({
   ...restored,
+  id: CANONICAL_ID,
   slug: CANONICAL_ID,
   recoveredAt: admin.firestore.FieldValue.serverTimestamp(),
   recoveredFromDatabase: source.databaseId,
@@ -53,4 +54,4 @@ await targetRef.set({
   recoveredFromId: source.id,
   recoveryMethod: 'historical-firestore-restoration'
 }, { merge: true });
-console.log(`Restored Auto Choice Peshawar showroom from ${source.databaseId}/${source.collectionName}/${source.id} to dealers/${CANONICAL_ID}`);
+console.log(`Restored Auto Choice Peshawar showroom to dealers/${CANONICAL_ID}`);
