@@ -1,0 +1,10 @@
+{
+  "name": "Bazar360.online",
+  "description": "Bazar360.online - Connect, Buy, Sell • Everything You Need. Pakistan's premier direct automotive marketplace, certified showroom hub, and vehicle classifieds ecosystem.",
+  "requestFramePermissions": [
+
+    "publickey-credentials-create",
+    "publickey-credentials-get"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

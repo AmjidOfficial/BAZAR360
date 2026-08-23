@@ -1,0 +1,113 @@
+# =========================================================================
+# BAZAR360.ONLINE - COMPREHENSIVE GITIGNORE TEMPLATE
+# For VS Code, WebStorm, Android Studio, and Gemini AI Studio Workflows
+# =========================================================================
+
+# --- Dependency Registries ---
+node_modules/
+jspm_packages/
+web_modules/
+.pnp/
+.pnp.js
+
+# --- Build, Distribution, and Asset Outputs ---
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.turbo/
+.vercel/
+coverage/
+*.tsbuildinfo
+vite.config.ts.timestamp-*
+vite.config.js.timestamp-*
+
+# --- Environment Secrets and Local Configurations ---
+# Secure all secret credentials while keeping the boilerplate example visible.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+!.env.example
+
+# --- Editor and IDE Configurations ---
+# Microsoft VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+
+# JetBrains (WebStorm, IntelliJ, Android Studio)
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Visual Studio / MSBuild
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.ntvs*
+*.njsproj
+*.sln
+
+# Sublimetext / Textmate
+*.sublime-project
+*.sublime-workspace
+.project
+.content
+.settings/
+
+# --- System and OS Specific Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# --- Diagnostic Logs and Runtime Traces ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# --- Testing and Coverage Reports ---
+coverage/
+.nyc_output/
+.eslintcache
+.stylelintcache
+.prettiercache
+
+# --- Firebase CLI and Local Emulator Storage ---
+.firebase/
+firebase-export/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+firestore.rules.bak
+storage.rules.bak
+database.rules.bak
+
+# --- AI Studio Workspace Internals & Telemetry ---
+.aistudio/
+.aistudio-logs/
+.task-logs/
+.system_generated/
+*.tmp
+*.temp

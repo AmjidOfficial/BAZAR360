@@ -1,0 +1,40 @@
+name: Recover Live User/Admin Inventory
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirm_recovery:
+        description: 'Type RECOVER to write only verified owner/showroom records into listings'
+        required: true
+        default: 'DRY-RUN'
+      dry_run:
+        description: 'Use true for discovery only; false performs safe idempotent recovery'
+        required: true
+        default: 'true'
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run verified live inventory recovery
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            export RECOVERY_DRY_RUN=false
+          else
+            if [ "${{ inputs.dry_run }}" = "false" ] && [ "${{ inputs.confirm_recovery }}" != "RECOVER" ]; then
+              echo 'Recovery requires confirm_recovery=RECOVER.'
+              exit 1
+            fi
+            export RECOVERY_DRY_RUN=${{ inputs.dry_run }}
+          fi
+          node scripts/recover-live-inventory.mjs
