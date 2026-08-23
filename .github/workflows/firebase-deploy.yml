@@ -52,6 +52,11 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
         run: firebase deploy --only firestore:rules --project bazar360-2026 --non-interactive
 
+      - name: Remove confirmed fake production listings
+        env:
+          FIREBASE_SERVICE_ACCOUNT_BAZAR360: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
+        run: node scripts/cleanup-known-fake-inventory.mjs
+
       - name: Recover historical Auto Choice Peshawar showroom
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
