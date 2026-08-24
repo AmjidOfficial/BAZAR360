@@ -35,7 +35,6 @@ export function HomeFeed({ listings, dealers, onSelectListing, onSelectDealer, o
   const [visibleCount, setVisibleCount] = useState(8);
 
   const publishedListings = useMemo(() => (listings || []).filter(car => car?.approved === true && car.isArchived !== true && car.isPaused !== true && car.isSold !== true), [listings]);
-
   const featuredListings = useMemo(() => publishedListings.filter(car => car.featured === true || car.verified === true).slice(0, 4), [publishedListings]);
 
   const filteredListings = useMemo(() => publishedListings.filter(car => {
@@ -52,19 +51,32 @@ export function HomeFeed({ listings, dealers, onSelectListing, onSelectDealer, o
 
   const sortedListings = useMemo(() => activeTabFilter === 'recent' ? [...filteredListings].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()) : filteredListings, [filteredListings, activeTabFilter]);
   const displayedListings = useMemo(() => sortedListings.slice(0, visibleCount), [sortedListings, visibleCount]);
-
   const handleBrandSelect = (brandName: string) => setSelectedBrand(prev => prev === brandName ? '' : brandName);
 
   return (
-    <motion.div variants={pageTransitions} initial="initial" animate="animate" exit="exit" className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-main)] overflow-x-hidden font-sans pb-24">
+    <motion.div variants={pageTransitions} initial="initial" animate="animate" exit="exit" className="b360-editorial-home min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-main)] overflow-x-hidden font-sans pb-24">
       <div className="w-full text-[var(--color-text-header)]">
         <AutoChoiceHero lang={lang} onSearch={query => setSearchQuery?.(query)} setTab={setTab} listings={publishedListings} onSelectListing={onSelectListing} />
       </div>
 
+      <section className="b360-editorial-story" aria-labelledby="b360-editorial-title">
+        <div>
+          <span className="b360-editorial-kicker">Bazar360 / The Auto Choice</span>
+          <h1 id="b360-editorial-title" className="b360-editorial-title">Real vehicles. Real sellers. One premium marketplace.</h1>
+        </div>
+        <div>
+          <p className="b360-editorial-copy">Discover vehicles from the live Bazar360 marketplace, explore verified listings and showrooms, and connect directly with the people behind the vehicle. This section is driven by the same persisted marketplace data shown below.</p>
+          <div className="b360-editorial-stats" aria-label="Live marketplace totals">
+            <div className="b360-editorial-stat"><span className="b360-editorial-stat-value">{publishedListings.length}</span><span className="b360-editorial-stat-label">Live vehicles</span></div>
+            <div className="b360-editorial-stat"><span className="b360-editorial-stat-value">{dealers.length}</span><span className="b360-editorial-stat-label">Showrooms & dealers</span></div>
+          </div>
+        </div>
+      </section>
+
       <TopBrandsRail onSelectBrand={handleBrandSelect} selectedBrand={selectedBrand} lang={lang} />
 
       {featuredListings.length > 0 && (
-        <section className="w-full py-12 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border-main)] bg-[var(--color-bg-primary)]">
+        <section className="b360-editorial-section w-full py-12 px-4 sm:px-6 lg:px-8 bg-[var(--color-bg-primary)]">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
               <div>
@@ -80,7 +92,7 @@ export function HomeFeed({ listings, dealers, onSelectListing, onSelectDealer, o
         </section>
       )}
 
-      <section className="w-full py-16 px-4 sm:px-6 lg:px-8 border-b border-[var(--color-border-main)] bg-[var(--color-bg-secondary)]">
+      <section className="b360-editorial-section w-full py-16 px-4 sm:px-6 lg:px-8 bg-[var(--color-bg-secondary)]">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
@@ -99,6 +111,13 @@ export function HomeFeed({ listings, dealers, onSelectListing, onSelectDealer, o
 
           {visibleCount < sortedListings.length && <div className="mt-12 text-center"><button onClick={() => setVisibleCount(prev => Math.min(prev + 8, sortedListings.length))} className="px-8 py-3 rounded-2xl bg-[var(--color-bg-primary)] hover:bg-white border border-[var(--color-border-main)] text-[var(--color-text-main)] text-xs font-mono font-bold uppercase tracking-wider">Load More Vehicles ({sortedListings.length - visibleCount} Remaining)</button></div>}
         </div>
+      </section>
+
+      <section className="b360-editorial-numbered" aria-label="Why Bazar360">
+        <article><span className="b360-editorial-number">01 / DISCOVER</span><h3>Find the right vehicle</h3><p>Search real marketplace inventory by make, model, price, location and vehicle details.</p></article>
+        <article><span className="b360-editorial-number">02 / EXPLORE</span><h3>See the real story</h3><p>Use vehicle galleries, specifications, seller details and showroom profiles before you decide.</p></article>
+        <article><span className="b360-editorial-number">03 / VERIFY</span><h3>Buy with more confidence</h3><p>Use the platform's real verification and approval signals instead of made-up marketplace claims.</p></article>
+        <article><span className="b360-editorial-number">04 / CONNECT</span><h3>Talk directly</h3><p>Reach sellers, dealers and showrooms through Bazar360's existing contact and lead flows.</p></article>
       </section>
 
       <ShowroomsSection dealers={dealers} onSelectDealer={onSelectDealer || (() => setTab('dealers'))} setTab={setTab} lang={lang} />
