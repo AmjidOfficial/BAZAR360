@@ -9,6 +9,7 @@ import { toast as hotToast } from 'react-hot-toast';
 import { toast as sonnerToast } from 'sonner';
 import './index.css';
 import './components/ResponsiveHardening.css';
+import './components/Bazar360EditorialLuxury.css';
 import './bazar360-reference-theme.css';
 
 if (typeof window !== 'undefined') {
