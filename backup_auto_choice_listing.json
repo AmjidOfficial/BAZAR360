@@ -1,0 +1,101 @@
+{
+  "teamMembers": [
+    {
+      "whatsapp": "923159085086",
+      "name": "Malak Mazhar",
+      "email": "Mazharsouls@gmail.com",
+      "title": "Showroom Partner / Services Lead",
+      "phone": "+923159085086",
+      "id": "tm-1",
+      "active": true
+    },
+    {
+      "name": "M. Nasir Mirza",
+      "id": "tm-3",
+      "whatsapp": "923005908508",
+      "title": "Chief Sales Executive",
+      "phone": "+923005908508"
+    },
+    {
+      "id": "tm-4",
+      "name": "Asfandyar Zafar",
+      "title": "Fleet & Trade Manager",
+      "phone": "+923129085033",
+      "whatsapp": "923129085033"
+    }
+  ],
+  "recoveredFromCollection": "dealers",
+  "vehiclesCount": 12,
+  "likes_count": 3,
+  "images": [
+    "https://res.cloudinary.com/me634xd0/image/upload/v1786266378/bazar360_covers/i9rknevddargoerv3xsq.jpg",
+    "https://res.cloudinary.com/me634xd0/image/upload/v1786719980/bazar360_showroom_logos/gvp4jqzmccmzezbuxkdg.jpg",
+    "https://res.cloudinary.com/me634xd0/image/upload/v1786719980/bazar360_showroom_logos/gvp4jqzmccmzezbuxkdg.jpg",
+    "https://res.cloudinary.com/me634xd0/image/upload/v1786719980/bazar360_showroom_logos/gvp4jqzmccmzezbuxkdg.jpg"
+  ],
+  "businessCards": [
+    {
+      "colorAccent": "emerald",
+      "showroomName": "Auto Choice",
+      "tagline": "100% Verified Quality Vehicles",
+      "websiteUrl": "https://bazar360.online/dealers/auto-choice-peshawar",
+      "slogan": "To buy and Sell New and Used Cars, Jeeps and SUVs",
+      "id": "card-1",
+      "phone2": "+92 346 9085033",
+      "name": "Malak Mazhar",
+      "phone1": "+92 315 9085086",
+      "location": "Alamas Car Village, Ring Road, Peshawar, Pakistan",
+      "role": "Showroom Owner & Head Partner",
+      "email": "Mazharsouls@gmail.com"
+    },
+    {
+      "id": "card-1785737383483",
+      "showroomName": "Auto Choice | The Right Choice",
+      "phone1": "03469085033",
+      "role": "Showroom Owner & Head Partner",
+      "tagline": "Verified High-Performance Automotive Dealer",
+      "location": "Alamas Car Village, Ring Road, Peshawar",
+      "colorAccent": "cyan",
+      "websiteUrl": "https://ais-dev-rz4v7qyxhx63sum4234cnw-54200336767.asia-southeast1.run.app/dealers/auto-choice-peshawar",
+      "slogan": "To buy and Sell New and Used Cars, Jeeps and SUVs",
+      "email": "",
+      "name": "MUHAMMAD NASIR MIRZA",
+      "phone2": ""
+    }
+  ],
+  "avatarLetter": "AC",
+  "name": "Auto Choice - The Right Choice",
+  "coverImage": "https://res.cloudinary.com/me634xd0/image/upload/v1786266378/bazar360_covers/i9rknevddargoerv3xsq.jpg",
+  "location": "Alamas Car Village, Ring Road, Peshawar",
+  "recoveryOwner": "Auto Choice Peshawar",
+  "phone": "+923159085086",
+  "gallery": [
+    "https://www.tiktok.com/@grandautochoice"
+  ],
+  "likesCount": 3,
+  "imageUrl": "https://res.cloudinary.com/me634xd0/image/upload/v1786266378/bazar360_covers/i9rknevddargoerv3xsq.jpg",
+  "createdAt": "2026-07-08T13:40:25.234Z",
+  "socials": {
+    "instagram": "https://instagram.com/autochoice",
+    "tiktok": "https://www.tiktok.com/@grandautochoice",
+    "website": null
+  },
+  "avatarUrl": "https://res.cloudinary.com/me634xd0/image/upload/v1786719980/bazar360_showroom_logos/gvp4jqzmccmzezbuxkdg.jpg",
+  "followersCount": "5.6k",
+  "logoUrl": "https://res.cloudinary.com/me634xd0/image/upload/v1786719980/bazar360_showroom_logos/gvp4jqzmccmzezbuxkdg.jpg",
+  "id": "auto-choice-peshawar",
+  "recoveredAt": {
+    "type": "firestore/timestamp/1.0",
+    "seconds": 1787406846,
+    "nanoseconds": 565000000
+  },
+  "logo": "https://res.cloudinary.com/me634xd0/image/upload/v1786719980/bazar360_showroom_logos/gvp4jqzmccmzezbuxkdg.jpg",
+  "updatedAt": "2026-08-22T13:12:03.888Z",
+  "subtitle": "The Right Choice | To buy and Sell New and Used Cars, Jeeps and SUVs",
+  "recoveredFromId": "auto-choice-peshawar",
+  "whatsapp": "923159085086",
+  "recoveredBy": "production-inventory-recovery",
+  "recoveredFromDatabase": "ai-studio-bazar360online-90162156-c190-465e-a44d-d2853657a61e",
+  "description": "Auto Choice is a premier automotive marketplace specialized in buying and selling immaculate new and used cars, robust jeeps, and luxury premium SUVs. Committed to absolute transparency, nationwide delivery, and personalized customer service all over Pakistan.",
+  "rating": 4.9
+}

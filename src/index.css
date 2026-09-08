@@ -1,0 +1,296 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-bg-primary: var(--color-bg-primary);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+  --color-text-main: var(--color-text-main);
+  --color-text-header: var(--color-text-header);
+  --color-text-muted: var(--color-text-muted);
+  --color-border-main: var(--color-border-main);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-accent-main: var(--color-accent-main);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-subtle: var(--color-accent-subtle);
+  --color-accent-secondary: var(--color-accent-secondary);
+  --color-accent-secondary-hover: var(--color-accent-secondary-hover);
+  --color-accent-secondary-subtle: var(--color-accent-secondary-subtle);
+  --shadow-luxury: var(--shadow-luxury);
+}
+
+:root {
+  /* Premium Light Neutral Theme - Default Base */
+  --color-bg-primary: #F9F9FB;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-tertiary: #F3F4F6;
+  --color-text-main: #374151;
+  --color-text-header: #111827;
+  --color-text-muted: #6B7280;
+  --color-border-main: #E5E7EB;
+  --color-border-subtle: #F3F4F6;
+  --color-accent-main: #EA580C; /* Bazar360 Orange */
+  --color-accent-hover: #C2410C;
+  --color-accent-subtle: rgba(234, 88, 12, 0.05);
+  --color-accent-secondary: #0F172A; /* Deep Navy/Charcoal */
+  --color-accent-secondary-hover: #1E293B;
+  --color-accent-secondary-subtle: rgba(15, 23, 42, 0.05);
+  --shadow-luxury: 0 12px 30px -10px rgba(15, 23, 42, 0.04), 0 4px 12px -5px rgba(15, 23, 42, 0.02);
+}
+
+:root[class~="dark"], .dark, body.dark {
+  /* Premium Secondary Dark Focus */
+  --color-bg-primary: #0F172A;
+  --color-bg-secondary: #1E293B;
+  --color-bg-tertiary: #334155;
+  --color-text-main: #E2E8F0;
+  --color-text-header: #F8FAFC;
+  --color-text-muted: #94A3B8;
+  --color-border-main: #334155;
+  --color-border-subtle: #1E293B;
+  --color-accent-main: #F97316;
+  --color-accent-hover: #EA580C;
+  --color-accent-subtle: rgba(249, 115, 22, 0.12);
+  --color-accent-secondary: #E2E8F0;
+  --color-accent-secondary-hover: #F8FAFC;
+  --color-accent-secondary-subtle: rgba(226, 232, 240, 0.08);
+  --shadow-luxury: 0 20px 40px -15px rgba(0, 0, 0, 0.6);
+}
+
+*, ::before, ::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-main);
+  font-family: var(--font-sans);
+  line-height: 1.62;
+  transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--color-text-header);
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+
+/* ==========================================================================
+   BAZAR360 LUXURY DESIGN TOKENS & ANIMATED UTILITIES
+   ========================================================================== */
+
+/* Luxurious Liquid Gold Gradient Text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #FFB076 0%, #F97316 50%, #EA580C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Soft Brushed Silver-Metallic Gradient Text */
+.text-silver-gradient {
+  background: linear-gradient(135deg, #FFFFFF 0%, #E2E8F0 35%, #94A3B8 70%, #F1F5F9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Elite Liquid Gold Solid Background */
+.bg-brand-metallic {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+}
+
+/* Dual Layer Shimmer Border Card */
+.luxury-card {
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-main);
+  border-radius: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.luxury-card:hover {
+  transform: translateY(-4px) scale(1.005);
+  border-color: var(--color-accent-main);
+  box-shadow: var(--shadow-luxury);
+}
+
+.luxury-card:hover::before {
+  opacity: 1;
+}
+
+/* Premium Liquid Gold Button Action with Micro-Animation */
+.btn-gold-primary {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  border-radius: 0.875rem;
+  padding: 0.75rem 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 18px rgba(249, 115, 22, 0.25);
+  cursor: pointer;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.btn-gold-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
+  filter: brightness(1.15);
+}
+
+.btn-gold-primary:active {
+  transform: scale(0.975);
+}
+
+/* Secondary Button with Double Border Outline */
+.btn-luxury-secondary {
+  background-color: transparent;
+  color: var(--color-text-header);
+  border: 1px solid var(--color-border-main);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-luxury-secondary:hover {
+  background-color: var(--color-accent-subtle);
+  border-color: var(--color-accent-main);
+  color: var(--color-accent-main);
+}
+
+/* Glassmorphism Header */
+.header-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--color-border-main);
+}
+
+:root[class~="dark"] .header-glass, .dark .header-glass, body.dark .header-glass {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--color-border-main);
+}
+
+/* Elegant Scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Liquid Ambient Background Pulses */
+.ambient-glow-mesh {
+  background: radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.04) 0%, transparent 60%),
+              radial-gradient(circle at 90% 80%, rgba(197, 160, 89, 0.05) 0%, transparent 50%);
+}
+
+/* Smooth Entering Keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slow Gentle Floating Effect for Luxury Cars */
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float-slow {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+/* Responsive Touch Target Helper */
+@media (pointer: coarse), (max-width: 768px) {
+  button, a.btn, input, select, textarea {
+    min-height: 44px;
+  }
+}
+
+/* Fluid Responsive Grid for Showroom Inventory */
+#showroom-inventory-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
+  gap: 1.5rem !important; /* Equivalent to Tailwind's gap-6 */
+}
+
+/* Ensure all images or container trigger tags maintain an exact 16/10 aspect ratio to eliminate Cumulative Layout Shift (CLS) */
+#showroom-inventory-grid [data-lightbox-trigger="true"],
+#showroom-inventory-grid .aspect-\[16\/10\],
+#showroom-inventory-grid .aspect-video,
+#showroom-inventory-grid .image-container {
+  aspect-ratio: 16 / 10 !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+/* 3D-Perspective Hover Tilt Effect on Children Cards */
+#showroom-inventory-grid > div,
+#showroom-inventory-grid > a,
+#showroom-inventory-grid .group\/card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transform-style: preserve-3d !important;
+  perspective: 1000px !important;
+}
