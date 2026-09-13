@@ -1,0 +1,57 @@
+/* BAZAR360 V2 visual layer. Import after the existing global stylesheet. */
+:root {
+  --b360-blue: #2563eb;
+  --b360-blue-strong: #1d4ed8;
+  --b360-red: #dc2626;
+  --b360-ink: #0f172a;
+  --b360-surface: #ffffff;
+  --b360-soft: #f1f5f9;
+  --b360-muted: #64748b;
+  --b360-line: #e2e8f0;
+  --b360-radius: 18px;
+  --b360-shadow: 0 8px 28px rgba(15,23,42,.08);
+  --b360-shadow-hover: 0 16px 40px rgba(15,23,42,.14);
+  --b360-ease: cubic-bezier(.2,.8,.2,1);
+}
+.dark {
+  --b360-ink: #f8fafc;
+  --b360-surface: #0f172a;
+  --b360-soft: #172033;
+  --b360-muted: #94a3b8;
+  --b360-line: rgba(148,163,184,.16);
+  --b360-shadow: 0 10px 32px rgba(0,0,0,.28);
+  --b360-shadow-hover: 0 18px 44px rgba(0,0,0,.38);
+}
+
+.b360-shell { width:min(100% - 24px, 1180px); margin-inline:auto; }
+.b360-card { background:var(--b360-surface); border:1px solid var(--b360-line); border-radius:var(--b360-radius); box-shadow:var(--b360-shadow); transition:transform .2s var(--b360-ease), box-shadow .2s var(--b360-ease), border-color .2s var(--b360-ease); }
+.b360-card:hover { transform:translateY(-3px); box-shadow:var(--b360-shadow-hover); border-color:color-mix(in srgb,var(--b360-blue) 35%,var(--b360-line)); }
+.b360-btn { min-height:44px; border-radius:12px; padding:.65rem 1rem; display:inline-flex; align-items:center; justify-content:center; gap:.5rem; font-weight:700; transition:transform .16s var(--b360-ease), background .16s var(--b360-ease), box-shadow .16s var(--b360-ease); }
+.b360-btn:active { transform:scale(.98); }
+.b360-btn-primary { background:var(--b360-blue); color:#fff; box-shadow:0 6px 18px rgba(37,99,235,.22); }
+.b360-btn-primary:hover { background:var(--b360-blue-strong); }
+.b360-btn-secondary { background:var(--b360-soft); color:var(--b360-ink); border:1px solid var(--b360-line); }
+.b360-btn-ghost { background:transparent; color:var(--b360-ink); }
+.b360-avatar { width:44px; height:44px; border-radius:50%; object-fit:cover; border:2px solid var(--b360-surface); box-shadow:0 0 0 1px var(--b360-line); }
+.b360-media { width:100%; aspect-ratio:16/10; object-fit:cover; display:block; background:var(--b360-soft); }
+.b360-glass { background:color-mix(in srgb,var(--b360-surface) 84%,transparent); border:1px solid var(--b360-line); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
+.b360-grid { display:grid; grid-template-columns:repeat(1,minmax(0,1fr)); gap:12px; }
+.b360-grid-2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.b360-grid-auto { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); gap:16px; }
+.b360-row { display:flex; align-items:center; gap:10px; }
+.b360-row-wrap { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.b360-scroll-x { display:flex; gap:10px; overflow-x:auto; overscroll-behavior-inline:contain; scrollbar-width:none; scroll-snap-type:x proximity; }
+.b360-scroll-x::-webkit-scrollbar { display:none; }
+.b360-scroll-x > * { scroll-snap-align:start; flex:0 0 auto; }
+.b360-float { transform:translateZ(0); transition:transform .2s var(--b360-ease); }
+.b360-float:hover { transform:translateY(-4px) translateZ(0); }
+@keyframes b360-rise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes b360-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(37,99,235,.18); } 50% { box-shadow:0 0 0 8px rgba(37,99,235,0); } }
+.b360-enter { animation:b360-rise .24s var(--b360-ease) both; }
+.b360-live { animation:b360-pulse 2.4s ease-in-out infinite; }
+
+@media (min-width:640px) { .b360-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .b360-shell { width:min(100% - 32px,1180px); } }
+@media (min-width:1024px) { .b360-grid { grid-template-columns:repeat(3,minmax(0,1fr)); } .b360-grid-2 { grid-template-columns:repeat(2,minmax(0,1fr)); } .b360-shell { width:min(100% - 48px,1200px); } }
+@media (min-width:1280px) { .b360-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media (pointer:coarse) { .b360-btn, .b360-row button, .b360-row a { min-height:44px; } }
+@media (prefers-reduced-motion:reduce) { .b360-card,.b360-btn,.b360-float { transition:none; } .b360-enter,.b360-live { animation:none; } }
