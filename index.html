@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>BAZAR360.online | Connect, Buy, Sell • Everything You Need</title>
     <meta name="description" content="Pakistan's premier direct automotive network. Connect with certified showrooms, buy verified cars, and sell in 60 seconds on Bazar360.online." />
-    
-    <!-- Social Media Link Share Thumbnails & Open Graph Metadata -->
     <meta property="og:site_name" content="Bazar360.online" />
     <meta property="og:title" content="BAZAR360.online | Connect, Buy, Sell • Everything You Need" />
     <meta property="og:description" content="Pakistan's premier direct automotive network. Connect with certified showrooms, buy verified cars, and sell in 60 seconds on Bazar360.online." />
@@ -18,28 +16,37 @@
     <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:url" content="https://bazar360.online/" />
     <meta property="og:type" content="website" />
-    
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="BAZAR360.online | Connect, Buy, Sell • Everything You Need" />
     <meta name="twitter:description" content="Pakistan's premier direct automotive network. Connect with certified showrooms, buy verified cars, and sell in 60 seconds on Bazar360.online." />
     <meta name="twitter:image" content="https://bazar360.online/bazar360_official_logo.jpg" />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#080C14" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/bazar360_icon.jpg" />
+    <style>
+      .b360-public-nav{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid rgba(165,231,255,.18);border-radius:16px;background:rgba(8,12,20,.88);backdrop-filter:blur(16px);box-shadow:0 12px 35px rgba(0,0,0,.25);font:700 11px/1.2 system-ui,sans-serif}.b360-public-nav a{color:#bbc9cf;text-decoration:none;padding:8px 10px;border-radius:10px;white-space:nowrap}.b360-public-nav a:hover{background:#171f33;color:#a5e7ff}.b360-public-nav .primary{background:#a5e7ff;color:#003543}.b360-wa{position:fixed;right:18px;bottom:20px;z-index:9999;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:#22c55e;color:#06140b;text-decoration:none;font:900 24px/1 system-ui,sans-serif;box-shadow:0 12px 30px rgba(0,0,0,.35);border:2px solid rgba(255,255,255,.55)}.b360-wa span{position:absolute;right:64px;white-space:nowrap;background:#0f172a;color:#fff;padding:7px 9px;border-radius:8px;font:700 11px system-ui,sans-serif;opacity:0;pointer-events:none;transition:.2s}.b360-wa:hover span{opacity:1}@media(max-width:720px){.b360-public-nav{top:auto;bottom:10px;max-width:calc(100vw - 78px);left:10px;right:68px;transform:none;overflow-x:auto;justify-content:flex-start}.b360-public-nav a{padding:8px 9px}.b360-wa{right:10px;bottom:10px}}
+    </style>
     <script>
-      // Global window shim for Node process compatibility
       window.process = window.process || { env: { NODE_ENV: 'development' } };
       window.global = window.global || window;
     </script>
   </head>
   <body class="bg-[#080C14] text-[#F1F5F9] overflow-x-hidden antialiased selection:bg-[#C5A880] selection:text-[#080C14]">
+    <nav class="b360-public-nav" aria-label="Bazar360 public navigation">
+      <a href="/" aria-label="Bazar360 Home">Home</a>
+      <a href="/about.html">About Us</a>
+      <a href="/services.html">Services</a>
+      <a href="/contact.html">Contact</a>
+      <a href="/inventory">Inventory</a>
+      <a href="/dealers">Showrooms</a>
+      <a class="primary" href="/sell">Post Ad</a>
+    </nav>
+    <a class="b360-wa" href="https://wa.me/923149198403?text=Hello%20Bazar360%2C%20I%20need%20help." target="_blank" rel="noopener noreferrer" aria-label="Chat with Bazar360 on WhatsApp">◔<span>WhatsApp Support</span></a>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
