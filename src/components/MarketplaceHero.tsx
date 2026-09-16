@@ -17,9 +17,11 @@ import {
   MapPin,
   Flame,
   RefreshCw,
-  Award
+  Award,
+  Box
 } from 'lucide-react';
 import { CarListing } from '../types';
+import ThreeVehicleHero from './ThreeVehicleHero';
 
 interface MarketplaceHeroProps {
   lang: 'en' | 'ur';
@@ -49,6 +51,7 @@ export default function MarketplaceHero({ lang, onSearch, setTab, listings = [],
   const [selectedPrice, setSelectedPrice] = useState('');
   const [selectedCondition, setSelectedCondition] = useState('');
   const [searchMode, setSearchMode] = useState<'buy' | 'sell' | 'showroom'>('buy');
+  const [heroViewMode, setHeroViewMode] = useState<'3d' | 'live'>('3d');
   
   // Hero Live Inventory Carousel State
   const [selectedHeroIndex, setSelectedHeroIndex] = useState(0);
@@ -355,40 +358,68 @@ export default function MarketplaceHero({ lang, onSearch, setTab, listings = [],
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
             >
-              {/* Header Label Bar above Showcase Card */}
+              {/* Header Label Bar above Showcase Card with 3D / Live Switcher */}
               <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-accent-main)] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[var(--color-accent-main)]"></span>
-                  </span>
-                  <span className="text-xs font-bold text-[var(--color-text-header)] tracking-wider uppercase flex items-center gap-1.5">
-                    <Award size={13} className="text-[var(--color-accent-main)]" />
-                    <span>{isUrdu ? 'لائیو گاڑی شوکیس' : 'Live Showcase Inventory'}</span>
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold text-[var(--color-text-muted)] bg-[var(--color-bg-tertiary)] px-2.5 py-1 rounded-lg border border-[var(--color-border-main)] shadow-sm">
-                    {(() => {
-                      const totalCount = heroVehicles?.length || 0;
-                      const activeNum = totalCount === 0 ? 0 : ((selectedHeroIndex || 0) % totalCount) + 1;
-                      return `${activeNum} / ${totalCount}`;
-                    })()}
-                  </span>
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--color-bg-tertiary)] border border-[var(--color-border-main)]">
                   <button
                     type="button"
-                    onClick={() => setIsAutoplay(!isAutoplay)}
-                    title={isAutoplay ? 'Pause auto rotation' : 'Start auto rotation'}
-                    className="p-1.5 rounded-lg bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-header)] hover:border-[var(--color-accent-main)] transition-all cursor-pointer border border-[var(--color-border-main)]"
+                    onClick={() => setHeroViewMode('3d')}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      heroViewMode === '3d'
+                        ? 'bg-[var(--color-accent-main)] text-slate-950 shadow-md'
+                        : 'text-[var(--color-text-muted)] hover:text-white'
+                    }`}
                   >
-                    {isAutoplay ? <Pause size={12} /> : <Play size={12} />}
+                    <Box size={13} />
+                    <span>3D Telemetry</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setHeroViewMode('live')}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      heroViewMode === 'live'
+                        ? 'bg-[var(--color-accent-main)] text-slate-950 shadow-md'
+                        : 'text-[var(--color-text-muted)] hover:text-white'
+                    }`}
+                  >
+                    <Award size={13} />
+                    <span>Live Stock ({heroVehicles.length})</span>
                   </button>
                 </div>
+
+                {heroViewMode === 'live' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-[var(--color-text-muted)] bg-[var(--color-bg-tertiary)] px-2.5 py-1 rounded-lg border border-[var(--color-border-main)] shadow-sm">
+                      {(() => {
+                        const totalCount = heroVehicles?.length || 0;
+                        const activeNum = totalCount === 0 ? 0 : ((selectedHeroIndex || 0) % totalCount) + 1;
+                        return `${activeNum} / ${totalCount}`;
+                      })()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAutoplay(!isAutoplay)}
+                      title={isAutoplay ? 'Pause auto rotation' : 'Start auto rotation'}
+                      className="p-1.5 rounded-lg bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] hover:text-[var(--color-text-header)] hover:border-[var(--color-accent-main)] transition-all cursor-pointer border border-[var(--color-border-main)]"
+                    >
+                      {isAutoplay ? <Pause size={12} /> : <Play size={12} />}
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* Main Showcase Vehicle Card */}
-              {heroVehicles.length === 0 ? (
+              {/* 3D Supercar Telemetry Mode */}
+              {heroViewMode === '3d' && (
+                <div className="w-full">
+                  <ThreeVehicleHero lang={lang} onExploreInventory={() => setTab('inventory')} />
+                </div>
+              )}
+
+              {/* Main Showcase Vehicle Card (Live Inventory Mode) */}
+              {heroViewMode === 'live' && (
+                <>
+                  {heroVehicles.length === 0 ? (
                 <div className="relative w-full rounded-2xl overflow-hidden border border-[var(--color-border-main)] shadow-2xl bg-[var(--color-bg-secondary)] p-8 text-center space-y-4">
                   <div className="w-12 h-12 rounded-full bg-[var(--color-accent-subtle)] border border-[var(--color-accent-main)] flex items-center justify-center mx-auto text-[var(--color-accent-main)]">
                     <Car size={24} />
@@ -635,6 +666,8 @@ export default function MarketplaceHero({ lang, onSearch, setTab, listings = [],
                 )}
               </div>
               ) : null}
+              </>
+              )}
             </div>
 
           </div>

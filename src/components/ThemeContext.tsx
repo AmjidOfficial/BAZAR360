@@ -17,7 +17,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeType>(() => {
     const saved = localStorage.getItem('bazar360_theme') as ThemeType;
     if (saved === 'light' || saved === 'dark') return saved;
-    return 'light'; // Default to light premium theme
+    return 'dark'; // Default to Stitch Elite dark cosmic theme
   });
 
   const toggleTheme = () => {

@@ -719,7 +719,49 @@ export default function ShowroomMiniSite({
                     </div>
                   </div>
 
+                    {/* Team Members */}
+                    {(() => {
+                      const DEFAULT_TEAM = [
+                        { name: 'Malak Mazhar', title: 'Director / Chief Partner', phone: '0315-9085086', avatar: 'M', color: '#00D2FF' },
+                        { name: 'Nasir Mirza', title: 'Senior Sales Executive', phone: '0346-9085033', avatar: 'N', color: '#FFB95F' },
+                        { name: 'Asfandyar Zafar', title: 'Vehicle Inspection Head', phone: '', avatar: 'A', color: '#10b981' },
+                      ];
+                      const team = (dealer as any).teamMembers?.length > 0 ? (dealer as any).teamMembers : DEFAULT_TEAM;
+                      return (
+                        <div className="space-y-6 pt-6 border-t border-[var(--color-border-main)]">
+                          <h2 className="text-2xl font-black text-[var(--color-text-main)] font-display uppercase tracking-tight">
+                            Meet Our Team
+                          </h2>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            {team.map((member: any, idx: number) => (
+                              <div key={idx} className="bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-3xl p-6 flex flex-col items-center text-center space-y-3 shadow-xl relative overflow-hidden group hover:border-[var(--color-accent-main)]/40 transition-all">
+                                <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-accent-main)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg"
+                                  style={{ background: `linear-gradient(135deg, ${member.color}30, ${member.color}10)`, border: `1.5px solid ${member.color}40` }}>
+                                  <span style={{ color: member.color }}>{member.avatar}</span>
+                                </div>
+                                <div>
+                                  <p className="font-black text-sm text-[var(--color-text-main)] font-sans uppercase tracking-wide">{member.name}</p>
+                                  <p className="text-[10px] font-mono text-[var(--color-text-muted)] mt-0.5">{member.title}</p>
+                                </div>
+                                {member.phone && (
+                                  <a href={`https://wa.me/${member.phone.replace(/[^\d]/g, '').replace(/^0/, '92')}`}
+                                    target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer uppercase tracking-wide"
+                                  >
+                                    <MessageCircle size={12} />
+                                    WhatsApp
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Direct Contact Form Section */}
+
                     <div className="pt-6 border-t border-[var(--color-border-main)] space-y-8">
                       <div className="text-center max-w-2xl mx-auto space-y-2">
                         <h2 className="text-3xl font-black text-[var(--color-text-main)] font-display uppercase tracking-tight">Get In Touch</h2>

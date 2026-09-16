@@ -19,7 +19,8 @@ import {
   Filter,
   Check,
   ArrowDownUp,
-  WifiOff
+  WifiOff,
+  Share2
 } from 'lucide-react';
 import { CarListing, Dealer } from '../types';
 import { VehicleCard } from './VehicleCard';
@@ -93,27 +94,78 @@ export default function SearchExplorerView({
   dbLoading = false
 }: SearchExplorerViewProps) {
   
-  // Filter States
-  const [localQuery, setLocalQuery] = useState(searchQuery);
-  const [filterVehicleType, setFilterVehicleType] = useState('All'); // 'All' | 'car' | 'motorcycle' | 'commercial'
-  const [filterMake, setFilterMake] = useState('All');
-  const [filterModel, setFilterModel] = useState('');
-  const [filterVariant, setFilterVariant] = useState('');
-  const [filterBodyCategory, setFilterBodyCategory] = useState('All');
-  const [filterCity, setFilterCity] = useState('All');
-  const [filterTransmission, setFilterTransmission] = useState('All');
-  const [filterFuel, setFilterFuel] = useState('All');
-  const [filterCondition, setFilterCondition] = useState('All');
-  const [filterAssembly, setFilterAssembly] = useState('All');
-  const [filterSellerType, setFilterSellerType] = useState('All'); // 'All' | 'Individual' | 'Showroom'
-  const [priceMin, setPriceMin] = useState<number>(0);
-  const [priceMax, setPriceMax] = useState<number>(120000000); // 12 Crore Max default
-  const [yearMin, setYearMin] = useState<number>(2000);
-  const [yearMax, setYearMax] = useState<number>(2026);
+  // ─── URL Search Param helpers ───────────────────────────────────────────────
+  const getUrlParams = () => new URLSearchParams(window.location.search);
+
+  const readParam = (params: URLSearchParams, key: string, fallback: string) =>
+    params.get(key) || fallback;
+
+  const readNumParam = (params: URLSearchParams, key: string, fallback: number) => {
+    const v = params.get(key);
+    if (!v) return fallback;
+    const n = Number(v);
+    return isNaN(n) ? fallback : n;
+  };
+
+  // Initialise filter states from URL on first mount
+  const _initialParams = getUrlParams();
+
+  // Filter States (initialised from URL params)
+  const [localQuery, setLocalQuery] = useState(readParam(_initialParams, 'q', searchQuery));
+  const [filterVehicleType, setFilterVehicleType] = useState(readParam(_initialParams, 'type', 'All'));
+  const [filterMake, setFilterMake] = useState(readParam(_initialParams, 'make', 'All'));
+  const [filterModel, setFilterModel] = useState(readParam(_initialParams, 'model', ''));
+  const [filterVariant, setFilterVariant] = useState(readParam(_initialParams, 'variant', ''));
+  const [filterBodyCategory, setFilterBodyCategory] = useState(readParam(_initialParams, 'body', 'All'));
+  const [filterCity, setFilterCity] = useState(readParam(_initialParams, 'city', 'All'));
+  const [filterTransmission, setFilterTransmission] = useState(readParam(_initialParams, 'transmission', 'All'));
+  const [filterFuel, setFilterFuel] = useState(readParam(_initialParams, 'fuel', 'All'));
+  const [filterCondition, setFilterCondition] = useState(readParam(_initialParams, 'condition', 'All'));
+  const [filterAssembly, setFilterAssembly] = useState(readParam(_initialParams, 'assembly', 'All'));
+  const [filterSellerType, setFilterSellerType] = useState(readParam(_initialParams, 'seller', 'All'));
+  const [priceMin, setPriceMin] = useState<number>(readNumParam(_initialParams, 'priceMin', 0));
+  const [priceMax, setPriceMax] = useState<number>(readNumParam(_initialParams, 'priceMax', 120000000));
+  const [yearMin, setYearMin] = useState<number>(readNumParam(_initialParams, 'yearMin', 2000));
+  const [yearMax, setYearMax] = useState<number>(readNumParam(_initialParams, 'yearMax', 2026));
   const [filterFavorites, setFilterFavorites] = useState(false);
   const [filterRecentViews, setFilterRecentViews] = useState(false);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [sortBy, setSortBy] = useState('Newest');
+  const [sortBy, setSortBy] = useState(readParam(_initialParams, 'sort', 'Newest'));
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  // ─── Sync filter state → URL (debounced via useEffect) ────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (localQuery) params.set('q', localQuery);
+    if (filterVehicleType !== 'All') params.set('type', filterVehicleType);
+    if (filterMake !== 'All') params.set('make', filterMake);
+    if (filterModel) params.set('model', filterModel);
+    if (filterVariant) params.set('variant', filterVariant);
+    if (filterBodyCategory !== 'All') params.set('body', filterBodyCategory);
+    if (filterCity !== 'All') params.set('city', filterCity);
+    if (filterTransmission !== 'All') params.set('transmission', filterTransmission);
+    if (filterFuel !== 'All') params.set('fuel', filterFuel);
+    if (filterCondition !== 'All') params.set('condition', filterCondition);
+    if (filterAssembly !== 'All') params.set('assembly', filterAssembly);
+    if (filterSellerType !== 'All') params.set('seller', filterSellerType);
+    if (priceMin > 0) params.set('priceMin', String(priceMin));
+    if (priceMax < 120000000) params.set('priceMax', String(priceMax));
+    if (yearMin > 2000) params.set('yearMin', String(yearMin));
+    if (yearMax < 2026) params.set('yearMax', String(yearMax));
+    if (sortBy !== 'Newest') params.set('sort', sortBy);
+    const search = params.toString();
+    const newUrl = `${window.location.pathname}${search ? '?' + search : ''}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [localQuery, filterVehicleType, filterMake, filterModel, filterVariant, filterBodyCategory, filterCity, filterTransmission, filterFuel, filterCondition, filterAssembly, filterSellerType, priceMin, priceMax, yearMin, yearMax, sortBy]);
+
+  // ─── Copy Shareable Link ──────────────────────────────────────────────────
+  const handleCopyShareLink = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    });
+  };
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -289,6 +341,8 @@ export default function SearchExplorerView({
     setYearMax(2026);
     setFilterFavorites(false);
     setFilterRecentViews(false);
+    // Clear URL params
+    window.history.replaceState(null, '', window.location.pathname);
   };
 
   // Helper to match body category
@@ -981,7 +1035,22 @@ export default function SearchExplorerView({
             <span>
               {t.showing} <strong className="text-[#0F172A] font-bold">{sortedVehicles.length}</strong> {t.results}
             </span>
-            <span className="hidden sm:inline">Bazar360 Verified Marketplace</span>
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline">Bazar360 Verified Marketplace</span>
+              {/* Share Link Button */}
+              <button
+                onClick={handleCopyShareLink}
+                title="Copy shareable search link"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer ${
+                  linkCopied
+                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                    : 'bg-[#F8FAFC] border-[#E2E8F0] text-[#007979] hover:bg-[#007979]/10'
+                }`}
+              >
+                {linkCopied ? <Check size={12} /> : <Share2 size={12} />}
+                <span className="normal-case">{linkCopied ? 'Copied!' : 'Share'}</span>
+              </button>
+            </div>
           </div>
 
           {dbLoading ? (

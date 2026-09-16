@@ -5,12 +5,13 @@ import { Helmet } from 'react-helmet-async';
 import { jsPDF } from 'jspdf';
 import { CarListing, Dealer } from '../types';
 import { useCurrencyMode } from '../lib/currency';
-import { ArrowLeft, Image as ImageIcon, MapPin, Share2, ShieldCheck, CheckCircle2, Gauge, Calendar, Droplet, Cog, Download, Phone, MessageCircle, Zap, Camera } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, MapPin, Share2, ShieldCheck, CheckCircle2, Gauge, Calendar, Droplet, Cog, Download, Phone, MessageCircle, Zap, Camera, RotateCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Lightbox } from './Lightbox';
 import { dbFetchListingById } from '../lib/dbService';
 import VehicleARInspectorModal from './VehicleARInspectorModal';
+import Vehicle360Viewer from './Vehicle360Viewer';
 
 interface VehicleDetailProps {
   car: CarListing;
@@ -78,6 +79,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [activeMedia, setActiveMedia] = useState<{ type: 'image' | 'video'; url: string } | null>(null);
   const [showARModal, setShowARModal] = useState<boolean>(false);
+  const [show360Modal, setShow360Modal] = useState<boolean>(false);
 
   useEffect(() => {
     setActiveMedia({
@@ -338,12 +340,20 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
           
           <div className="flex items-center gap-2 sm:gap-3">
             <button 
+              onClick={() => setShow360Modal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#00D2FF] to-[#3B82F6] hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-md shadow-cyan-500/20 cursor-pointer"
+            >
+              <RotateCw size={14} className="stroke-[2.5]" />
+              <span className="hidden sm:inline">360° Inspection</span>
+              <span className="sm:hidden">360°</span>
+            </button>
+            <button 
               onClick={() => setShowARModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-md shadow-cyan-500/20 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] hover:border-[var(--color-accent-main)] text-[var(--color-text-header)] font-bold text-xs uppercase tracking-wider transition cursor-pointer"
             >
               <Camera size={14} />
-              <span className="hidden sm:inline">Inspect AR Dimensions</span>
-              <span className="sm:hidden">AR Frame</span>
+              <span className="hidden sm:inline">AR View</span>
+              <span className="sm:hidden">AR</span>
             </button>
             <button 
               onClick={handleDownloadFactSheet}
@@ -979,6 +989,20 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
           car={car}
           onClose={() => setShowARModal(false)}
         />
+      )}
+
+      {show360Modal && (
+        <div className="fixed inset-0 z-[120] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fade-in">
+          <div className="max-w-4xl w-full relative">
+            <button
+              onClick={() => setShow360Modal(false)}
+              className="absolute -top-9 right-1 text-white hover:text-[#00D2FF] font-mono text-xs uppercase tracking-widest flex items-center gap-1 cursor-pointer"
+            >
+              ✕ Close 360° Inspection
+            </button>
+            <Vehicle360Viewer car={car} onClose={() => setShow360Modal(false)} />
+          </div>
+        </div>
       )}
     </motion.div>
   );

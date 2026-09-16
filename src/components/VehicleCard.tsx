@@ -349,31 +349,32 @@ export function VehicleCard({
         </div>
 
         {/* Price & Actions Row */}
-        <div className="pt-3 flex flex-col gap-1.5 mt-auto">
+        <div className="pt-3 flex flex-col gap-2 mt-auto">
           <div className="flex items-center justify-between gap-1 w-full">
-            <span className="text-sm sm:text-base font-extrabold text-[var(--color-accent-main)] font-sans leading-tight whitespace-nowrap truncate">
-              {formatPrice(car.price)}
-            </span>
+            <div className="min-w-0">
+              <span className="text-sm sm:text-base font-extrabold text-[var(--color-accent-main)] font-sans leading-tight whitespace-nowrap block truncate">
+                {formatPrice(car.price)}
+              </span>
+              <span className="text-[9px] text-[var(--color-text-muted)] font-mono block truncate">
+                PKR {car.price ? car.price.toLocaleString() : 'Call'}
+              </span>
+            </div>
+
             <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                title={isExpanded ? 'Collapse Specs' : 'Expand Specs'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsExpanded(!isExpanded);
-                }}
-                className="px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-main)] text-[var(--color-text-muted)] hover:text-[var(--color-text-header)] cursor-pointer flex items-center gap-0.5 border border-[var(--color-border-main)]"
+              <a
+                href={`https://wa.me/${(car.sellerWhatsApp || car.sellerPhone || car.phone || '923159085086').replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I am inquiring about the ${car.year} ${car.make} ${car.model} listed on Bazar360.online.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="px-2.5 py-1.5 bg-[#25D366]/15 hover:bg-[#25D366] text-[#25D366] hover:text-slate-950 border border-[#25D366]/30 font-bold text-[10px] rounded-xl transition-all flex items-center gap-1 shadow-sm active:scale-95"
+                title="Direct WhatsApp Chat"
               >
-                <span>Specs</span>
-                <ChevronDown 
-                  size={10} 
-                  className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : 'rotate-0'}`} 
-                />
-              </button>
+                <span>WhatsApp</span>
+              </a>
               <button
                 type="button"
                 onClick={() => onSelect(car)}
-                className="btn-gold-primary py-1 px-3 text-[9px] rounded-lg"
+                className="px-3 py-1.5 bg-[var(--color-accent-main)] hover:bg-[var(--color-accent-hover)] text-slate-950 font-sans font-bold text-[10px] rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-1 cursor-pointer"
               >
                 <span>View</span>
                 <ArrowUpRight size={11} />

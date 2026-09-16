@@ -2000,28 +2000,6 @@ function App() {
           ? 'pt-0 px-0 md:px-0 max-w-full' 
           : `section-container ${currentCategory === 'auto' ? 'pt-32' : 'pt-24'}`
       }`}>
-        
-        {activeIndustry !== 'Automotive' && (
-          <div className="mb-6 bg-bg-primary/90 backdrop-blur-md border border-[var(--color-accent-main)]/30 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 animate-scale-fade shadow-xl">
-            <div className="space-y-1">
-              <span className="text-[9px] font-mono font-black text-sky-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 uppercase tracking-widest">
-                Dynamic Multi-Tenant Partition Activated
-              </span>
-              <h3 className="text-sm font-black text-[var(--color-text-header)] uppercase tracking-tight">
-                🛍️ BAZAR360 {activeIndustry} Showcase Channel (Demo Sandbox)
-              </h3>
-              <p className="text-xs text-[var(--color-text-muted)] leading-relaxed max-w-2xl">
-                You are currently viewing the horizontal {activeIndustry} expansion sector. BAZAR360 dynamically adapts its interface parameters, catalog filters, and pricing indices for this domain. The core system remains verified on 'Bazar360'.
-              </p>
-            </div>
-            <button
-              onClick={() => setActiveIndustry('Automotive')}
-              className="bg-emerald-600 hover:bg-[var(--color-accent-hover)] active:scale-95 duration-150 text-slate-950 font-mono font-black text-[10px] uppercase py-2.5 px-4.5 rounded-xl block shrink-0 tracking-widest cursor-pointer"
-            >
-              Reset to Bazar360
-            </button>
-          </div>
-        )}
 
         {dbLoading && currentTab !== 'home' && currentTab !== 'inventory' && currentTab !== 'search' ? (
           <SkeletonLoader />

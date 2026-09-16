@@ -189,7 +189,7 @@ export function HomeFeed({
                   onClick={() => setCategoryFilter('all')}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     categoryFilter === 'all'
-                      ? 'bg-[var(--color-accent-main)] text-white shadow-xs'
+                      ? 'bg-[var(--color-accent-main)] text-slate-950 shadow-xs font-extrabold'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-header)]'
                   }`}
                 >
@@ -199,12 +199,29 @@ export function HomeFeed({
                   onClick={() => setCategoryFilter('suv')}
                   className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
                     categoryFilter === 'suv'
-                      ? 'bg-[var(--color-accent-main)] text-white shadow-xs'
+                      ? 'bg-[var(--color-accent-main)] text-slate-950 shadow-xs font-extrabold'
                       : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-header)]'
                   }`}
                 >
                   SUVs & 4x4
                 </button>
+              </div>
+
+              {/* City Filter Pills */}
+              <div className="flex items-center p-1 bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border-main)] overflow-x-auto no-scrollbar">
+                {['', 'Peshawar', 'Islamabad', 'Rawalpindi', 'Lahore', 'Karachi'].map((c) => (
+                  <button
+                    key={c || 'all'}
+                    onClick={() => setSelectedCity(c)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+                      selectedCity === c
+                        ? 'bg-[var(--color-accent-main)] text-slate-950 shadow-xs font-extrabold'
+                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-header)]'
+                    }`}
+                  >
+                    {c || 'All Cities'}
+                  </button>
+                ))}
               </div>
 
               {/* Toggle Chips (Additive Filters & Sort) */}
