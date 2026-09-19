@@ -7,6 +7,7 @@ import { useTheme } from './ThemeContext';
 import { useCurrencyMode } from '../lib/currency';
 import { toast } from 'react-hot-toast';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { isAdminUser } from '../lib/permissions';
 
 interface RoleTailoredSettingsProps {
   currentUser: UserProfile;
@@ -23,10 +24,7 @@ export function RoleTailoredSettings({
   const { currencyMode, changeCurrencyMode } = useCurrencyMode();
 
   // Role detection
-  const isFounderOrAdmin = 
-    currentUser.role === 'Admin' || 
-    currentUser.role === 'Super Admin' || 
-    ['amjid.bisconni@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'].includes(currentUser.email?.toLowerCase() || '');
+  const isFounderOrAdmin = isAdminUser(currentUser);
 
   const isShowroomOwner = currentUser.role === 'Showroom Owner' || currentUser.role === 'Dealer';
 

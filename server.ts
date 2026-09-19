@@ -12,6 +12,28 @@ import firebaseConfig from "./firebase-applet-config.json";
 
 dotenv.config();
 
+// Server-side source of truth for administrator identity. Mirrors src/lib/permissions.ts.
+// Verified against the ID token email claim, which cannot be spoofed by the client.
+const ADMIN_EMAILS = [
+  'amjid.bisconni@gmail.com',
+  'amjid.psh@gmail.com',
+  'mazharsouls@gmail.com',
+  'khattakghani94@gmail.com'
+];
+
+// Roles a user may assign to themselves during self-registration.
+const SELF_ASSIGNABLE_ROLES = [
+  'Buyer',
+  'Individual User',
+  'Private Seller',
+  'Dealer',
+  'Showroom Owner',
+  'Verified Seller',
+  'Sales Rep',
+  'Sales Representative',
+  'Marketing'
+];
+
 // Initialize Firebase Admin SDK using applet configurations
 if (getApps().length === 0) {
   try {
@@ -408,39 +430,64 @@ Your task is to translate any incoming text block beautifully and accurately int
   });
 
   // API 5: Secure Registration & Role Provisioning via Admin SDK
-  app.post("/api/user/register", async (req, res) => {
+  // Identity and role are derived from the verified ID token; request body is never trusted for either.
+  app.post("/api/user/register", requireAuth, async (req, res) => {
     try {
       const { profile, showroom } = req.body;
       if (!profile || !profile.uid) {
         return res.status(400).json({ success: false, error: "Profile payload with valid UID is required." });
       }
 
-      console.log(`[Admin SDK] Securely registering user profile: ${profile.uid} with role: ${profile.role}`);
+      const caller = (req as any).user;
+      const uid = caller.uid;
+
+      if (profile.uid !== uid) {
+        console.warn(`[Admin SDK] Rejected registration for foreign UID: token=${uid} body=${profile.uid}`);
+        return res.status(403).json({ success: false, error: "Profile UID does not match the authenticated user." });
+      }
+
+      const requestedRole = String(profile.role || 'Individual User');
+      const callerEmail = String(caller.email || '').toLowerCase();
+      const callerIsAdmin = caller.email_verified === true && ADMIN_EMAILS.includes(callerEmail);
+
+      if (!SELF_ASSIGNABLE_ROLES.includes(requestedRole) && !(callerIsAdmin && (requestedRole === 'Admin' || requestedRole === 'Super Admin'))) {
+        console.warn(`[Admin SDK] Rejected role self-assignment: uid=${uid} role=${requestedRole}`);
+        return res.status(403).json({ success: false, error: "This role cannot be self-assigned." });
+      }
+
+      console.log(`[Admin SDK] Securely registering user profile: ${uid} with role: ${requestedRole}`);
       const dbAdmin = getDbAdmin();
       const timeStr = new Date().toISOString();
 
-      // Ensure updatedAt is set
+      // Ensure uid and updatedAt reflect the verified caller
       const profilePayload = {
         ...profile,
+        uid,
+        role: requestedRole,
         updatedAt: timeStr
       };
 
       // Save to /users
-      await dbAdmin.collection('users').doc(profile.uid).set(profilePayload, { merge: true });
+      await dbAdmin.collection('users').doc(uid).set(profilePayload, { merge: true });
 
       // Save to /profiles (split-collection personal details)
-      await dbAdmin.collection('profiles').doc(profile.uid).set({
-        uid: profile.uid,
+      await dbAdmin.collection('profiles').doc(uid).set({
+        uid,
         displayName: profile.displayName || profile.name || 'Anonymous User',
         createdAt: profile.createdAt || timeStr,
         updatedAt: timeStr
       }, { merge: true });
 
-      // If showroom payload is provided, register the dealership
+      // If showroom payload is provided, register the dealership owned by the verified caller
       if (showroom && showroom.id) {
+        if (showroom.ownerUid && showroom.ownerUid !== uid) {
+          console.warn(`[Admin SDK] Rejected showroom for foreign ownerUid: token=${uid} body=${showroom.ownerUid}`);
+          return res.status(403).json({ success: false, error: "Showroom owner does not match the authenticated user." });
+        }
         console.log(`[Admin SDK] Securely registering showroom: ${showroom.id}`);
         await dbAdmin.collection('dealers').doc(showroom.id).set({
           ...showroom,
+          ownerUid: uid,
           createdAt: showroom.createdAt || timeStr,
           updatedAt: timeStr
         }, { merge: true });
@@ -448,10 +495,10 @@ Your task is to translate any incoming text block beautifully and accurately int
 
       // Set Firebase Custom Claims for role-based access
       try {
-        await getAuth().setCustomUserClaims(profile.uid, { role: profile.role });
-        console.log(`[Admin SDK] Successfully set custom claims for user ${profile.uid}: role=${profile.role}`);
+        await getAuth().setCustomUserClaims(uid, { role: requestedRole });
+        console.log(`[Admin SDK] Successfully set custom claims for user ${uid}: role=${requestedRole}`);
       } catch (claimError) {
-        console.error(`[Admin SDK] Failed to set custom claims for ${profile.uid}:`, claimError);
+        console.error(`[Admin SDK] Failed to set custom claims for ${uid}:`, claimError);
         // We don't fail the registration if setting claims fails, but we log it
       }
 
@@ -672,6 +719,29 @@ Your task is to translate any incoming text block beautifully and accurately int
       const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || "me634xd0";
       const uploadPreset = process.env.VITE_CLOUDINARY_UPLOAD_PRESET || "bazar360_upload";
       const apiKey = process.env.VITE_CLOUDINARY_API_KEY || "165721653511945";
+      // Once this is set the proxy signs its uploads, which is what allows the Cloudinary
+      // preset to be switched from "unsigned" to "signed" and stop anonymous uploads.
+      // While it is unset the request stays unsigned, exactly as before.
+      const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+      const uploadParams: Record<string, string> = {
+        upload_preset: uploadPreset,
+        folder: folder || "bazar360/uploads"
+      };
+      if (tags) {
+        uploadParams.tags = Array.isArray(tags) ? tags.join(',') : String(tags);
+      }
+
+      const uploadBody: Record<string, any> = { file: fileData, api_key: apiKey, ...uploadParams };
+      if (apiSecret) {
+        uploadParams.timestamp = String(Math.floor(Date.now() / 1000));
+        Object.assign(uploadBody, uploadParams);
+        const toSign = Object.keys(uploadParams)
+          .sort()
+          .map((key) => `${key}=${uploadParams[key]}`)
+          .join('&');
+        uploadBody.signature = crypto.createHash('sha1').update(toSign + apiSecret).digest('hex');
+      }
 
       const cloudUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
       const response = await fetch(cloudUrl, {
@@ -679,13 +749,7 @@ Your task is to translate any incoming text block beautifully and accurately int
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          file: fileData,
-          upload_preset: uploadPreset,
-          api_key: apiKey,
-          folder: folder || "bazar360/uploads",
-          ...(tags ? { tags } : {})
-        }),
+        body: JSON.stringify(uploadBody),
       });
 
       if (!response.ok) {

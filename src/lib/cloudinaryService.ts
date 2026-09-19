@@ -18,6 +18,19 @@ export interface CloudinaryUploadResult {
   bytes: number;
 }
 
+function withStatus(error: Error, status: number): Error {
+  (error as any).status = status;
+  return error;
+}
+
+/**
+ * A 4xx from Cloudinary means the request itself was rejected (wrong credentials,
+ * a preset that now requires signing, a file it refuses) — retrying is pointless.
+ */
+function isNonRetryableUploadError(error: any): boolean {
+  return error?.status >= 400 && error?.status < 500;
+}
+
 /**
  * Validate image file size before starting upload or compression.
  * Rejects files larger than maxSizeKB (default 10240KB / 10MB).
@@ -215,9 +228,9 @@ export async function uploadToCloudinary(
         } else {
           try {
             const errRes = JSON.parse(xhr.responseText);
-            reject(new Error(errRes.error?.message || `Cloudinary upload error (${xhr.status})`));
+            reject(withStatus(new Error(errRes.error?.message || `Cloudinary upload error (${xhr.status})`), xhr.status));
           } catch {
-            reject(new Error(`Cloudinary upload failed with status ${xhr.status}`));
+            reject(withStatus(new Error(`Cloudinary upload failed with status ${xhr.status}`), xhr.status));
           }
         }
       };
@@ -248,6 +261,10 @@ export async function uploadToCloudinary(
       return await attemptUpload(attempt);
     } catch (err: any) {
       lastError = err;
+      if (isNonRetryableUploadError(err)) {
+        console.warn('[Cloudinary] Direct upload rejected, routing through server proxy:', err.message || err);
+        break;
+      }
       console.warn(`[Cloudinary] Client upload attempt ${attempt} failed:`, err.message || err);
       if (attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 1000; // 2s, 4s, etc.

@@ -11,6 +11,7 @@ import {
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider, facebookProvider } from '../firebase';
 import { UserProfile, dbSaveUserProfile, dbFetchUserProfile } from '../lib/dbService';
+import { isAdminEmail } from '../lib/permissions';
 
 export const getFriendlyAuthErrorMessage = (errorMsg: string, lang: 'en' | 'ur' = 'en'): string => {
   const isUrdu = lang === 'ur';
@@ -145,8 +146,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
       const fUser = result.user;
       
       let profile = await dbFetchUserProfile(fUser.uid);
-      const authorizedAdmins = ['amjid.bisconni@gmail.com', 'amjid.psh@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'];
-      const isAdminEmail = fUser.email && authorizedAdmins.includes(fUser.email.toLowerCase());
       const isMalakEmail = fUser.email && fUser.email.toLowerCase() === 'mazharsouls@gmail.com';
 
       if (!profile) {
@@ -156,7 +155,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
           displayName: isMalakEmail ? 'Malak Mazhar' : (fUser.displayName || 'Guest User'),
           phoneNumber: isMalakEmail ? '+923159085086' : (fUser.phoneNumber || ''),
           phoneVerified: isMalakEmail || !!fUser.phoneNumber,
-          role: isMalakEmail ? 'Admin' : (isAdminEmail ? 'Admin' : 'Buyer'),
+          role: isAdminEmail(fUser.email) ? 'Admin' : 'Buyer',
           status: 'Active',
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
@@ -165,7 +164,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
           state: 'Khyber Pakhtunkhwa'
         };
         await dbSaveUserProfile(profile);
-      } else if ((isAdminEmail || isMalakEmail) && profile.role !== 'Admin') {
+      } else if (isAdminEmail(fUser.email) && profile.role !== 'Admin') {
         profile.role = 'Admin';
         await dbSaveUserProfile(profile);
       }
@@ -193,8 +192,6 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
       const fUser = result.user;
       
       let profile = await dbFetchUserProfile(fUser.uid);
-      const authorizedAdmins = ['amjid.bisconni@gmail.com', 'amjid.psh@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'];
-      const isAdminEmail = fUser.email && authorizedAdmins.includes(fUser.email.toLowerCase());
       const isMalakEmail = fUser.email && fUser.email.toLowerCase() === 'mazharsouls@gmail.com';
 
       if (!profile) {
@@ -204,7 +201,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
           displayName: isMalakEmail ? 'Malak Mazhar' : (fUser.displayName || 'Guest User'),
           phoneNumber: isMalakEmail ? '+923159085086' : (fUser.phoneNumber || ''),
           phoneVerified: isMalakEmail || !!fUser.phoneNumber,
-          role: isMalakEmail ? 'Admin' : (isAdminEmail ? 'Admin' : 'Buyer'),
+          role: isAdminEmail(fUser.email) ? 'Admin' : 'Buyer',
           status: 'Active',
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
@@ -213,7 +210,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
           state: 'Khyber Pakhtunkhwa'
         };
         await dbSaveUserProfile(profile);
-      } else if ((isAdminEmail || isMalakEmail) && profile.role !== 'Admin') {
+      } else if (isAdminEmail(fUser.email) && profile.role !== 'Admin') {
         profile.role = 'Admin';
         await dbSaveUserProfile(profile);
       }
@@ -261,12 +258,10 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
         // Firebase Login Flow
         const result = await signInWithEmailAndPassword(auth, email, password);
         let profile = await dbFetchUserProfile(result.user.uid);
-        const authorizedAdmins = ['amjid.bisconni@gmail.com', 'amjid.psh@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'];
-        const isAdminEmail = email && authorizedAdmins.includes(email.toLowerCase());
         const isMalakEmail = email && email.toLowerCase() === 'mazharsouls@gmail.com';
 
         if (profile) {
-          if ((isAdminEmail || isMalakEmail) && profile.role !== 'Admin') {
+          if (isAdminEmail(email) && profile.role !== 'Admin') {
             profile.role = 'Admin';
             await dbSaveUserProfile(profile);
           }
@@ -285,7 +280,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
             displayName: isMalakEmail ? 'Malak Mazhar' : (result.user.displayName || email.split('@')[0]),
             phoneNumber: isMalakEmail ? '+923159085086' : '',
             phoneVerified: isMalakEmail,
-            role: (isAdminEmail || isMalakEmail) ? 'Admin' : 'Individual User',
+            role: isAdminEmail(email) ? 'Admin' : 'Individual User',
             status: 'Active',
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
@@ -307,9 +302,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
         const result = await createUserWithEmailAndPassword(auth, email, password);
         
         let assignedRole: any = role;
-        const authorizedAdmins = ['amjid.bisconni@gmail.com', 'amjid.psh@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'];
-        const isMalakEmail = email && email.toLowerCase() === 'mazharsouls@gmail.com';
-        if (authorizedAdmins.includes(email.toLowerCase()) || isMalakEmail) {
+        if (isAdminEmail(email)) {
           assignedRole = 'Admin';
         }
         

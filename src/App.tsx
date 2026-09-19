@@ -47,7 +47,6 @@ import DetailedVehiclePostingPage from './components/DetailedVehiclePostingPage'
 import AdminModerationDeck from './components/AdminModerationDeck';
 import AdminDashboard from './components/AdminDashboard';
 import RegistrationPortal from './components/RegistrationPortal';
-import NotificationsView from './components/NotificationsView';
 import UnifiedNotificationCenter from './components/UnifiedNotificationCenter';
 import MessagingCenterModal from './components/MessagingCenterModal';
 import AutoServicesView from './components/AutoServicesView';
@@ -2170,7 +2169,7 @@ function App() {
 
             {currentTab === 'services' && (
               <div className="max-w-7xl mx-auto pb-16 px-4 md:px-8">
-                <AutoServicesView lang={lang} preselectedCar={preselectedServiceCar} />
+                <AutoServicesView lang={lang} preselectedCar={preselectedServiceCar} currentUser={currentUser} />
               </div>
             )}
 
@@ -2231,7 +2230,7 @@ function App() {
               </div>
             )}
 
-            {currentTab === 'admin' && (currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin' || ['amjid.bisconni@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'].includes(currentUser?.email?.toLowerCase() || '')) ? (
+            {currentTab === 'admin' && isAdminUser(currentUser) ? (
               <AdminDashboard
                 listings={listings}
                 dealers={dealers}

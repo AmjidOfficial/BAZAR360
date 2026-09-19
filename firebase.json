@@ -1,4 +1,11 @@
 {
+  "firestore": [
+    {
+      "database": "ai-studio-bazar360online-90162156-c190-465e-a44d-d2853657a61e",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
+    }
+  ],
   "hosting": {
     "public": "dist",
     "ignore": [

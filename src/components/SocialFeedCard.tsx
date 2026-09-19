@@ -5,6 +5,7 @@ import { SocialPost, SocialComment } from '../types';
 import { toggleLikeSocialPost, deleteSocialPost } from '../services/api';
 import CommentSection from './CommentSection';
 import { toast } from 'sonner';
+import { isAdminUser } from '../lib/permissions';
 
 interface SocialFeedCardProps {
   post: SocialPost;
@@ -171,7 +172,7 @@ export default function SocialFeedCard({
 
   // Determine permissions
   const isAuthor = post.userId === currentUserId;
-  const isAdmin = currentUser?.role === 'Admin' || currentUser?.email === 'amjid.bisconni@gmail.com';
+  const isAdmin = isAdminUser(currentUser);
   const canDelete = isAuthor || isAdmin;
 
   return (

@@ -260,8 +260,14 @@ service cloud.firestore {
     }
     
     match /suggestions/{suggestionId} {
+      function isValidSuggestion(data) {
+        return data.suggestion_text is string && data.suggestion_text.size() > 0 && data.suggestion_text.size() <= 2000 &&
+               (!('user_id' in data) || data.user_id == null || data.user_id is string);
+      }
+
+      // Guests may submit feedback, but the payload is shape-capped to block junk writes.
       allow read: if isAdmin();
-      allow create: if true;
+      allow create: if isValidSuggestion(incoming());
     }
 
     // ==========================================
@@ -273,15 +279,20 @@ service cloud.firestore {
         request.auth.uid in resource.data.participants ||
         isAdmin()
       );
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid in incoming().participants;
       allow update: if isSignedIn() && (
         request.auth.uid in resource.data.participants ||
         isAdmin()
       );
       
       match /messages/{messageId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn();
+        // Private threads: only members of the parent conversation may read or post.
+        function isParticipant() {
+          return isSignedIn() && request.auth.uid in
+            get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        }
+        allow read: if isParticipant() || isAdmin();
+        allow create: if isParticipant() && incoming().senderId == request.auth.uid;
         allow update, delete: if isAdmin() || isOwner(existing().senderId);
       }
     }
@@ -302,23 +313,33 @@ service cloud.firestore {
     // ==========================================
     
     match /service_bookings/{bookingId} {
-      allow get: if true;
-      allow list: if request.query.limit == null || request.query.limit <= 100;
-      allow create: if true;
-      allow update: if true;
+      function isValidBooking(data) {
+        return data.userName is string && data.userName.size() > 0 && data.userName.size() <= 200 &&
+               data.userPhone is string && data.userPhone.size() >= 5 && data.userPhone.size() <= 30 &&
+               data.serviceId is string && data.serviceId.size() > 0 && data.serviceId.size() <= 100 &&
+               data.serviceTitle is string && data.serviceTitle.size() <= 200 &&
+               (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000)) &&
+               (!('inquiryMessage' in data) || (data.inquiryMessage is string && data.inquiryMessage.size() <= 4000));
+      }
+
+      // Bookings hold customer contact details, so reads and mutations are restricted to
+      // admins and the customer who owns the record.
+      allow get, list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isValidBooking(incoming());
+      allow update: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
       allow delete: if isAdmin();
     }
 
     match /systemLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if true;
+      allow create: if isAdmin();
       allow update, delete: if false;
     }
 
     match /searchHistory/{searchId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn();
+      allow get, list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
     }
 
     match /system/{docId} {

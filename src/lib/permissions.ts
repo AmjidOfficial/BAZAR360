@@ -1,9 +1,12 @@
 import { CarListing, Dealer } from '../types';
 import { UserProfile } from './dbService';
 
-// Designated system administrators
+// Designated system administrators. Single source of truth for the client —
+// mirrors ADMIN_EMAILS in server.ts, which is the authoritative copy for
+// anything the Admin SDK writes.
 export const ADMIN_EMAILS = [
   'amjid.bisconni@gmail.com',
+  'amjid.psh@gmail.com',
   'mazharsouls@gmail.com',
   'khattakghani94@gmail.com'
 ];
@@ -14,14 +17,16 @@ export const ADMIN_NAMES = [
   'Ghani Khan'
 ];
 
+export function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
 export function isAdminUser(user?: UserProfile | null): boolean {
   if (!user) return false;
   const roleStr = String(user.role || '').toLowerCase();
   if (roleStr === 'admin' || roleStr === 'super admin' || (user as any).isAdmin === true) return true;
-  const email = (user.email || '').toLowerCase();
-  
-  if (ADMIN_EMAILS.includes(email)) return true;
-  return false;
+  return isAdminEmail(user.email);
 }
 
 export function canDeleteListing(user?: UserProfile | null, listing?: CarListing): boolean {

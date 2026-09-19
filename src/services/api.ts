@@ -15,6 +15,7 @@ import {
   orderBy,
   runTransaction
 } from 'firebase/firestore';
+import { isAdminEmail } from '../lib/permissions';
 
 // Strong type definitions matching the Express payloads and response shapes
 export interface MarketingEngineRequest {
@@ -261,11 +262,16 @@ export async function callRegisterUser(
   showroom?: any
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   try {
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) {
+      return { success: false, error: 'No authenticated session available for registration.' };
+    }
     const appCheckHeader = await getAppCheckHeader();
     const response = await fetch('/api/user/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
         ...appCheckHeader
       },
       body: JSON.stringify({ profile, showroom }),
@@ -330,8 +336,7 @@ async function fetchCommunityFeedDirect(): Promise<{ success: boolean; posts?: a
 
     // Filter out unapproved posts except for the author and admins
     const currentUser = auth.currentUser;
-    const authorizedAdmins = ['amjid.bisconni@gmail.com', 'amjid.psh@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'];
-    const isAdmin = currentUser?.email && authorizedAdmins.includes(currentUser.email.toLowerCase());
+    const isAdmin = isAdminEmail(currentUser?.email);
 
     posts = posts.filter((p: any) => {
       if (p.approved !== false) return true;
@@ -377,8 +382,7 @@ async function createSocialPostDirect(payload: {
       console.warn("Could not fetch extra profile details for post author:", e);
     }
 
-    const authorizedAdmins = ['amjid.bisconni@gmail.com', 'amjid.psh@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'];
-    const isAdmin = (currentUser.email && authorizedAdmins.includes(currentUser.email.toLowerCase())) || userRole === 'Admin';
+    const isAdmin = isAdminEmail(currentUser.email) || userRole === 'Admin';
 
     const postId = "post-" + Date.now() + "-" + Math.random().toString(36).substring(2, 9);
     const newPost = {

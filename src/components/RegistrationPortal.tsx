@@ -66,6 +66,7 @@ import {
 } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { callRegisterUser } from '../services/api';
+import { isAdminUser } from '../lib/permissions';
 
 // Extend Window interface for clean typing of Firebase Auth variables
 declare global {
@@ -1114,20 +1115,11 @@ export default function RegistrationPortal({
       setAuthError('');
       setSuccessMessage('');
       
-      let userCredential;
-      try {
-        userCredential = await signInWithEmailAndPassword(auth, emailLower, regPass);
-      } catch (signInErr: any) {
-        // If it is Ghani Khan or Malak Mazhar and doesn't exist, automatically create it!
-        const isSpecialEmail = emailLower === 'khattakghani94@gmail.com' || emailLower === 'mazharsouls@gmail.com';
-        if (isSpecialEmail && regPass === 'bazar360@1' && (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/wrong-password' || signInErr.code === 'auth/user-disabled')) {
-          console.log(`Creating special account for ${emailLower}...`);
-          userCredential = await createUserWithEmailAndPassword(auth, emailLower, regPass);
-        } else {
-          throw signInErr;
-        }
-      }
-      
+      // Accounts must already exist. An earlier revision silently created
+      // accounts for allowlisted admin emails when the password matched a
+      // hardcoded literal, which handed admin to anyone reading this bundle.
+      const userCredential = await signInWithEmailAndPassword(auth, emailLower, regPass);
+
       const user = userCredential.user;
       const isAmjidEmail = user.email === 'amjid.bisconni@gmail.com' || user.email === 'amjid.psh@gmail.com';
       const isGhaniEmail = user.email === 'khattakghani94@gmail.com';
@@ -1378,9 +1370,10 @@ export default function RegistrationPortal({
     }
   };
 
-  // Switch role simulator
+  // Switch role simulator. Restricted to admins: otherwise any signed-in visitor could
+  // flip their own role to 'Admin' and open the admin-only views.
   const handleRoleSimulationSwap = (role: 'Admin' | 'Dealer' | 'Private Seller' | 'Buyer') => {
-    if (!currentUser) return;
+    if (!currentUser || !isAdminUser(currentUser)) return;
     const updated: UserProfile = {
       ...currentUser,
       role: role,
@@ -1682,8 +1675,8 @@ export default function RegistrationPortal({
         })()}
       </div>
 
-      {/* Role privilege level quick simulation block */}
-      {currentUser && (
+      {/* Role privilege level quick simulation block (admin-only) */}
+      {currentUser && isAdminUser(currentUser) && (
         <div className="bg-[var(--color-bg-secondary)] border border-white/5 rounded-2xl p-4 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
             <span className="text-[10px] font-mono font-black text-gray-400 uppercase tracking-wider block">

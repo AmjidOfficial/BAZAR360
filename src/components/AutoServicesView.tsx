@@ -18,7 +18,8 @@ import {
   Search,
   Upload
 } from 'lucide-react';
-import { dbSubmitServiceBooking } from '../lib/dbService';
+import { dbSubmitServiceBooking, type UserProfile } from '../lib/dbService';
+import { isAdminUser } from '../lib/permissions';
 import { generateInspectionPDF } from '../lib/inspectionPdfService';
 import { CarListing } from '../types';
 import { ServiceManagementHub } from './admin/ServiceManagementHub';
@@ -27,9 +28,10 @@ interface AutoServicesViewProps {
   lang: 'en' | 'ur';
   preselectedCar?: CarListing | null;
   onSelectCarForService?: (car: CarListing) => void;
+  currentUser?: UserProfile | null;
 }
 
-export default function AutoServicesView({ lang, preselectedCar }: AutoServicesViewProps) {
+export default function AutoServicesView({ lang, preselectedCar, currentUser }: AutoServicesViewProps) {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [bookingForm, setBookingForm] = useState({
     name: '',
@@ -47,6 +49,7 @@ export default function AutoServicesView({ lang, preselectedCar }: AutoServicesV
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   const isUrdu = lang === 'ur';
+  const canManageServices = isAdminUser(currentUser);
 
   // 6 Primary Bazar360 Specialized Services
   const servicesList = [
@@ -189,7 +192,8 @@ export default function AutoServicesView({ lang, preselectedCar }: AutoServicesV
       vehicleId: preselectedCar?.id,
       vehicleTitle: preselectedCar?.title,
       uvLightAnalysisRequested: bookingForm.uvLightAnalysis,
-      notes: bookingForm.notes
+      notes: bookingForm.notes,
+      userId: currentUser?.uid
     });
 
     setSavedBookingId(bookingId);
@@ -290,7 +294,7 @@ export default function AutoServicesView({ lang, preselectedCar }: AutoServicesV
           { id: 'legal', label: isUrdu ? 'ایکائز و فنانس' : 'Excise & Financing' },
           { id: 'care', label: isUrdu ? 'ڈیٹیلنگ و PPF' : 'Detailing & PPF Protection' },
           { id: 'sales', label: isUrdu ? 'سیل فار یو' : 'Sell For U Consignment' },
-          { id: 'management', label: isUrdu ? 'سروس مینیجمنٹ' : 'Service Management Hub' }
+          ...(canManageServices ? [{ id: 'management', label: isUrdu ? 'سروس مینیجمنٹ' : 'Service Management Hub' }] : [])
         ].map((cat) => (
           <button
             key={cat.id}
@@ -306,7 +310,7 @@ export default function AutoServicesView({ lang, preselectedCar }: AutoServicesV
         ))}
       </div>
 
-      {activeCategory === 'management' ? (
+      {activeCategory === 'management' && canManageServices ? (
         <div className="w-full bg-white border border-[#E2E8F0] rounded-3xl p-4 sm:p-6 shadow-xs">
           <ServiceManagementHub lang={lang} />
         </div>

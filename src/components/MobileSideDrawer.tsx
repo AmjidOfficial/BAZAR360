@@ -12,6 +12,7 @@ import {
   Image, Users, CreditCard, QrCode, Phone, ShieldCheck, Languages, 
   HelpCircle, Sun, Moon, Leaf, Flame
 } from 'lucide-react';
+import { isAdminUser } from '../lib/permissions';
 import { UserProfile } from '../lib/dbService';
 import { useTheme, ThemeClassType } from './ThemeContext';
 
@@ -77,9 +78,7 @@ export default function MobileSideDrawer({
 
   const isUrdu = lang === 'ur';
 
-  const isAdmin = currentUser?.role === 'Admin' || 
-                  currentUser?.role === 'Super Admin' || 
-                  ['amjid.bisconni@gmail.com', 'khattakghani94@gmail.com', 'mazharsouls@gmail.com'].includes(currentUser?.email?.toLowerCase() || '');
+  const isAdmin = isAdminUser(currentUser);
 
   const isDealer = currentUser?.role?.toLowerCase().includes('showroom') || 
                    currentUser?.role?.toLowerCase().includes('dealer') || 
