@@ -258,9 +258,23 @@ export async function callAiTranslate(text: string, targetLanguage = 'Urdu'): Pr
  * Register User Profile and optional Showroom via Secure full-stack Admin SDK backend
  */
 export async function callRegisterUser(
-  profile: any, 
+  profile: any,
   showroom?: any
 ): Promise<{ success: boolean; message?: string; error?: string }> {
+  if (isProduction) {
+    try {
+      const registerUserFn = httpsCallable<
+        { profile: any; showroom?: any },
+        { success: boolean; message: string }
+      >(functions, 'registerUser');
+      const response = await registerUserFn({ profile, showroom });
+      return response.data;
+    } catch (error: any) {
+      console.error('[Registration] Serverless registration failed:', error);
+      return { success: false, error: error.message || 'Secure registration service is unavailable.' };
+    }
+  }
+
   try {
     const idToken = await auth.currentUser?.getIdToken();
     if (!idToken) {
