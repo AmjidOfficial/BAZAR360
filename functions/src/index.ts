@@ -184,6 +184,49 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
 });
 
 /**
+ * 3. On-Demand Translation Engine
+ * Secure translation callable for English, Urdu and Pashto automotive copy.
+ */
+export const aiTranslate = onCall<
+  { text: string; targetLanguage: string },
+  Promise<{ success: boolean; translatedText: string; error?: string }>
+>(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Only signed-in Bazar360 members can use AI translation.");
+  }
+
+  const { text, targetLanguage = "Urdu" } = request.data;
+  if (!text || text.trim().length === 0) {
+    throw new HttpsError("invalid-argument", "Text is required for translation.");
+  }
+
+  try {
+    const client = getGeminiClient();
+    const systemPrompt = `You are an automotive translation engine for Bazar360 in Pakistan. Translate the supplied text into "${targetLanguage}". Preserve prices, numbers, technical specifications, phone numbers, vehicle names, and URLs exactly. Return only the translated text, with no explanation.`;
+    const response = await client.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: text,
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0.2,
+      },
+    });
+
+    return {
+      success: true,
+      translatedText: response.text?.trim() || text,
+    };
+  } catch (error: any) {
+    logger.error("Translation Cloud Function error:", error);
+    return {
+      success: false,
+      translatedText: text,
+      error: "Translation service is temporarily unavailable.",
+    };
+  }
+});
+
+/**
  * 3. Curator/Social WebScraping Proxy
  * Pre-populates avatar, banner image, and social posts on user registration
  */
