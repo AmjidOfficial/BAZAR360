@@ -35,14 +35,28 @@ jobs:
       - name: Type Check
         run: npm run lint
 
-      - name: Deploy Firestore Rules and Indexes
+      - name: Install Functions Dependencies
+        run: npm install --prefix functions
+
+      - name: Build Functions
+        run: npm run build --prefix functions
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Prepare Functions Runtime Environment
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" > functions/.env
+
+      - name: Deploy Firestore Rules, Indexes, and Functions
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BAZAR360 }}
         run: |
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-service-account.json"
-          npx firebase-tools deploy --only firestore:rules,firestore:indexes --project bazar360-2026 --non-interactive
-          rm -f "$RUNNER_TEMP/firebase-service-account.json"
+          npx firebase-tools deploy --only firestore:rules,firestore:indexes,functions --project bazar360-2026 --non-interactive
+          rm -f "$RUNNER_TEMP/firebase-service-account.json" "$GITHUB_WORKSPACE/functions/.env"
 
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
