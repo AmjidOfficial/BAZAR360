@@ -1,6 +1,13 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { GoogleGenAI, Type } from "@google/genai";
+import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
+import { initializeApp, getApps } from "firebase-admin/app";
+
+if (getApps().length === 0) {
+  initializeApp();
+}
 
 // Lazy-initialization pattern for GenAI Client to prevent cold start memory leaks
 let aiClient: GoogleGenAI | null = null;
@@ -29,6 +36,89 @@ function getGeminiClient(): GoogleGenAI {
   }
   return aiClient;
 }
+
+const ADMIN_EMAILS = new Set([
+  "amjid.bisconni@gmail.com",
+  "amjid.psh@gmail.com",
+  "mazharsouls@gmail.com",
+  "khattakghani94@gmail.com",
+]);
+
+const SELF_ASSIGNABLE_ROLES = new Set([
+  "Buyer",
+  "Individual User",
+  "Private Seller",
+  "Dealer",
+  "Showroom Owner",
+  "Verified Seller",
+  "Sales Rep",
+  "Sales Representative",
+  "Marketing",
+]);
+
+/**
+ * Secure user registration and role provisioning for the live Firebase-hosted app.
+ */
+export const registerUser = onCall<
+  { profile: Record<string, any>; showroom?: Record<string, any> },
+  Promise<{ success: boolean; message: string }>
+>(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication is required.");
+  }
+
+  const profile = request.data?.profile;
+  const showroom = request.data?.showroom;
+  const uid = request.auth.uid;
+  const email = String(request.auth.token.email || "").toLowerCase();
+
+  if (!profile || profile.uid !== uid) {
+    throw new HttpsError("invalid-argument", "Profile UID must match the authenticated account.");
+  }
+
+  const requestedRole = String(profile.role || "Individual User");
+  const isAdmin = ADMIN_EMAILS.has(email);
+  if ((requestedRole === "Admin" || requestedRole === "Super Admin") && !isAdmin) {
+    throw new HttpsError("permission-denied", "This account is not authorized for an administrative role.");
+  }
+  if (!isAdmin && !SELF_ASSIGNABLE_ROLES.has(requestedRole)) {
+    throw new HttpsError("permission-denied", "The requested role cannot be self-assigned.");
+  }
+
+  const db = getFirestore();
+  const now = new Date().toISOString();
+  const safeProfile = {
+    ...profile,
+    uid,
+    email: request.auth.token.email || profile.email || "",
+    role: requestedRole,
+    updatedAt: now,
+  };
+
+  await db.collection("users").doc(uid).set(safeProfile, { merge: true });
+  await db.collection("profiles").doc(uid).set({
+    uid,
+    displayName: profile.displayName || profile.name || "Anonymous User",
+    createdAt: profile.createdAt || now,
+    updatedAt: now,
+  }, { merge: true });
+
+  if (showroom?.id) {
+    const showroomOwnerUid = String(showroom.ownerUid || uid);
+    if (showroomOwnerUid !== uid && !isAdmin) {
+      throw new HttpsError("permission-denied", "You cannot register a showroom for another owner.");
+    }
+    await db.collection("dealers").doc(String(showroom.id)).set({
+      ...showroom,
+      ownerUid: showroomOwnerUid,
+      createdAt: showroom.createdAt || now,
+      updatedAt: now,
+    }, { merge: true });
+  }
+
+  await getAuth().setCustomUserClaims(uid, { role: requestedRole });
+  return { success: true, message: "Profile and showroom registration completed securely." };
+});
 
 /**
  * 1. AI Marketing SEO Listing Generator
