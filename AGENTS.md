@@ -85,7 +85,7 @@ App Check is client-attestation, **not** user identity. Any endpoint that writes
 ### Authorization & Roles
 
 - **Client-side**: [src/lib/permissions.ts](src/lib/permissions.ts) (`isAdminUser`, `canManageShowroom`, `isAuthorized`) gates UI only. It trusts `user.role` plus an email allowlist.
-- **Server-side**: `POST /api/user/register` is the only path that mints a custom claim. It requires a verified ID token, derives the uid from the token, and refuses privileged roles unless the token's verified email is in the admin allowlist.
+- **Server-side**: `registerUser` in Firebase Functions is the production path that mints a custom claim. It derives the uid from the callable auth context and refuses privileged roles unless the verified email is in the admin allowlist. The local Express `POST /api/user/register` remains a development fallback.
 - **Rules-side**: `isAdmin()` in `firestore.rules` checks a `role` custom claim or an `admins/{uid}` document. The client never writes `admins/*`, so admin access depends entirely on the claim set at registration. Client-side role strings do **not** grant data access.
 - Administrators are listed in exactly two places that must stay in sync: `ADMIN_EMAILS` in [src/lib/permissions.ts](src/lib/permissions.ts) and `ADMIN_EMAILS` in [server.ts](server.ts).
 
@@ -201,11 +201,12 @@ VITE_CLOUDINARY_UPLOAD_PRESET=<Cloudinary upload preset>
 
 - **Host**: Firebase Hosting project `bazar360-2026`, serving the static `dist/` bundle at https://bazar360.online (CNAME in repo root is for the gh-pages fallback)
 - **Build**: `npm run build` → `vite build` + `esbuild server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs`
-- **CI**: `.github/workflows/firebase-deploy.yml` runs on every push to `main`, builds, then calls `FirebaseExtended/action-hosting-deploy` with `channelId: live`. That action deploys **Hosting only** — it does not touch Firestore rules, indexes, or functions, and it does not run `dist/server.cjs`.
+- **CI**: `.github/workflows/firebase-deploy.yml` runs on every push to `main`. It type-checks the app, installs/builds `functions/`, deploys Firestore rules and indexes, deploys Firebase Functions, then publishes Hosting with `channelId: live`.
+- **Production callable backend**: `functions/src/index.ts` provides `marketingEngine`, `dealerChat`, `aiTranslate`, and `registerUser`. The workflow passes the Gemini key through `functions/.env` at deploy time and removes the file after deployment.
 - **`npm run deploy`** → `gh-pages -d dist` publishes the same static files to the `gh-pages` branch. Equally static-only.
-- **Firestore rules are a manual step**:
+- **Firestore rules are deployed automatically by CI**:
   ```bash
-  npx firebase deploy --only firestore:rules --project bazar360-2026
+  npx firebase deploy --only firestore:rules,firestore:indexes,functions --project bazar360-2026
   ```
   `firebase.json` maps the rules to the app's **named** database (`ai-studio-bazar360online-90162156-c190-465e-a44d-d2853657a61e` — the one `src/firebase.ts` passes to `getFirestore`), not `(default)`. A ruleset deployed to `(default)` would leave the app's real database untouched. `firebase.json` declares no `functions` block, so `functions/src/index.ts` is dead code — route server-side work through `server.ts`.
 
@@ -219,6 +220,6 @@ VITE_CLOUDINARY_UPLOAD_PRESET=<Cloudinary upload preset>
 
 ---
 
-**Last Updated**: 2026-09-19
+**Last Updated**: 2026-09-20
 **Framework Versions**: React 19, Vite 6, Firebase 12.14, TypeScript 5.8
 **Maintained By**: Bazar360 Development Team
