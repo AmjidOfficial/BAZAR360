@@ -1,11 +1,10 @@
-const STATIC_CACHE_NAME = 'bazar360-static-v4';
-const IMAGE_CACHE_NAME = 'bazar360-images-v3';
+const STATIC_CACHE_NAME = 'bazar360-static-v5';
+const IMAGE_CACHE_NAME = 'bazar360-images-v4';
 
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico',
   '/auto_choice_logo_1781509565476.jpg'
 ];
 
