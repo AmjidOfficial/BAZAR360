@@ -154,12 +154,10 @@ input:focus,select:focus,textarea:focus{
 @media(max-width:768px){
   body{font-size:14px}
   button,a,[role="button"],input,select,textarea{min-height:44px}
-  .grid{grid-template-columns:minmax(0,1fr)}
-  [class*="md:grid-cols-2"],[class*="lg:grid-cols-2"]{grid-template-columns:1fr!important}
-  [class*="md:grid-cols-3"],[class*="lg:grid-cols-3"]{grid-template-columns:1fr!important}
+  .grid > *{min-width:0}
+  [class*="md:grid-cols-2"],[class*="lg:grid-cols-2"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  [class*="md:grid-cols-3"],[class*="lg:grid-cols-3"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   [class*="md:grid-cols-4"],[class*="lg:grid-cols-4"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  [class*="flex-row"]{flex-direction:column}
-  [class*="justify-between"]{gap:12px}
   #showroom-inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
 }
 
@@ -174,6 +172,8 @@ input:focus,select:focus,textarea:focus{
     line-height:1.02!important;
   }
   [class*="rounded-3xl"]{border-radius:16px!important}
+  [class*="md:grid-cols-2"],[class*="lg:grid-cols-2"],[class*="md:grid-cols-3"],[class*="lg:grid-cols-3"]{grid-template-columns:1fr!important}
+  [class*="md:grid-cols-4"],[class*="lg:grid-cols-4"]{grid-template-columns:1fr!important}
   #showroom-inventory-grid{grid-template-columns:1fr!important;gap:14px!important}
   .luxury-card{border-radius:14px!important}
 }
@@ -198,4 +198,23 @@ input:focus,select:focus,textarea:focus{
     scroll-behavior:auto!important;
     transition-duration:.01ms!important;
   }
+}
+
+/* Explicit responsive contract: desktop, tablet, phone and small-phone states. */
+@media(min-width:1440px){
+  :root{--b360-ui-max:1320px}
+}
+@media(min-width:1025px) and (max-width:1279px){
+  :root{--b360-ui-max:1180px}
+}
+@media(min-width:769px) and (max-width:1024px){
+  :root{--b360-ui-max:960px}
+}
+@media(min-width:481px) and (max-width:640px){
+  .b360-ui-wide-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+}
+@media(max-width:480px){
+  :root{--b360-ui-radius:12px;--b360-ui-radius-lg:16px}
+  button,a,[role="button"],input,select,textarea{min-height:44px}
+  .b360-ui-wide-actions{display:grid;grid-template-columns:1fr;gap:10px}
 }
