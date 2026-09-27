@@ -1,0 +1,201 @@
+/* BAZAR360 FINAL WORLD-CLASS UI
+   Single responsive visual layer for the canonical BAZAR360 repository.
+   Purpose: premium automotive marketplace, not a clone of any reference brand. */
+
+:root{
+  --b360-ui-bg:#f4f5f6;
+  --b360-ui-surface:#fff;
+  --b360-ui-surface-2:#eef0f2;
+  --b360-ui-ink:#15181c;
+  --b360-ui-muted:#66707a;
+  --b360-ui-line:#d9dee3;
+  --b360-ui-accent:#c45b19;
+  --b360-ui-accent-hover:#a94b13;
+  --b360-ui-dark:#101418;
+  --b360-ui-dark-2:#171c21;
+  --b360-ui-dark-3:#20262c;
+  --b360-ui-dark-line:rgba(255,255,255,.12);
+  --b360-ui-max:1240px;
+  --b360-ui-radius:14px;
+  --b360-ui-radius-lg:20px;
+  --b360-ui-shadow:0 10px 32px rgba(16,20,24,.08);
+  --b360-ui-shadow-lg:0 22px 60px rgba(16,20,24,.13);
+}
+
+:root[class~="dark"],.dark,body.dark{
+  --b360-ui-bg:#0d1115;
+  --b360-ui-surface:#151a1f;
+  --b360-ui-surface-2:#1c2228;
+  --b360-ui-ink:#f5f7f9;
+  --b360-ui-muted:#a5afb9;
+  --b360-ui-line:rgba(255,255,255,.11);
+  --b360-ui-shadow:0 16px 46px rgba(0,0,0,.28);
+  --b360-ui-shadow-lg:0 28px 80px rgba(0,0,0,.38);
+}
+
+html{scroll-behavior:smooth;text-rendering:optimizeLegibility;-webkit-text-size-adjust:100%}
+body{
+  margin:0!important;
+  background:var(--b360-ui-bg)!important;
+  color:var(--b360-ui-ink)!important;
+  font-family:"Inter",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden!important;
+}
+h1,h2,h3,h4,h5,h6{
+  font-family:"Manrope","Inter",ui-sans-serif,system-ui,sans-serif!important;
+  letter-spacing:-.025em;
+}
+button,input,select,textarea{font:inherit;max-width:100%}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+img,video{max-width:100%;height:auto}
+*,*::before,*::after{box-sizing:border-box}
+:focus-visible{outline:0!important;box-shadow:0 0 0 4px rgba(196,91,25,.18)!important}
+::selection{background:rgba(196,91,25,.18);color:inherit}
+
+/* Replace the previous electric-blue/cosmic theme without changing app behavior. */
+.bg-\[\#0B1326\],.bg-\[\#080C14\],.bg-\[\#0F3460\]{background:var(--b360-ui-dark)!important}
+.text-\[\#00D2FF\],.text-\[\#A5E7FF\]{color:var(--b360-ui-accent)!important}
+.border-\[\#00D2FF\],.border-\[\#38BDF8\]{border-color:var(--b360-ui-line)!important}
+
+/* Shared premium surfaces */
+.luxury-card{
+  background:var(--b360-ui-surface)!important;
+  border:1px solid var(--b360-ui-line)!important;
+  border-radius:var(--b360-ui-radius)!important;
+  box-shadow:0 1px 2px rgba(16,20,24,.03)!important;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease!important;
+}
+.luxury-card::before{display:none!important}
+.luxury-card:hover{
+  transform:translateY(-2px)!important;
+  border-color:rgba(196,91,25,.42)!important;
+  box-shadow:var(--b360-ui-shadow)!important;
+}
+.btn-gold-primary,.bg-brand-metallic{
+  background:var(--b360-ui-accent)!important;
+  border-color:var(--b360-ui-accent)!important;
+  color:#fff!important;
+}
+.btn-gold-primary:hover{background:var(--b360-ui-accent-hover)!important}
+.btn-luxury-secondary{
+  background:var(--b360-ui-surface)!important;
+  border:1px solid var(--b360-ui-line)!important;
+  color:var(--b360-ui-ink)!important;
+}
+.btn-luxury-secondary:hover{
+  background:var(--b360-ui-surface-2)!important;
+  border-color:var(--b360-ui-accent)!important;
+  color:var(--b360-ui-accent)!important;
+}
+.text-gold-gradient,.text-silver-gradient{
+  background:none!important;
+  -webkit-text-fill-color:currentColor!important;
+  color:inherit!important;
+}
+
+/* App-level containers */
+.max-w-7xl{max-width:var(--b360-ui-max)!important}
+.header-glass{
+  background:color-mix(in srgb,var(--b360-ui-surface) 94%,transparent)!important;
+  border-bottom:1px solid var(--b360-ui-line)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+}
+
+/* Cards, panels and form controls */
+[class*="rounded-2xl"],[class*="rounded-3xl"]{
+  border-color:var(--b360-ui-line);
+}
+input,select,textarea{
+  border-color:var(--b360-ui-line);
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--b360-ui-accent)!important;
+  box-shadow:0 0 0 4px rgba(196,91,25,.12)!important;
+}
+
+/* Responsive grids. Existing semantic grids remain intact. */
+.grid{min-width:0}
+.grid > *{min-width:0}
+.flex{min-width:0}
+.flex > *{min-width:0}
+[class*="grid-cols-"]{min-width:0}
+[class*="overflow-x-auto"]{scrollbar-width:thin}
+
+/* Marketplace inventory cards */
+#showroom-inventory-grid{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))!important;
+  gap:20px!important;
+}
+#showroom-inventory-grid img{
+  aspect-ratio:16/10;
+  object-fit:cover;
+}
+
+/* 1280+ */
+@media(min-width:1280px){
+  .max-w-7xl{padding-inline:0}
+}
+
+/* Tablet */
+@media(max-width:1024px){
+  body{font-size:15px}
+  [class*="text-6xl"],[class*="text-7xl"],[class*="text-8xl"]{
+    font-size:clamp(2.25rem,6vw,4rem)!important;
+    line-height:1.02!important;
+  }
+  .grid{gap:1rem}
+}
+
+/* Large phones / small tablets */
+@media(max-width:768px){
+  body{font-size:14px}
+  button,a,[role="button"],input,select,textarea{min-height:44px}
+  .grid{grid-template-columns:minmax(0,1fr)}
+  [class*="md:grid-cols-2"],[class*="lg:grid-cols-2"]{grid-template-columns:1fr!important}
+  [class*="md:grid-cols-3"],[class*="lg:grid-cols-3"]{grid-template-columns:1fr!important}
+  [class*="md:grid-cols-4"],[class*="lg:grid-cols-4"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  [class*="flex-row"]{flex-direction:column}
+  [class*="justify-between"]{gap:12px}
+  #showroom-inventory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important}
+}
+
+/* Phones */
+@media(max-width:640px){
+  body{font-size:14px}
+  main{min-width:0;overflow-x:clip}
+  [class*="px-8"],[class*="px-10"],[class*="px-12"]{padding-inline:16px!important}
+  [class*="py-12"],[class*="py-16"],[class*="py-20"]{padding-block:48px!important}
+  [class*="text-5xl"],[class*="text-6xl"],[class*="text-7xl"],[class*="text-8xl"]{
+    font-size:clamp(2rem,10vw,3.25rem)!important;
+    line-height:1.02!important;
+  }
+  [class*="rounded-3xl"]{border-radius:16px!important}
+  #showroom-inventory-grid{grid-template-columns:1fr!important;gap:14px!important}
+  .luxury-card{border-radius:14px!important}
+}
+
+/* Small phones */
+@media(max-width:380px){
+  body{font-size:13px}
+  [class*="gap-8"],[class*="gap-10"],[class*="gap-12"]{gap:14px!important}
+  [class*="p-8"],[class*="p-10"],[class*="p-12"]{padding:16px!important}
+}
+
+/* Landscape phones */
+@media(max-height:500px) and (orientation:landscape){
+  header{min-height:56px}
+}
+
+/* Accessibility / performance */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    scroll-behavior:auto!important;
+    transition-duration:.01ms!important;
+  }
+}
