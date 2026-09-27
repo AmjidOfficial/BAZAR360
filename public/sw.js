@@ -1,5 +1,5 @@
-const STATIC_CACHE_NAME = 'bazar360-static-v3';
-const IMAGE_CACHE_NAME = 'bazar360-images-v2';
+const STATIC_CACHE_NAME = 'bazar360-static-v4';
+const IMAGE_CACHE_NAME = 'bazar360-images-v3';
 
 const STATIC_ASSETS = [
   '/',
