@@ -8,6 +8,7 @@ import { toast as hotToast } from 'react-hot-toast';
 import { toast as sonnerToast } from 'sonner';
 import './index.css';
 import './styles/bazar360-v2.css';
+import './styles/worldclass-ui.css';
 
 // Global toast interceptor to silence unnecessary success notifications
 if (typeof window !== 'undefined') {
