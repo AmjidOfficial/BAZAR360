@@ -27,6 +27,7 @@
     "firebase-functions.ts",
     "node_modules",
     "dist",
-    "app"
+    "app",
+    "functions"
   ]
 }
