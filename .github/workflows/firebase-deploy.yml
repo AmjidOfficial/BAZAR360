@@ -36,7 +36,7 @@ jobs:
         run: npm run lint
 
       - name: Install Functions Dependencies
-        run: npm ci --prefix functions
+        run: npm install --prefix functions
 
       - name: Build Functions
         run: npm run build --prefix functions
