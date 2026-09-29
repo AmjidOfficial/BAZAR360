@@ -53,7 +53,6 @@
     "autoprefixer": "^10.4.21",
     "cross-env": "^10.1.0",
     "esbuild": "^0.25.0",
-    "firebase-functions": "^7.2.5",
     "gh-pages": "^6.3.0",
     "puppeteer": "^25.5.0",
     "tailwindcss": "^4.1.14",
