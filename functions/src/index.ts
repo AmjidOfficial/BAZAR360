@@ -85,7 +85,7 @@ export const registerUser = onCall<
     throw new HttpsError("permission-denied", "The requested role cannot be self-assigned.");
   }
 
-  const db = getFirestore(undefined, "ai-studio-bazar360online-90162156-c190-465e-a44d-d2853657a61e");
+  const db = getFirestore(getApps()[0], "ai-studio-bazar360online-90162156-c190-465e-a44d-d2853657a61e");
   const now = new Date().toISOString();
   const safeProfile = {
     ...profile,
