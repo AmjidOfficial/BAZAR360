@@ -376,9 +376,9 @@ function mapListingDoc(id: string, data: any): CarListing {
     id === 'listing-1784821782501' ||
     id === 'listing-1784821585212';
 
-  const resolvedDealerId = isExplicitIndividual 
-    ? 'private' 
-    : ((data.dealerId === '' || (data.dealerId && data.dealerId.includes(''))) ? '' : (data.dealerId || 'private'));
+  const resolvedDealerId = isExplicitIndividual
+    ? 'private'
+    : (typeof data.dealerId === 'string' && data.dealerId.trim() ? data.dealerId.trim() : 'private');
 
   const resolvedSellerType = isExplicitIndividual ? 'Individual' : (data.sellerType || (resolvedDealerId === 'private' ? 'Individual' : 'Showroom'));
 
