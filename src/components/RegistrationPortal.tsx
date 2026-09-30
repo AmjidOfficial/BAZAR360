@@ -280,45 +280,8 @@ export default function RegistrationPortal({
   // Duplicate showrooms resolver state
   const [showroomDuplicates, setShowroomDuplicates] = useState<boolean>(true);
 
-  // Automatic background silent deduplication merge
-  useEffect(() => {
-    const runSilentMerge = async () => {
-      try {
-        const { collection, getDocs, doc, deleteDoc, updateDoc, query, limit } = await import('firebase/firestore');
-        const { db } = await import('../firebase');
-        
-        const dealersSnap = await getDocs(query(collection(db, 'dealers'), limit(100)));
-        for (const dealerDoc of dealersSnap.docs) {
-          const dealerId = dealerDoc.id;
-          const dealerData = dealerDoc.data();
-          
-          const isDuplicate = dealerId !== '' && 
-                              (dealerId === '' || 
-                               (dealerData.name && dealerData.name.toLowerCase().includes('auto choice')));
-          
-          if (isDuplicate) {
-            console.log(`Silent merging duplicate showroom document: ${dealerId}`);
-            await deleteDoc(doc(db, 'dealers', dealerId));
-          }
-        }
-        
-        const listingsSnap = await getDocs(query(collection(db, 'listings'), limit(100)));
-        for (const listingDoc of listingsSnap.docs) {
-          const listingData = listingDoc.data();
-          if (listingData.dealerId === '' || (listingData.dealerId && listingData.dealerId.includes('') && listingData.dealerId !== '')) {
-            console.log(`Silent redirecting listing ${listingDoc.id} to flagship auto-choice-peshawar`);
-            await updateDoc(doc(db, 'listings', listingDoc.id), {
-              dealerId: ''
-            });
-          }
-        }
-      } catch (error) {
-        console.warn('Failed silent merge of showrooms in database:', error);
-      }
-    };
-    runSilentMerge();
-  }, []);
-
+  // Production safety: do not run destructive showroom/listing deduplication automatically.
+  // Any data consolidation must be an explicit, audited admin operation.
   // Active theme settings for showroom
   const [activeShowroomTheme, setActiveShowroomTheme] = useState<string>('light');
 
@@ -1591,49 +1554,25 @@ export default function RegistrationPortal({
   };
 
   // Merge duplicates
+  // Production-safe behavior: audit only. Never delete or relink live inventory automatically.
   const handleMergeShowrooms = async () => {
     try {
-      const { collection, getDocs, doc, deleteDoc, updateDoc, query, limit } = await import('firebase/firestore');
+      const { collection, getDocs, query, limit } = await import('firebase/firestore');
       const { db } = await import('../firebase');
-      
       const dealersSnap = await getDocs(query(collection(db, 'dealers'), limit(100)));
-      let mergeCount = 0;
-      
-      for (const dealerDoc of dealersSnap.docs) {
-        const dealerId = dealerDoc.id;
-        const dealerData = dealerDoc.data();
-        
-        const isDuplicate = dealerId !== '' && 
-                            (dealerId === '' || 
-                             (dealerData.name && dealerData.name.toLowerCase().includes('auto choice')));
-        
-        if (isDuplicate) {
-          console.log(`Deleting duplicate showroom document: ${dealerId}`);
-          await deleteDoc(doc(db, 'dealers', dealerId));
-          mergeCount++;
-        }
-      }
-      
-      const listingsSnap = await getDocs(query(collection(db, 'listings'), limit(100)));
-      let listingUpdateCount = 0;
-      
-      for (const listingDoc of listingsSnap.docs) {
-        const listingData = listingDoc.data();
-        if (listingData.dealerId === '' || (listingData.dealerId && listingData.dealerId.includes('') && listingData.dealerId !== '')) {
-          console.log(`Redirecting listing ${listingDoc.id} to flagship auto-choice-peshawar`);
-          await updateDoc(doc(db, 'listings', listingDoc.id), {
-            dealerId: ''
-          });
-          listingUpdateCount++;
-        }
-      }
-      
-      setShowroomDuplicates(false);
-      alert(`Showroom profiles compiled and merged successfully under ID "auto-choice-peshawar"! Consolidated ${mergeCount} duplicate profile(s) and redirected ${listingUpdateCount} listing(s) directly to the flagship Bazar360 Peshawar.`);
+      const names = new Map<string, number>();
+      dealersSnap.docs.forEach((dealerDoc) => {
+        const name = String(dealerDoc.data().name || '').trim().toLowerCase();
+        if (name) names.set(name, (names.get(name) || 0) + 1);
+      });
+      const duplicateGroups = [...names.values()].filter(count => count > 1).length;
+      setShowroomDuplicates(duplicateGroups > 0);
+      alert(duplicateGroups > 0
+        ? 'Audit found ' + duplicateGroups + ' showroom name group(s) with duplicates. No live data was changed.'
+        : 'No duplicate showroom name groups were found. No live data was changed.');
     } catch (error) {
-      console.error('Failed to merge showrooms in database:', error);
-      setShowroomDuplicates(false);
-      alert('Showroom profiles compiled and merged successfully under ID "auto-choice-peshawar"!');
+      console.error('Showroom duplicate audit failed:', error);
+      alert('Showroom duplicate audit failed. No live data was changed.');
     }
   };
 
@@ -1703,33 +1642,7 @@ export default function RegistrationPortal({
                 {r.label}
               </button>
             ))}
-            <button
-              onClick={() => {
-                setCurrentUser({
-                  uid: 'usr-auto-choice-pesh',
-                  email: 'peshawar@autochoice.online',
-                  displayName: 'Bazar360 Peshawar (Flagship)',
-                  phoneNumber: '03159085086',
-                  phoneVerified: true,
-                  city: 'Peshawar',
-                  state: 'KP',
-                  role: 'Dealer',
-                  status: 'Active',
-                  createdAt: new Date().toISOString(),
-                  lastLogin: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-                  salesPodId: ''
-                });
-                setSuccessMessage('✓ Logged into Peshawar Flagship Hub: AUTO CHOICE');
-              }}
-              className={`py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all border col-span-2 sm:col-span-1 cursor-pointer ${
-                currentUser?.displayName?.includes('Bazar360')
-                  ? 'bg-amber-500 border-amber-500 text-stone-950 shadow-md'
-                  : 'bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20'
-              }`}
-            >
-              ★ Bazar360 Flagship
-            </button>
+
           </div>
         </div>
       )}
