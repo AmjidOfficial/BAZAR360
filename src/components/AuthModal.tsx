@@ -6,7 +6,8 @@ import { GlassCard } from './GlassCard';
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db, googleProvider, facebookProvider } from '../firebase';
@@ -678,7 +679,22 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
                 {isLogin && (
                   <button 
                     type="button" 
-                    onClick={() => alert('Password reset link has been dispatched to your email address.')}
+                    onClick={async () => {
+                      if (!email.trim()) {
+                        setError(isUrdu ? 'براہ کرم پہلے اپنا ای میل درج کریں۔' : 'Enter your email first.');
+                        return;
+                      }
+                      try {
+                        setLoading(true);
+                        setError(null);
+                        await sendPasswordResetEmail(auth, email.trim());
+                        setSuccess(isUrdu ? 'پاس ورڈ ری سیٹ لنک آپ کے ای میل پر بھیج دیا گیا ہے۔' : 'Password reset link sent. Check your email.');
+                      } catch (err: any) {
+                        setError(getFriendlyAuthErrorMessage(err?.message || 'Password reset failed.', lang));
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
                     className="text-[10px] font-mono font-bold uppercase tracking-wider text-text-muted hover:text-text-muted transition-colors mt-2"
                   >
                     Forgot Password?
@@ -747,19 +763,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
                   </motion.button>
 
                   {/* Apple */}
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    type="button"
-                    onClick={() => alert('Apple Sign-In integration ready under Sandbox mode!')}
-                    disabled={loading}
-                    className="w-10 h-10 rounded-full bg-[var(--color-bg-secondary)] border border-white/5 hover:bg-[var(--color-bg-tertiary)] hover:border-white/10 shadow-sm flex items-center justify-center cursor-pointer transition-all"
-                    title="Sign in with Apple"
-                  >
-                    <svg className="w-4 h-4 text-[var(--color-text-header)] fill-current" viewBox="0 0 24 24">
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.22.67-2.94 1.51-.64.73-1.19 1.87-1.04 2.98.1.08 2.33-.62 2.99-1.43z"/>
-                    </svg>
-                  </motion.button>
+
                 </div>
               </div>
 
