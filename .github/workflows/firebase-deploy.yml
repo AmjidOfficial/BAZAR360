@@ -46,8 +46,14 @@ jobs:
       - name: Prepare Functions Runtime Environment
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.VITE_CLOUDINARY_CLOUD_NAME }}
+          VITE_CLOUDINARY_API_KEY: ${{ secrets.VITE_CLOUDINARY_API_KEY }}
         run: |
           printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" > functions/.env
+          printf 'CLOUDINARY_API_SECRET=%s\n' "$CLOUDINARY_API_SECRET" >> functions/.env
+          printf 'VITE_CLOUDINARY_CLOUD_NAME=%s\n' "$VITE_CLOUDINARY_CLOUD_NAME" >> functions/.env
+          printf 'VITE_CLOUDINARY_API_KEY=%s\n' "$VITE_CLOUDINARY_API_KEY" >> functions/.env
 
       - name: Deploy Firestore Rules, Indexes, and Functions
         env:
