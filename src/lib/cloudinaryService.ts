@@ -450,7 +450,8 @@ export function getResponsiveSrcSet(urlOrPublicId: string, widths = [320, 640, 9
     .join(', ');
 }
 
-import { auth } from '../firebase';
+import { auth, functions } from '../firebase';
+import { httpsCallable } from 'firebase/functions';
 
 /**
  * Request server-side deletion of Cloudinary assets.
@@ -460,14 +461,19 @@ export async function deleteFromCloudinary(publicId: string, resourceType: 'imag
   if (!publicId) return { success: false, error: 'Public ID is required for deletion.' };
 
   try {
+    if (typeof window !== 'undefined' && ((import.meta as any).env?.PROD || window.location.hostname.includes('bazar360.online'))) {
+      const deleteAsset = httpsCallable<{ publicId: string; resourceType: 'image' | 'video' | 'raw' }, { success: boolean; message: string }>(
+        functions,
+        'deleteCloudinaryAsset'
+      );
+      const response = await deleteAsset({ publicId, resourceType });
+      return response.data;
+    }
+
     const user = auth.currentUser;
     const idToken = user ? await user.getIdToken() : '';
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (idToken) {
-      headers['Authorization'] = `Bearer ${idToken}`;
-    }
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (idToken) headers['Authorization'] = `Bearer ${idToken}`;
 
     const response = await fetch('/api/cloudinary/delete', {
       method: 'POST',
@@ -475,17 +481,13 @@ export async function deleteFromCloudinary(publicId: string, resourceType: 'imag
       body: JSON.stringify({ publicId, resourceType }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Server returned status ${response.status} during deletion.`);
-    }
-
+    if (!response.ok) throw new Error(`Server returned status ${response.status} during deletion.`);
     return await response.json();
   } catch (error: any) {
     console.error('[Cloudinary] Delete request failed:', error);
-    return { success: false, error: error.message || 'Failed to communicate with Cloudinary delete API.' };
+    return { success: false, error: error.message || 'Failed to delete Cloudinary asset.' };
   }
 }
-
 /**
  * Generate a clean, structured Cloudinary folder path for each vehicle upload:
  * e.g., "bazar360/vehicles/{ownerId}/{make}_{model}_{year}_{listingId}"
