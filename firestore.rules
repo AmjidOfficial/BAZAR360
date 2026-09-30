@@ -185,7 +185,7 @@ service cloud.firestore {
           'displayName', 'phoneNumber', 'city', 'state', 'socials', 'socialMedia', 
           'profilePhoto', 'photoURL', 'logoUrl', 'coverImage', 'preferredLanguage', 'preferredTheme', 
           'whatsappNumber', 'updatedAt', 'lastLogin', 'notificationSettings', 'privacySettings',
-          'address', 'dob', 'gender', 'bio', 'status', 'email'
+          'address', 'dob', 'gender', 'bio'
         ])
       ) || isAdmin();
       allow delete: if isAdmin();
