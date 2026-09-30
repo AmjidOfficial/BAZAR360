@@ -4,6 +4,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp, getApps } from "firebase-admin/app";
+import { createHash } from "node:crypto";
 
 if (getApps().length === 0) {
   initializeApp();
@@ -198,18 +199,7 @@ Tone tuning selected: ${tone}. Ensure vocabulary mirrors luxury automotive catal
 
   } catch (error: any) {
     logger.error("AI engine Cloud Function fail:", error);
-    // Graceful secure fallback matches standard specs to keep runtime working even during API downtime
-    return {
-      success: false,
-      error: error.message,
-      result: {
-        title: "Premium Certified Sedan - Pakistan Edition",
-        description: `A meticulously styled vehicle ready for immediate city drives. Passed full Bazar360 safety inspections successfully. Shipped with standard specs. (Bypassed due to: ${error.message})`,
-        tags: ["Compact", "Certified", "Slick"],
-        suggestedPricePKR: 1500000,
-        highlights: ["Clean vehicle background checked", "Pristine interior condition", "Optimal Pakistani specs"],
-      },
-    };
+    throw new HttpsError("unavailable", "AI marketing service is temporarily unavailable. No fabricated vehicle claims or pricing were returned.");
   }
 });
 
@@ -271,6 +261,105 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
       reply: "Hello! Thank you for contacting us. To secure optimal pricing on our fleet details or speak directly, please leave a direct message/review or tap 'Call Showroom'!",
     };
   }
+});
+
+/**
+ * Secure Cloudinary asset deletion for authenticated owners/admins.
+ * Production Hosting does not expose server.ts, so destructive media operations
+ * must use a deployed callable function.
+ */
+function containsPublicId(value: any, publicId: string): boolean {
+  if (typeof value === "string") return value === publicId;
+  if (Array.isArray(value)) return value.some(item => containsPublicId(item, publicId));
+  if (value && typeof value === "object") return Object.values(value).some(item => containsPublicId(item, publicId));
+  return false;
+}
+
+export const deleteCloudinaryAsset = onCall<
+  { publicId: string; resourceType?: "image" | "video" | "raw" },
+  Promise<{ success: boolean; message: string }>
+>(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Authentication is required.");
+  }
+
+  const publicId = String(request.data?.publicId || "").trim();
+  const resourceType = (request.data?.resourceType || "image") as "image" | "video" | "raw";
+  if (!publicId) throw new HttpsError("invalid-argument", "Cloudinary public ID is required.");
+  if (!["image", "video", "raw"].includes(resourceType)) {
+    throw new HttpsError("invalid-argument", "Unsupported Cloudinary resource type.");
+  }
+
+  const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || "me634xd0";
+  const apiKey = process.env.VITE_CLOUDINARY_API_KEY || "165721653511945";
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  if (!apiSecret) {
+    throw new HttpsError("failed-precondition", "Cloudinary server secret is not configured.");
+  }
+
+  const db = getFirestore(getApps()[0], "ai-studio-bazar360online-90162156-c190-465e-a44d-d2853657a61e");
+  const uid = request.auth.uid;
+  const email = String(request.auth.token.email || "").toLowerCase();
+  const isAdmin = ADMIN_EMAILS.has(email);
+
+  let authorized = isAdmin;
+  if (!authorized) {
+    const userSnap = await db.collection("users").doc(uid).get();
+    const userData = userSnap.exists ? userSnap.data() || {} : {};
+    const dealerIds = new Set<string>();
+    if (typeof userData.dealerId === "string") dealerIds.add(userData.dealerId);
+    if (typeof userData.associatedShowroomId === "string") dealerIds.add(userData.associatedShowroomId);
+    if (typeof userData.salesPodId === "string") dealerIds.add(userData.salesPodId);
+
+    const ownedListings = await db.collection("listings").where("ownerId", "==", uid).limit(100).get();
+    for (const doc of ownedListings.docs) {
+      if (containsPublicId(doc.data(), publicId)) {
+        authorized = true;
+        break;
+      }
+    }
+
+    if (!authorized && dealerIds.size) {
+      for (const dealerId of dealerIds) {
+        const dealerSnap = await db.collection("dealers").doc(dealerId).get();
+        if (dealerSnap.exists) {
+          const dealerData = dealerSnap.data() || {};
+          if (dealerData.ownerUid === uid && containsPublicId(dealerData, publicId)) {
+            authorized = true;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (!authorized) {
+    throw new HttpsError("permission-denied", "You are not authorized to delete this media asset.");
+  }
+
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signatureBase = `public_id=${publicId}&timestamp=${timestamp}&invalidate=true${apiSecret}`;
+  const signature = createHash("sha1").update(signatureBase).digest("hex");
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/destroy`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      public_id: publicId,
+      timestamp: String(timestamp),
+      invalidate: "true",
+      api_key: apiKey,
+      signature,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    logger.error("Cloudinary deletion failed", { status: response.status, body });
+    throw new HttpsError("internal", "Cloudinary rejected the deletion request.");
+  }
+
+  return { success: true, message: "Cloudinary asset deleted." };
 });
 
 /**
@@ -351,86 +440,23 @@ export const scrapeSocials = onCall<
   }
 
   try {
-    const curatedCoverImages = [
-      "",
-      "",
-      "",
-      ""
-    ];
-
-    const curatedLogos = [
-      "",
-      "",
-      ""
-    ];
-
-    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const coverImage = curatedCoverImages[hash % curatedCoverImages.length];
-    
-    // Default fallback logo path for Choice dealerships
-    const avatarUrl = name.toLowerCase().includes("choice")
-      ? "./auto_choice_logo_1781509565476.jpg"
-      : curatedLogos[hash % curatedLogos.length];
-
-    const activityFeed: any[] = [];
-    const timestampStr = new Date().toISOString();
-
-    if (tiktok) {
-      activityFeed.push({
-        id: `act-tiktok-${Date.now()}`,
-        timestamp: "Just now",
-        badge: "TikTok Reel",
-        imageUrl: "",
-        title: `Trending TikTok walkaround on @${name.toLowerCase().replace(/\s+/g, "")}`,
-        description: `Watch our high-engagement video walkaround and exhaust sound review of our newly imported premium sports touring model.`,
-        price: "Available PKR",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (instagram || facebook) {
-      activityFeed.push({
-        id: `act-social-${Date.now() + 1}`,
-        timestamp: "3 hours ago",
-        badge: instagram ? "Instagram Showcase" : "Facebook Active Campaign",
-        imageUrl: "",
-        title: "Prestige Fleet Campaign Spotlight",
-        description: `Meticulously pre-purchase diagnostics passed. Spotlighting the luxury specifications of our highest-grade SUVs this month.`,
-        price: "Elite Specs",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (website) {
-      activityFeed.push({
-        id: `act-web-${Date.now() + 2}`,
-        timestamp: "Yesterday",
-        badge: "Web Direct Port",
-        imageUrl: "",
-        title: "Interactive Web Portal Online",
-        description: `Check out our newly optimized digital dealership website. Browse full certificates, schedule on-site inspections, or request direct transportation.`,
-        price: "Online Booking",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (activityFeed.length === 0) {
-      activityFeed.push({
-        id: `act-fallback-${Date.now()}`,
-        timestamp: "Just now",
-        badge: "Launch Event",
-        imageUrl: "",
-        title: `Welcome to ${name} Showroom floor`,
-        description: `We are live on Bazar360! Stop by our physical collection or use WhatsApp to request personalized walkarounds with verified specs.`,
-        price: "Direct Access",
-        createdAt: timestampStr,
-      });
-    }
+    const socialLinks = [website, facebook, instagram, tiktok].filter((url): url is string => typeof url === "string" && url.trim().length > 0);
+    const activityFeed = socialLinks.map((url, index) => ({
+      id: `official-social-${index}`,
+      timestamp: "Available now",
+      badge: "Official Social Link",
+      imageUrl: "",
+      title: `Official ${name} profile`,
+      description: "Open the showroom's official social profile. Bazar360 does not fabricate scraped posts or engagement data.",
+      price: "",
+      createdAt: new Date().toISOString(),
+      url,
+    }));
 
     return {
       success: true,
-      avatarUrl,
-      coverImage,
+      avatarUrl: "",
+      coverImage: "",
       activityFeed,
     };
 
