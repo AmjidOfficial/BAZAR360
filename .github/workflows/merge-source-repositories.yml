@@ -1,0 +1,70 @@
+name: Merge Bazar360 Source Repositories
+
+on:
+  push:
+    branches:
+      - integration/all-repositories-2026-10-04
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  merge-sources:
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message != 'chore: merge source repositories'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical BAZAR360
+        uses: actions/checkout@v4
+        with:
+          ref: integration/all-repositories-2026-10-04
+          fetch-depth: 0
+
+      - name: Clone source repositories
+        run: |
+          set -e
+          mkdir -p /tmp/bazar-sources
+          git clone --depth=1 https://github.com/AmjidOfficial/Bazar360.online-V3.git /tmp/bazar-sources/Bazar360.online-V3
+          git clone --depth=1 https://github.com/AmjidOfficial/automotive-marketplace-platform.git /tmp/bazar-sources/automotive-marketplace-platform
+          git clone --depth=1 https://github.com/AmjidOfficial/BAZAR360.V2.0.git /tmp/bazar-sources/BAZAR360.V2.0
+          git clone --depth=1 https://github.com/AmjidOfficial/Marketplace.Bolt.git /tmp/bazar-sources/Marketplace.Bolt || true
+          git clone --depth=1 https://github.com/AmjidOfficial/Cars.git /tmp/bazar-sources/Cars
+
+      - name: Import source repositories
+        run: |
+          set -e
+          rm -rf _legacy/source-repositories
+          mkdir -p _legacy/source-repositories
+          for repo in Bazar360.online-V3 automotive-marketplace-platform BAZAR360.V2.0 Marketplace.Bolt Cars; do
+            mkdir -p "_legacy/source-repositories/$repo"
+            if [ -d "/tmp/bazar-sources/$repo" ]; then
+              rsync -a --exclude='.git' --exclude='.env' --exclude='*.pem' --exclude='*.key' --exclude='*.p12' --exclude='*.pfx' --exclude='node_modules' "/tmp/bazar-sources/$repo/" "_legacy/source-repositories/$repo/"
+            fi
+          done
+          cat > _legacy/source-repositories/README.md <<'EOF'
+# BAZAR360 Source Repository Archive
+
+This directory preserves source material from the previous Bazar360-related repositories.
+
+Canonical production application:
+- Repository root: AmjidOfficial/BAZAR360
+
+Imported sources:
+- Bazar360.online-V3
+- automotive-marketplace-platform
+- BAZAR360.V2.0
+- Marketplace.Bolt
+- Cars
+
+Sensitive local environment files and Git metadata are intentionally excluded.
+
+The source archives are reference material. Production code must use the canonical BAZAR360 architecture and backend.
+EOF
+
+      - name: Commit merged source archive
+        run: |
+          git config user.name "BAZAR360 Integration Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add _legacy/source-repositories
+          git commit -m "chore: merge source repositories" || exit 0
+          git push origin integration/all-repositories-2026-10-04
