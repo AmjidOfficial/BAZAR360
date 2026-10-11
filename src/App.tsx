@@ -169,14 +169,36 @@ function IdentityBanner({ currentUser }: { currentUser: any }) {
   let greeting = 'Welcome, Guest. Login to access full features.';
 
   if (currentUser) {
-    if (currentUser.role === 'dealer' || currentUser.role === 'admin') {
-      identity = 'Showroom Owner';
+    // Normalize legacy and current role labels before deciding which identity to show.
+    const normalizedRole = String(currentUser.role || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+
+    const showroomRoles = new Set([
+      'dealer',
+      'showroom owner',
+      'verified seller',
+      'sales rep',
+      'sales representative'
+    ]);
+    const adminRoles = new Set(['admin', 'super admin']);
+
+    if (adminRoles.has(normalizedRole)) {
+      identity = 'Administrator';
       bannerColor = 'bg-amber-500/10 border-amber-500/20 text-amber-500';
-      greeting = `Welcome back, ${currentUser.name || 'Owner'}. Your showroom dashboard is active.`;
+      greeting = `Welcome back, ${currentUser.name || currentUser.displayName || 'Admin'}. Your admin dashboard is active.`;
+    } else if (showroomRoles.has(normalizedRole)) {
+      identity = normalizedRole === 'sales rep' || normalizedRole === 'sales representative'
+        ? 'Sales Representative'
+        : 'Showroom Owner';
+      bannerColor = 'bg-amber-500/10 border-amber-500/20 text-amber-500';
+      greeting = `Welcome back, ${currentUser.name || currentUser.displayName || 'User'}. Your dashboard is active.`;
     } else {
       identity = 'Registered User';
       bannerColor = 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
-      greeting = `Welcome back, ${currentUser.name || 'User'}. Explore personalized recommendations.`;
+      greeting = `Welcome back, ${currentUser.name || currentUser.displayName || 'User'}. Explore personalized recommendations.`;
     }
   }
 
