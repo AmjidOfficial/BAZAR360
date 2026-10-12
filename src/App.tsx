@@ -1059,9 +1059,9 @@ function App() {
             const photo = fetchedProfile.photoURL || fetchedProfile.profilePhoto || firebaseUser.photoURL || '';
             activeProfile = {
               ...fetchedProfile,
-              displayName: fetchedProfile.displayName || firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan (Admin)' : 'Muhammad Amjid (Founder)')),
+              displayName: fetchedProfile.displayName || firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan' : (isAmjid ? 'Muhammad Amjid' : 'Bazar360 Member'))),
               phoneNumber: fetchedProfile.phoneNumber || firebaseUser.phoneNumber || '',
-              city: fetchedProfile.city || 'Peshawar',
+              city: fetchedProfile.city || '',
               photoURL: photo,
               profilePhoto: photo,
               createdAt: fetchedProfile.createdAt || (firebaseUser.metadata?.creationTime ? new Date(firebaseUser.metadata.creationTime).toISOString() : new Date().toISOString())
@@ -1084,7 +1084,17 @@ function App() {
             dbUpdateProfile(firebaseUser.uid, { lastLogin: new Date().toISOString() }).catch(err => console.warn("Last login update skip:", err));
 
           } else if (localProfile && localProfile.uid === firebaseUser.uid) {
-            activeProfile = { ...localProfile };
+            // Local storage is user-editable; preserve preferences, but never trust its role,
+            // email, or phone-verification flags for authorization.
+            activeProfile = {
+              ...localProfile,
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || localProfile.displayName || 'Bazar360 Member',
+              phoneNumber: firebaseUser.phoneNumber || '',
+              phoneVerified: !!firebaseUser.phoneNumber,
+              role: isMalak ? 'Dealer' : ((isAmjid || isGhani) ? 'Admin' : 'Buyer')
+            };
             setCurrentUser(activeProfile);
             dbSaveUserProfile(activeProfile).catch(err => console.warn("Profile persistence sync skip:", err));
           } else {
