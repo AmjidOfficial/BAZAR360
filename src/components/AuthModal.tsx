@@ -151,17 +151,17 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
       if (!profile) {
         profile = {
           uid: fUser.uid,
-          email: fUser.email || 'user@bazar360.online',
+          email: fUser.email || '',
           displayName: isMalakEmail ? 'Malak Mazhar' : (fUser.displayName || 'Guest User'),
-          phoneNumber: isMalakEmail ? '+923159085086' : (fUser.phoneNumber || ''),
-          phoneVerified: isMalakEmail || !!fUser.phoneNumber,
+          phoneNumber: fUser.phoneNumber || '',
+          phoneVerified: !!fUser.phoneNumber,
           role: isAdminEmail(fUser.email) ? 'Admin' : 'Buyer',
           status: 'Active',
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          city: 'Peshawar',
-          state: 'Khyber Pakhtunkhwa'
+          city: '',
+          state: ''
         };
         await dbSaveUserProfile(profile);
       } else if (isAdminEmail(fUser.email) && profile.role !== 'Admin') {
@@ -197,17 +197,17 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
       if (!profile) {
         profile = {
           uid: fUser.uid,
-          email: fUser.email || 'user@bazar360.online',
+          email: fUser.email || '',
           displayName: isMalakEmail ? 'Malak Mazhar' : (fUser.displayName || 'Guest User'),
-          phoneNumber: isMalakEmail ? '+923159085086' : (fUser.phoneNumber || ''),
-          phoneVerified: isMalakEmail || !!fUser.phoneNumber,
+          phoneNumber: fUser.phoneNumber || '',
+          phoneVerified: !!fUser.phoneNumber,
           role: isAdminEmail(fUser.email) ? 'Admin' : 'Buyer',
           status: 'Active',
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          city: 'Peshawar',
-          state: 'Khyber Pakhtunkhwa'
+          city: '',
+          state: ''
         };
         await dbSaveUserProfile(profile);
       } else if (isAdminEmail(fUser.email) && profile.role !== 'Admin') {
@@ -278,15 +278,15 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
             uid: result.user.uid,
             email: result.user.email || email,
             displayName: isMalakEmail ? 'Malak Mazhar' : (result.user.displayName || email.split('@')[0]),
-            phoneNumber: isMalakEmail ? '+923159085086' : '',
-            phoneVerified: isMalakEmail,
+            phoneNumber: result.user.phoneNumber || '',
+            phoneVerified: !!result.user.phoneNumber,
             role: isAdminEmail(email) ? 'Admin' : 'Individual User',
             status: 'Active',
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            city: 'Peshawar',
-            state: 'Khyber Pakhtunkhwa'
+            city: '',
+            state: ''
           };
           await dbSaveUserProfile(defaultProfile);
           setSuccess(t.successLogin);
@@ -317,8 +317,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess, lang }: AuthModa
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          city: 'Peshawar',
-          state: 'Khyber Pakhtunkhwa'
+          city: '',
+          state: ''
         };
         await dbSaveUserProfile(newProfile);
         setSuccess(t.successRegister);
