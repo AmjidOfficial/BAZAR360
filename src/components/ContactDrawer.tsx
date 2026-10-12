@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Phone, MessageSquare, Send, CheckCircle, Sparkles, MapPin, Clock, ExternalLink } from 'lucide-react';
 import { dbSaveLead } from '../lib/dbService';
+import { auth } from '../firebase';
 import { Lead } from '../types';
 
 interface ContactDrawerProps {
@@ -82,6 +83,7 @@ export default function ContactDrawer({ isOpen, onClose, lang, initialMessage }:
     setIsSubmitting(true);
     const newLead: Lead = {
       id: `support-lead-${Date.now()}`,
+      customerId: auth.currentUser?.uid || 'guest',
       type: 'Support Request',
       title: `Support Inquiry from ${name}`,
       userName: name,
