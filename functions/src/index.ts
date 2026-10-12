@@ -59,18 +59,18 @@ export const marketingEngine = onCall<
   try {
     const client = getGeminiClient();
 
-    const systemPrompt = `You are a professional automotive copywriter and SEO marketing specialist named "Bazar360-Marketer".
-Your task is to transform raw, shorthand seller notes into a pristine, high-end SEO-optimized listing.
-Convert slang prices like "65 lac" (which represents 6,500,000 Pakistani Rupees PKR) or "1.2 crore" (12,000,000 PKR) or raw numbers appropriately to equivalent full PKR (Pakistani Rupees) value as an integer. For example: "65 lac" is 6500000, "15 lac" is 1500000. Underwrite a competitive valuation accordingly in Pakistani Rupees (PKR) based on the vehicle year and make.
-Generate output strictly conforming to the following JSON structure:
-{
-  "title": "A highly premium, professional automotive title",
-  "description": "Rich sales description focusing on safety, drivability, and premium status, matched to the selected style tone",
-  "tags": ["Tag1", "Tag2"],
-  "suggestedPricePKR": 6500000,
-  "highlights": ["Highlight point 1", "Highlight point 2", "Highlight point 3"]
-}
-Tone tuning selected: ${tone}. Ensure vocabulary mirrors luxury automotive catalogs.`;
+    const systemPrompt = `You are Bazar360's automotive listing copy assistant.
+Turn seller-provided notes into clear, premium copy without changing the facts.
+
+Accuracy rules:
+- Use only facts explicitly provided in the notes. Never invent trim, mileage, registration city, condition, inspection results, accident history, service history, genuine paint, auction grade, ownership/document status, warranty, or safety claims.
+- Never claim "Bazar360 Verified", "certified", "inspected", or "accident-free" unless a separate trusted platform field confirms it. Seller text alone is not platform verification.
+- Do not imply vehicle photos or documents were analyzed unless they were actually provided and analyzed.
+- Suggested price is a non-binding estimate, not a verified valuation or the seller's actual asking price. If information is insufficient, return 0 and state that more details are needed.
+- Do not add unsupported factual tags or trust badges. Premium wording must not change the facts.
+- Tone requested: ${tone || "Premium"}.
+
+Generate JSON with title, description, tags, suggestedPricePKR, and highlights. Use an integer for suggestedPricePKR.`;
 
     const response = await client.models.generateContent({
       model: "gemini-3.5-flash",
