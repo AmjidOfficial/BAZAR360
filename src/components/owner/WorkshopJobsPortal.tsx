@@ -90,8 +90,8 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
   const activeList = getActiveList();
 
   // Financial aggregates
-  const totalCompletedRevenue = completedJobs.reduce((sum, j) => sum + (j.invoice?.status === 'Paid' ? (j.invoice.amount || 14500) : 0), 0);
-  const outstandingInvoices = jobs.reduce((sum, j) => sum + (j.status === 'Completed' && j.invoice?.status !== 'Paid' ? (j.invoice?.amount || 14500) : 0), 0);
+  const totalCompletedRevenue = completedJobs.reduce((sum, j) => sum + (j.invoice?.status === 'Paid' ? (Number(j.invoice.amount) || 0) : 0), 0);
+  const outstandingInvoices = jobs.reduce((sum, j) => sum + (j.status === 'Completed' && j.invoice?.status !== 'Paid' ? (Number(j.invoice?.amount) || 0) : 0), 0);
 
   return (
     <div className="space-y-6 text-left animate-fadeIn font-sans">
@@ -104,7 +104,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <Wrench size={22} className="animate-spin" />
           </div>
           <div>
-            <span className="text-xl font-black text-[var(--color-text-header)] font-mono">{todayJobs.length || 2}</span>
+            <span className="text-xl font-black text-[var(--color-text-header)] font-mono">{todayJobs.length}</span>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Active Jobs (Today)</span>
           </div>
         </div>
@@ -114,7 +114,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <DollarSign size={22} />
           </div>
           <div>
-            <span className="text-xl font-black text-[var(--color-accent-main)] font-mono">PKR {totalCompletedRevenue.toLocaleString() || '185,000'}</span>
+            <span className="text-xl font-black text-[var(--color-accent-main)] font-mono">PKR {totalCompletedRevenue.toLocaleString()}</span>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Settled Invoice Revenue</span>
           </div>
         </div>
@@ -124,7 +124,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <Clock size={22} />
           </div>
           <div>
-            <span className="text-xl font-black text-amber-400 font-mono">PKR {outstandingInvoices.toLocaleString() || '43,500'}</span>
+            <span className="text-xl font-black text-amber-400 font-mono">PKR {outstandingInvoices.toLocaleString()}</span>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Outstanding Invoices</span>
           </div>
         </div>
