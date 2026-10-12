@@ -125,8 +125,8 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <Users size={22} />
           </div>
           <div>
-            <span className="text-xl font-black text-indigo-400 font-mono">{staff.length}</span>
-            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Specialized Mechanics</span>
+            <span className="text-xl font-black text-indigo-400 font-mono">Not set</span>
+            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Technician roster</span>
           </div>
         </div>
 
