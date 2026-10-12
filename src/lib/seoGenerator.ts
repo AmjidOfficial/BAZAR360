@@ -46,7 +46,8 @@ export async function generateDealerSeo(dealerId: string): Promise<string> {
     }
     const dealer = dealerDoc.data() as any;
 
-    const title = `${dealer.name} - Verified Showroom | Bazar360 Online`;
+    const verificationLabel = dealer.verified === true ? 'Verified Showroom' : 'Showroom';
+    const title = `${dealer.name} - ${verificationLabel} | Bazar360 Online`;
     const description = dealer.subtitle || dealer.description || `Browse active pre-owned vehicle stock and contact ${dealer.name} directly on Bazar360.online.`;
     // Showroom shares prioritize Showroom Logo for clear branding preview
     const rawImage = dealer.logoUrl || dealer.logo || dealer.avatarUrl || dealer.coverImage;
