@@ -741,13 +741,17 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                   <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-wider">
                     {isPrivateSeller ? 'Direct Ad Owner Contact:' : 'Showroom Main Phone:'}
                   </p>
-                  <a 
-                    href={`tel:${resolvedSellerPhone}`}
-                    className="text-sm font-extrabold text-orange-500 font-mono tracking-widest bg-[var(--color-bg-primary)] hover:bg-slate-100 dark:hover:bg-bg-tertiary py-2.5 px-4 rounded-xl border border-[var(--color-border-main)] inline-flex items-center gap-2 select-all cursor-pointer shadow-sm transition-all"
-                  >
-                    <Phone size={14} className="text-orange-500" /> 
-                    <span>{resolvedSellerPhone}</span>
-                  </a>
+                  {resolvedSellerPhone ? (
+                    <a
+                      href={`tel:${resolvedSellerPhone}`}
+                      className="text-sm font-extrabold text-orange-500 font-mono tracking-widest bg-[var(--color-bg-primary)] hover:bg-slate-100 dark:hover:bg-bg-tertiary py-2.5 px-4 rounded-xl border border-[var(--color-border-main)] inline-flex items-center gap-2 select-all cursor-pointer shadow-sm transition-all"
+                    >
+                      <Phone size={14} className="text-orange-500" />
+                      <span>{resolvedSellerPhone}</span>
+                    </a>
+                  ) : (
+                    <span className="text-xs text-[var(--color-text-muted)]">Phone number not provided</span>
+                  )}
                   {resolvedSellerWhatsApp && (
                     <a 
                       href={`https://wa.me/${formattedWhatsapp}`}
@@ -764,13 +768,19 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
 
               {/* Action Buttons for Direct Owner Contact */}
               <div className="space-y-3">
-                <a 
-                  href={`tel:${resolvedSellerPhone}`}
-                  className="w-full py-3.5 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-secondary)] dark:bg-white dark:text-[#26344F] dark:hover:bg-gray-200 text-[var(--color-text-header)] font-mono font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
-                >
-                  <Phone size={14} />
-                  {isPrivateSeller ? 'Call Individual Seller' : 'Call Showroom'}
-                </a>
+                {resolvedSellerPhone ? (
+                  <a
+                    href={`tel:${resolvedSellerPhone}`}
+                    className="w-full py-3.5 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-secondary)] dark:bg-white dark:text-[#26344F] dark:hover:bg-gray-200 text-[var(--color-text-header)] font-mono font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
+                  >
+                    <Phone size={14} />
+                    {isPrivateSeller ? 'Call Individual Seller' : 'Call Showroom'}
+                  </a>
+                ) : (
+                  <div className="w-full py-3.5 text-center text-xs text-[var(--color-text-muted)] border border-[var(--color-border-main)] rounded-xl">
+                    Seller phone number not provided
+                  </div>
+                )}
                 
                 {formattedWhatsapp && (
                   <a 
