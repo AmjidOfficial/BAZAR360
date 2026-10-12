@@ -1096,7 +1096,7 @@ function App() {
               role: isMalak ? 'Dealer' : ((isAmjid || isGhani) ? 'Admin' : 'Buyer')
             };
             setCurrentUser(activeProfile);
-            dbSaveUserProfile(activeProfile).catch(err => console.warn("Profile persistence sync skip:", err));
+            try { localStorage.setItem('bazar360_user', JSON.stringify(activeProfile)); } catch (e) {}
           } else {
             // First-time signup fallback: create a robust, rules-compliant profile
             const photo = firebaseUser.photoURL || '';
