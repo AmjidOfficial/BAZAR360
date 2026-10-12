@@ -22,26 +22,22 @@ interface VehicleDetailProps {
 }
 
 export function getContactDataForListing(car: CarListing, dealer?: Dealer) {
-  const isIndividualSeller = 
-    car.dealerId === 'private' || 
-    car.dealerId === 'private-seller' || 
-    car.dealerId === 'individual' || 
-    car.sellerType === 'Individual' || 
-    (car.sellerType as string) === 'individual' || 
-    dealer?.id === 'private' || 
-    !car.dealerId ||
-    Boolean(car.sellerPhone && car.sellerName && car.sellerName !== 'Bazar360');
+  const sellerType = String(car.sellerType || '').trim().toLowerCase();
+  const privateIds = ['private', 'private-seller', 'individual'];
+  const isIndividualSeller = privateIds.includes(String(car.dealerId || '').toLowerCase()) ||
+    ['individual', 'individual user', 'private seller', 'private'].includes(sellerType) ||
+    (!car.dealerId && !dealer);
 
-  const resolvedSellerName = isIndividualSeller 
-    ? (car.sellerName || car.createdBy || 'Individual User') 
-    : (dealer?.name || 'Bazar360 Showroom');
-  const resolvedSellerLocation = car.location || car.registrationCity || (isIndividualSeller ? 'Pakistan' : dealer?.location) || 'Peshawar, Pakistan';
-  const resolvedSellerPhone = isIndividualSeller 
-    ? (car.sellerPhone || car.phone || 'Contact Seller') 
-    : (dealer?.phone || '+923159085086');
-  const resolvedSellerWhatsApp = isIndividualSeller 
-    ? (car.sellerWhatsApp || car.sellerPhone || car.phone || '') 
-    : (dealer?.whatsapp || '923159085086');
+  const resolvedSellerName = isIndividualSeller
+    ? (car.sellerName || car.ownerDetails?.displayName || 'Individual seller')
+    : (dealer?.name || 'Showroom details unavailable');
+  const resolvedSellerLocation = car.location || car.registrationCity || dealer?.location || 'Location not provided';
+  const resolvedSellerPhone = isIndividualSeller
+    ? (car.sellerPhone || car.phone || '')
+    : (dealer?.phone || '');
+  const resolvedSellerWhatsApp = isIndividualSeller
+    ? (car.sellerWhatsApp || car.sellerPhone || car.phone || '')
+    : (dealer?.whatsapp || dealer?.phone || '');
 
   return {
     isPrivateSeller: isIndividualSeller,
@@ -88,7 +84,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
     });
   }, [car]);
 
-  const videoUrl = car.videoUrl || "https://assets.mixkit.co/videos/preview/mixkit-car-headlights-in-the-dark-34440-large.mp4";
+  const videoUrl = car.videoUrl || '';
 
   const imagesList = useMemo(() => {
     if (car.images && car.images.length > 0) {
@@ -153,14 +149,15 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
     formattedWhatsapp
   } = contactData;
 
-  const carCity = (resolvedSellerLocation || 'Peshawar').split(',')[0].trim().toLowerCase();
+  const carCity = (car.location || car.registrationCity || dealer?.location || '').split(',')[0].trim().toLowerCase();
   const similarListings = useMemo(() => {
     if (!allListings || allListings.length === 0) return [];
     return allListings
       .filter(item => item.id !== car.id)
       .filter(item => {
-        const itemCity = (item.location || 'Peshawar').split(',')[0].trim().toLowerCase();
-        return itemCity.includes(carCity) || carCity.includes(itemCity) || item.make.toLowerCase() === car.make.toLowerCase();
+        const itemCity = (item.location || item.registrationCity || '').split(',')[0].trim().toLowerCase();
+        const sameCity = !!carCity && !!itemCity && (itemCity.includes(carCity) || carCity.includes(itemCity));
+        return sameCity || item.make.toLowerCase() === car.make.toLowerCase();
       })
       .slice(0, 4);
   }, [allListings, car.id, car.make, carCity]);
@@ -344,8 +341,8 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#00D2FF] to-[#3B82F6] hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-md shadow-cyan-500/20 cursor-pointer"
             >
               <RotateCw size={14} className="stroke-[2.5]" />
-              <span className="hidden sm:inline">360° Inspection</span>
-              <span className="sm:hidden">360°</span>
+              <span className="hidden sm:inline">Vehicle Preview</span>
+              <span className="sm:hidden">Preview</span>
             </button>
             <button 
               onClick={() => setShowARModal(true)}
@@ -728,7 +725,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 ) : (
                   <div className="space-y-1">
                     <span className="inline-block bg-[var(--color-accent-main)]/10 text-[var(--color-accent-main)] text-[10px] font-mono font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-[var(--color-accent-main)]/20">
-                      Bazar360 Certified Showroom
+                      {dealer?.verified ? 'Verified Showroom' : 'Showroom on Bazar360'}
                     </span>
                     <h3 className="text-lg font-black text-[#26344F] dark:text-[var(--color-text-header)] uppercase tracking-tight">{resolvedSellerName}</h3>
                     <p className="text-xs text-[var(--color-text-muted)] flex items-center justify-center gap-1">
