@@ -120,7 +120,7 @@ export default function DetailedVehiclePostingPage({
   contextListing = null
 }: DetailedVehiclePostingPageProps) {
   const t = translations[lang];
-  const conciergeWhatsApp = String(import.meta.env.VITE_SUPPORT_WHATSAPP || '').replace(/\D/g, '');
+  const conciergeWhatsApp = String((import.meta as any).env?.VITE_SUPPORT_WHATSAPP || '').replace(/\D/g, '');
 
   // Pathway Mode: 'sell_for_u' (VIP Concierge) vs 'direct_post' (Direct Self Posting)
   const [postingType, setPostingType] = useState<'sell_for_u' | 'direct_post'>('direct_post');
