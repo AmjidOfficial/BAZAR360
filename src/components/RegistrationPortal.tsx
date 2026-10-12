@@ -83,28 +83,8 @@ interface RegistrationPortalProps {
   onClose?: () => void;
 }
 
-// Live presets for visitor tracking simulation
-interface SimVisitorLog {
-  id: string;
-  name: string;
-  phone: string;
-  ip_address: string;
-  device_type: string;
-  browser: string;
-  city: string;
-  visit_count: number;
-  last_visit: string;
-  score: number;
-  category: 'Cold' | 'Warm' | 'Hot' | 'VIP';
-}
-
-const SIMULATED_VISITORS: SimVisitorLog[] = [
-  { id: 'v-01', name: 'Malak Mazhar', phone: '03159085086', ip_address: '182.180.45.12', device_type: 'Mobile', browser: 'Chrome Mobile', city: 'Peshawar', visit_count: 14, last_visit: '2 mins ago', score: 92, category: 'VIP' },
-  { id: 'v-02', name: 'Zia-ur-Rehman', phone: '03149198403', ip_address: '111.88.234.90', device_type: 'Mobile', browser: 'Safari', city: 'Peshawar', visit_count: 5, last_visit: '15 mins ago', score: 78, category: 'Hot' },
-  { id: 'v-03', name: 'Amjid Khan', phone: '03125678901', ip_address: '202.163.120.4', device_type: 'Desktop', browser: 'Chrome', city: 'Islamabad', visit_count: 2, last_visit: '1 hour ago', score: 45, category: 'Warm' },
-  { id: 'v-04', name: 'Sajid Afridi', phone: '03339123456', ip_address: '175.107.12.87', device_type: 'Mobile', browser: 'Samsung Internet', city: 'Rawalpindi', visit_count: 1, last_visit: 'Yesterday', score: 20, category: 'Cold' },
-  { id: 'v-05', name: 'Imran Peshawar', phone: '03157771234', ip_address: '182.176.99.112', device_type: 'Desktop', browser: 'Edge', city: 'Peshawar', visit_count: 19, last_visit: '4 mins ago', score: 98, category: 'VIP' }
-];
+// Do not display fabricated visitor identities, contact details, IP addresses, or activity scores.
+const SIMULATED_VISITORS: SimVisitorLog[] = [];
 
 export default function RegistrationPortal({ 
   currentUser, 
@@ -4060,7 +4040,7 @@ export default function RegistrationPortal({
                         <Users size={18} className="text-sky-500" /> Visitor Intelligence Stream (Showroom Specific)
                       </h3>
                       <span className="bg-sky-100 text-sky-700 text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                        Active Tracker Live
+                        Awaiting live data
                       </span>
                     </div>
 
@@ -4077,7 +4057,13 @@ export default function RegistrationPortal({
                           </tr>
                         </thead>
                         <tbody>
-                          {SIMULATED_VISITORS.map(v => (
+                          {SIMULATED_VISITORS.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="py-8 px-4 text-center text-sm text-text-muted">
+                                No verified visitor events are available yet. Real activity will appear here when tracking data is connected.
+                              </td>
+                            </tr>
+                          ) : SIMULATED_VISITORS.map(v => (
                             <tr key={v.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                               <td className="py-2.5 font-bold">
                                 <div>{v.name}</div>
@@ -4105,7 +4091,7 @@ export default function RegistrationPortal({
                   </div>
 
                   <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-4 text-[10px] text-text-muted leading-normal font-mono uppercase tracking-wide">
-                    📊 Bazar360 AI evaluates visit duration, favorites saved, and phone clicks to generate exact lead temperatures.
+                    Analytics should reflect recorded activity only. This panel does not show fabricated visitor records or estimated lead scores.
                   </div>
                 </div>
               </div>
