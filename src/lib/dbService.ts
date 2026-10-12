@@ -2247,6 +2247,9 @@ export async function dbFetchServiceBookings(userPhoneOrUid?: string): Promise<S
     let localBookings: ServiceBooking[] = [];
     try {
       localBookings = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
+      if (userPhoneOrUid) {
+        localBookings = localBookings.filter(b => b.userPhone === userPhoneOrUid || b.userId === userPhoneOrUid);
+      }
     } catch {}
 
     const combined = [...list];
@@ -2259,8 +2262,13 @@ export async function dbFetchServiceBookings(userPhoneOrUid?: string): Promise<S
     return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (err) {
     console.warn('[ServiceBooking] Fetching offline service bookings:', err);
+    // An unrestricted offline fallback would expose other customers' booking data.
+    if (!userPhoneOrUid) return [];
     try {
-      return JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
+      const localBookings = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]') as ServiceBooking[];
+      return localBookings
+        .filter(b => b.userPhone === userPhoneOrUid || b.userId === userPhoneOrUid)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch {
       return [];
     }
