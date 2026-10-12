@@ -200,10 +200,11 @@ export async function callScrapeSocials(socials: ScrapeSocialsRequest): Promise<
     },
     body: JSON.stringify(socials),
   });
-  if (!response.ok) {
-    throw new Error('Local dev scraper API offline.');
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result.success === false) {
+    throw new Error(result.error || 'Automatic social scraping is not configured.');
   }
-  return response.json();
+  return result;
 }
 
 export interface AiTranslateRequest {
@@ -296,19 +297,25 @@ export async function callGoogleSheetsSync(payload: {
   data: any[];
 }): Promise<{ success: boolean; message?: string; error?: string; [key: string]: any }> {
   try {
+    const idToken = await auth.currentUser?.getIdToken();
+    if (!idToken) {
+      return { success: false, error: 'Please sign in as an administrator before exporting data.' };
+    }
     const appCheckHeader = await getAppCheckHeader();
     const response = await fetch('/api/google-sheets/sync', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
         ...appCheckHeader
       },
       body: JSON.stringify(payload),
     });
+    const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error('Google Sheets sync backend API not responding or offline.');
+      return { success: false, error: result.error || 'Google Sheets sync is not available.' };
     }
-    return response.json();
+    return result;
   } catch (error: any) {
     console.error('Google Sheets Sync API Error:', error);
     return { success: false, error: error.message || 'Failed to communicate with Sheets sync API.' };
