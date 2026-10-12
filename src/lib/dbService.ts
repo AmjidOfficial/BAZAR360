@@ -716,6 +716,7 @@ export async function dbRegisterDealership(dealer: Omit<Dealer, 'activityFeed'>)
   } catch (err) {
     toast.error('Failed to register showroom.');
     handleFirestoreError(err, OperationType.WRITE, `${DEALERS_COLLECTION}/${dealer.id}`);
+    throw err;
   }
 }
 
