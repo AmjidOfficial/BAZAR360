@@ -513,9 +513,44 @@ export default function DetailedVehiclePostingPage({
       setStep(1);
       return;
     }
-    if (!price || parseFloat(price) <= 0) {
+    if (!year || year < 1980 || year > new Date().getFullYear() + 1) {
+      toast.error('Please select a valid manufacturing year.');
+      setStep(2);
+      return;
+    }
+    if (!registrationCity || !registrationYear || !color || !mileage || Number(mileage.replace(/,/g, '')) < 0 || !engineCC || Number(engineCC) <= 0 || !transmission || !fuelType || !condition || !bodyCondition || !assemblyType) {
+      toast.error('Complete the required vehicle specifications using the actual vehicle details.');
+      setStep(2);
+      return;
+    }
+    if (!city && !location) {
+      toast.error('Please provide the vehicle location.');
+      setStep(3);
+      return;
+    }
+    if (!price || parseFloat(price.replace(/,/g, '')) <= 0) {
       toast.error('Please enter a valid price in PKR.');
       setStep(4);
+      return;
+    }
+    if (!documentType || tokenTaxPaid === null) {
+      toast.error('Please select the document type and indicate the token tax status.');
+      setStep(4);
+      return;
+    }
+    if (postingMode === 'showroom' && !selectedShowroomForPost) {
+      toast.error('Select the showroom that owns this listing.');
+      setStep(3);
+      return;
+    }
+    if (postingMode === 'individual' && !sellerPhone.trim()) {
+      toast.error('Please provide a contact phone number for buyers.');
+      setStep(3);
+      return;
+    }
+    if (!photos.some(p => p.cloudinaryUrl || (p.status === 'success' && p.previewUrl && p.previewUrl !== NO_IMAGE_SVG))) {
+      toast.error('Upload at least one real vehicle photo before publishing.');
+      setStep(5);
       return;
     }
 
@@ -534,7 +569,7 @@ export default function DetailedVehiclePostingPage({
     const primaryImage = finalImages[coverPhotoIndex] || finalImages[0];
     const numPrice = parseFloat(price.replace(/,/g, '')) || 0;
     const numMileage = parseFloat(mileage.replace(/,/g, '')) || 0;
-    const numEngine = parseInt(engineCC) || 1300;
+    const numEngine = parseInt(engineCC, 10);
 
     const listingTitle = `${year} ${make} ${model} ${variant}`;
     
@@ -605,7 +640,7 @@ export default function DetailedVehiclePostingPage({
       images: finalImages,
       imageUrl: primaryImage,
       primaryImage,
-      tokenTaxPaid,
+      tokenTaxPaid: tokenTaxPaid === true,
       documentType,
       range: `Registration Year: ${registrationYear}`,
       features: selectedFeatures,
@@ -1038,6 +1073,7 @@ export default function DetailedVehiclePostingPage({
                     onChange={(e) => setYear(Number(e.target.value))}
                     className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] focus:border-orange-500 outline-none"
                   >
+                    <option value={0}>Select manufacturing year</option>
                     {Array.from({ length: 45 }, (_, i) => 2026 - i).map((y) => (
                       <option key={y} value={y}>{y}</option>
                     ))}
@@ -1198,6 +1234,7 @@ export default function DetailedVehiclePostingPage({
                     onChange={(e) => setBodyCondition(e.target.value as any)}
                     className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] outline-none"
                   >
+                    <option value="">Select body condition</option>
                     <option value="Total Genuine">Total Genuine</option>
                     <option value="Minor Touch-ups">Minor Touch-ups</option>
                     <option value="Major Repaint">Major Repaint</option>
@@ -1310,6 +1347,7 @@ export default function DetailedVehiclePostingPage({
                     }}
                     className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] outline-none"
                   >
+                    <option value="">Select registration city</option>
                     {PAKISTAN_CITIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -1513,6 +1551,7 @@ export default function DetailedVehiclePostingPage({
                     onChange={(e) => setDocumentType(e.target.value as any)}
                     className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] outline-none"
                   >
+                    <option value="">Select document type</option>
                     <option value="Smart Card">Smart Card</option>
                     <option value="Original Book">Original Book</option>
                     <option value="Duplicate">Duplicate Book</option>
@@ -1525,14 +1564,16 @@ export default function DetailedVehiclePostingPage({
                   </label>
                   <button
                     type="button"
-                    onClick={() => setTokenTaxPaid(!tokenTaxPaid)}
+                    onClick={() => setTokenTaxPaid(tokenTaxPaid === null ? true : !tokenTaxPaid)}
                     className={`w-full py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition border cursor-pointer ${
-                      tokenTaxPaid
-                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-500'
-                        : 'bg-rose-500/15 border-rose-500 text-rose-500'
+                      tokenTaxPaid === null
+                        ? 'bg-[var(--color-bg-secondary)] border-[var(--color-border-main)] text-[var(--color-text-muted)]'
+                        : tokenTaxPaid
+                          ? 'bg-emerald-500/15 border-emerald-500 text-emerald-500'
+                          : 'bg-rose-500/15 border-rose-500 text-rose-500'
                     }`}
                   >
-                    {tokenTaxPaid ? 'Token Tax Up to Date' : 'Token Tax Unpaid'}
+                    {tokenTaxPaid === null ? 'Select token tax status' : tokenTaxPaid ? 'Seller reports tax paid' : 'Seller reports tax unpaid'}
                   </button>
                 </div>
               </div>
