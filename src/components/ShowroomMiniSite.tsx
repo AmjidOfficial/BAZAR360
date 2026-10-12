@@ -84,16 +84,20 @@ export default function ShowroomMiniSite({
   const [qrSize, setQrSize] = useState(250);
 
   // Business Card Customizer States
-  const [cardName, setCardName] = useState('Malak Mazhar');
-  const [cardTitle, setCardTitle] = useState('Director / Chief Partner');
-  const [cardPhone, setCardPhone] = useState('0315-9085086');
-  const [cardSecondary, setCardSecondary] = useState('0346-9085033');
-  const [cardAddress, setCardAddress] = useState('Alamas Car Village, Ring Road, Peshawar');
-  const [cardSlogan, setCardSlogan] = useState('The Right Choice');
+  const [cardName, setCardName] = useState(initialDealer.contactPerson || initialDealer.name || '');
+  const [cardTitle, setCardTitle] = useState('Showroom contact');
+  const [cardPhone, setCardPhone] = useState(initialDealer.phone || initialDealer.whatsapp || '');
+  const [cardSecondary, setCardSecondary] = useState('');
+  const [cardAddress, setCardAddress] = useState(initialDealer.location || '');
+  const [cardSlogan, setCardSlogan] = useState(initialDealer.subtitle || '');
   const [isCardBack, setIsCardBack] = useState(false);
 
   useEffect(() => {
     setDealer(initialDealer);
+    setCardName(initialDealer.contactPerson || initialDealer.name || '');
+    setCardPhone(initialDealer.phone || initialDealer.whatsapp || '');
+    setCardAddress(initialDealer.location || '');
+    setCardSlogan(initialDealer.subtitle || '');
   }, [initialDealer]);
 
   useEffect(() => {
@@ -708,12 +712,12 @@ export default function ShowroomMiniSite({
 
                       <div className="space-y-2 pt-2 border-t border-[var(--color-border-main)] text-xs font-mono">
                         <div className="flex justify-between py-1 border-b border-[var(--color-border-main)]/5">
-                          <span className="text-[var(--color-text-muted)]">Mon - Sat:</span>
-                          <span className="text-[var(--color-accent-main)] font-bold">9:00 AM - 9:00 PM</span>
+                          <span className="text-[var(--color-text-muted)]">Business hours:</span>
+                          <span className="text-[var(--color-accent-main)] font-bold">{(dealer as any).openingHours || 'Not provided'}</span>
                         </div>
                         <div className="flex justify-between py-1">
-                          <span className="text-[var(--color-text-muted)]">Sunday:</span>
-                          <span className="text-[var(--color-accent-main)] font-bold">Appointment Only</span>
+                          <span className="text-[var(--color-text-muted)]">Contact:</span>
+                          <span className="text-[var(--color-accent-main)] font-bold">{dealer.phone || dealer.whatsapp || 'Not provided'}</span>
                         </div>
                       </div>
                     </div>
@@ -721,11 +725,7 @@ export default function ShowroomMiniSite({
 
                     {/* Team Members */}
                     {(() => {
-                      const DEFAULT_TEAM = [
-                        { name: 'Malak Mazhar', title: 'Director / Chief Partner', phone: '0315-9085086', avatar: 'M', color: '#00D2FF' },
-                        { name: 'Nasir Mirza', title: 'Senior Sales Executive', phone: '0346-9085033', avatar: 'N', color: '#FFB95F' },
-                        { name: 'Asfandyar Zafar', title: 'Vehicle Inspection Head', phone: '', avatar: 'A', color: '#10b981' },
-                      ];
+                      const DEFAULT_TEAM: any[] = [];
                       const team = (dealer as any).teamMembers?.length > 0 ? (dealer as any).teamMembers : DEFAULT_TEAM;
                       return (
                         <div className="space-y-6 pt-6 border-t border-[var(--color-border-main)]">
