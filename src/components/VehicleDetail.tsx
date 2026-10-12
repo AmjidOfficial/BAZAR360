@@ -163,29 +163,32 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
   }, [allListings, car.id, car.make, carCity]);
 
   const vehicleSchema = useMemo(() => {
+    const isSold = car.isSold === true || car.status === 'Sold';
+    const isReserved = car.status === 'Reserved';
+    const seller = isPrivateSeller
+      ? { '@type': 'Person', name: resolvedSellerName }
+      : {
+          '@type': 'AutoDealer',
+          name: dealer?.name || 'Showroom details unavailable',
+          ...(dealer?.phone ? { telephone: dealer.phone } : {})
+        };
+
     return {
       '@context': 'https://schema.org',
       '@type': 'Car',
-      name: car.title,
-      description: car.description || `${car.year} ${car.make} ${car.model} available at ${dealer?.name || 'Bazar360'}`,
-      image: imagesList[0],
+      name: car.title || `${car.year || ''} ${car.make || ''} ${car.model || ''}`.trim(),
+      description: car.description || `${car.year} ${car.make} ${car.model} listing on Bazar360. Contact the seller for more details.`,
+      ...(imagesList[0] ? { image: imagesList[0] } : {}),
       offers: {
         '@type': 'Offer',
         priceCurrency: 'PKR',
-        price: car.price,
-        itemCondition: car.condition === 'Used' ? 'https://schema.org/UsedCondition' : 'https://schema.org/NewCondition',
-        availability: 'https://schema.org/InStock',
-        seller: {
-          '@type': 'AutoDealer',
-          name: dealer?.name || 'Bazar360 Bazar360',
-          telephone: dealer?.phone || '+923149198403'
-        }
+        price: car.price > 0 ? car.price : undefined,
+        ...(car.condition === 'Used' ? { itemCondition: 'https://schema.org/UsedCondition' } : car.condition === 'New' ? { itemCondition: 'https://schema.org/NewCondition' } : {}),
+        ...(isSold ? { availability: 'https://schema.org/OutOfStock' } : isReserved ? { availability: 'https://schema.org/LimitedAvailability' } : { availability: 'https://schema.org/InStock' }),
+        seller
       },
-      brand: {
-        '@type': 'Brand',
-        name: car.make || 'Automotive'
-      },
-      model: car.model,
+      ...(car.make ? { brand: { '@type': 'Brand', name: car.make } } : {}),
+      ...(car.model ? { model: car.model } : {}),
       productionDate: car.year ? String(car.year) : undefined,
       mileageFromOdometer: car.mileage ? {
         '@type': 'QuantitativeValue',
@@ -193,7 +196,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
         unitCode: 'KMT'
       } : undefined
     };
-  }, [car, dealer, imagesList]);
+  }, [car, dealer, imagesList, isPrivateSeller, resolvedSellerName]);
 
   const handleDownloadFactSheet = () => {
     try {
@@ -208,7 +211,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
       
       doc.setFontSize(10);
       doc.setTextColor(255, 107, 0);
-      doc.text('OFFICIAL VEHICLE FACT SHEET & INSPECTION REPORT', 14, 30);
+      doc.text('VEHICLE FACT SHEET - LISTING DATA ONLY', 14, 30);
       
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(18);
@@ -313,8 +316,8 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
       <Helmet>
         <title>{`${car.title} (${car.year}) | ${dealer?.name || 'Bazar360'} - Bazar360`}</title>
         <meta name="description" content={car.description || `Buy ${car.title} (${car.year}) for PKR ${car.price} at ${dealer?.name || 'Bazar360'}. Verified inspection and authentic showroom listing.`} />
-        <meta property="og:title" content={`${car.title} - ${dealer?.name || 'Bazar360 Bazar360'}`} />
-        <meta property="og:description" content={`Verified ${car.year} ${car.make} ${car.model} in ${dealer?.location || 'Pakistan'}. Price: PKR ${car.price.toLocaleString()}`} />
+        <meta property="og:title" content={`${car.title} - ${dealer?.name || 'Bazar360'}`} />
+        <meta property="og:description" content={`${car.year} ${car.make} ${car.model} listing. ${car.location || dealer?.location || 'Location not provided'}. Price: ${car.price > 0 ? `PKR ${car.price.toLocaleString()}` : 'not provided'}`} />
         <meta property="og:image" content={imagesList[0]} />
         <meta property="og:url" content={window.location.href} />
         <meta property="og:type" content="product" />
@@ -459,7 +462,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
             {car.images && car.images.map((img, idx) => (
               <div 
                 key={`img-${idx}`}
-                className="relative shrink-0 cursor-pointer hover:scale-[1.03] transition-all"
+                className={`relative shrink-0 ${videoUrl ? 'cursor-pointer hover:scale-[1.03]' : 'hidden'} transition-all`}
                 onClick={() => {
                   setActiveMedia({ type: 'image', url: img });
                 }}
