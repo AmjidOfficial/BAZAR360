@@ -73,7 +73,7 @@ Accuracy rules:
 Generate JSON with title, description, tags, suggestedPricePKR, and highlights. Use an integer for suggestedPricePKR.`;
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.8-flash",
       contents: `Translate this shorthand seller note: "${rawInput}"`,
       config: {
         systemInstruction: systemPrompt,
@@ -158,7 +158,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
     formattedContents.push({ role: "user", parts: [{ text: message }] });
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.8-flash",
       contents: formattedContents,
       config: {
         systemInstruction: contextPrompt,
