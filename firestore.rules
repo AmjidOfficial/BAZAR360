@@ -204,8 +204,12 @@ service cloud.firestore {
       // Resolve that relationship through the showroom's trusted ownerUid field.
       function isLeadShowroomOwner(leadData) {
         return isSignedIn() && (
-          request.auth.uid == leadData.showroomOwnerId ||
           (
+            'showroomOwnerId' in leadData &&
+            request.auth.uid == leadData.showroomOwnerId
+          ) ||
+          (
+            'showroomOwnerId' in leadData &&
             leadData.showroomOwnerId is string &&
             exists(/databases/$(database)/documents/dealers/$(leadData.showroomOwnerId)) &&
             get(/databases/$(database)/documents/dealers/$(leadData.showroomOwnerId)).data.ownerUid == request.auth.uid
@@ -215,12 +219,13 @@ service cloud.firestore {
 
       function isAssignedLeadSalesRep(leadData) {
         return isSignedIn() &&
+          'assignedSalesRepId' in leadData &&
           leadData.assignedSalesRepId is string &&
           request.auth.uid == leadData.assignedSalesRepId;
       }
 
       allow read: if isSignedIn() && (
-        isOwner(resource.data.customerId) ||
+        (('customerId' in resource.data) && isOwner(resource.data.customerId)) ||
         isLeadShowroomOwner(resource.data) ||
         isAssignedLeadSalesRep(resource.data) ||
         isAdmin()
