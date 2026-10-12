@@ -25,6 +25,7 @@
   },
   "exclude": [
     "firebase-functions.ts",
+    "functions",
     "node_modules",
     "dist",
     "app"
