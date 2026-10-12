@@ -1092,20 +1092,17 @@ function App() {
             const photo = firebaseUser.photoURL || '';
             activeProfile = {
               uid: firebaseUser.uid,
-              email: firebaseUser.email || 'amjid.bisconni@gmail.com',
-              displayName: firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan (Admin)' : 'Muhammad Amjid (Founder)')),
-              phoneNumber: firebaseUser.phoneNumber || (isMalak ? '+923159085086' : (isGhani ? '+92 355 6908995' : '+92 314 3600000')),
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan' : (isAmjid ? 'Muhammad Amjid' : 'Bazar360 Member'))),
+              phoneNumber: firebaseUser.phoneNumber || '',
               photoURL: photo,
               profilePhoto: photo,
-              phoneVerified: isMalak || isGhani || !!firebaseUser.phoneNumber,
-              city: (isMalak || isGhani) ? 'Peshawar' : 'Lahore',
-              state: (isMalak || isGhani) ? 'Khyber Pakhtunkhwa' : 'Punjab',
+              phoneVerified: !!firebaseUser.phoneNumber,
+              city: (isMalak || isGhani) ? 'Peshawar' : '',
+              state: (isMalak || isGhani) ? 'Khyber Pakhtunkhwa' : '',
               role: isMalak ? 'Dealer' : ((isAmjid || isGhani) ? 'Admin' : 'Buyer'),
               status: 'Active',
-              socials: {
-                facebook: 'https://facebook.com/amjid.bazar360',
-                instagram: 'https://instagram.com/amjid_b360'
-              },
+              socials: {},
               createdAt: firebaseUser.metadata?.creationTime ? new Date(firebaseUser.metadata.creationTime).toISOString() : new Date().toISOString(),
               lastLogin: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
