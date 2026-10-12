@@ -200,19 +200,44 @@ service cloud.firestore {
     // ==========================================
     
     match /leads/{leadId} {
+      // A lead may reference the showroom document ID rather than the owner's UID.
+      // Resolve that relationship through the showroom's trusted ownerUid field.
+      function isLeadShowroomOwner(leadData) {
+        return isSignedIn() && (
+          request.auth.uid == leadData.showroomOwnerId ||
+          (
+            leadData.showroomOwnerId is string &&
+            exists(/databases/$(database)/documents/dealers/$(leadData.showroomOwnerId)) &&
+            get(/databases/$(database)/documents/dealers/$(leadData.showroomOwnerId)).data.ownerUid == request.auth.uid
+          )
+        );
+      }
+
+      function isAssignedLeadSalesRep(leadData) {
+        return isSignedIn() &&
+          leadData.assignedSalesRepId is string &&
+          request.auth.uid == leadData.assignedSalesRepId;
+      }
+
       allow read: if isSignedIn() && (
-        isOwner(resource.data.customerId) || 
-        isOwner(resource.data.showroomOwnerId) || 
+        isOwner(resource.data.customerId) ||
+        isLeadShowroomOwner(resource.data) ||
+        isAssignedLeadSalesRep(resource.data) ||
         isAdmin()
       );
+
       allow create: if isSignedIn() && (
-        isOwner(incoming().customerId) || 
+        isOwner(incoming().customerId) ||
         incoming().customerId == 'guest'
       );
-      allow update: if isSignedIn() && (
-        isOwner(resource.data.showroomOwnerId) || 
-        isAdmin()
-      );
+
+      allow update: if isAdmin() ||
+        isLeadShowroomOwner(resource.data) ||
+        (
+          isAssignedLeadSalesRep(resource.data) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        );
+
       allow delete: if isAdmin();
     }
 
