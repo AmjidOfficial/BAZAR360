@@ -129,9 +129,9 @@ export default function DetailedVehiclePostingPage({
 
   // PAGE 1: Cascading Vehicle Selection State
   const [vehicleType, setVehicleType] = useState<string>('car');
-  const [make, setMake] = useState<string>('Toyota');
-  const [model, setModel] = useState<string>('Corolla');
-  const [variant, setVariant] = useState<string>('Grande');
+  const [make, setMake] = useState<string>('');
+  const [model, setModel] = useState<string>('');
+  const [variant, setVariant] = useState<string>('');
 
   // Popup Sheet Selector State: 'none' | 'make' | 'model' | 'variant'
   const [activePopup, setActivePopup] = useState<'none' | 'make' | 'model' | 'variant'>('none');
@@ -140,24 +140,24 @@ export default function DetailedVehiclePostingPage({
   const [customInputValue, setCustomInputValue] = useState('');
 
   // PAGE 2: Vehicle Information & Specs
-  const [year, setYear] = useState<number>(2024);
-  const [registrationCity, setRegistrationCity] = useState('Islamabad');
-  const [registrationYear, setRegistrationYear] = useState<string>('2024');
-  const [color, setColor] = useState('White');
-  const [mileage, setMileage] = useState('15000');
-  const [engineCC, setEngineCC] = useState('1800');
-  const [transmission, setTransmission] = useState<'Automatic' | 'Manual'>('Automatic');
-  const [fuelType, setFuelType] = useState<'Petrol' | 'Diesel' | 'Hybrid' | 'Electric'>('Petrol');
-  const [condition, setCondition] = useState<'New' | 'Used'>('Used');
-  const [bodyCondition, setBodyCondition] = useState<'Total Genuine' | 'Minor Touch-ups' | 'Major Repaint'>('Total Genuine');
-  const [assemblyType, setAssemblyType] = useState<'Local' | 'Imported'>('Local');
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(['Alloy Rims', 'Power Windows', 'Push Start', 'Dual Airbags', 'ABS']);
+  const [year, setYear] = useState<number>(0);
+  const [registrationCity, setRegistrationCity] = useState('');
+  const [registrationYear, setRegistrationYear] = useState<string>('');
+  const [color, setColor] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [engineCC, setEngineCC] = useState('');
+  const [transmission, setTransmission] = useState<'Automatic' | 'Manual' | ''>('');
+  const [fuelType, setFuelType] = useState<'Petrol' | 'Diesel' | 'Hybrid' | 'Electric' | ''>('');
+  const [condition, setCondition] = useState<'New' | 'Used' | ''>('');
+  const [bodyCondition, setBodyCondition] = useState<'Total Genuine' | 'Minor Touch-ups' | 'Major Repaint' | ''>('');
+  const [assemblyType, setAssemblyType] = useState<'Local' | 'Imported' | ''>('');
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   // PAGE 3: Location & Seller Description
-  const [city, setCity] = useState('Peshawar');
-  const [location, setLocation] = useState('Ring Road, Peshawar, Pakistan');
+  const [city, setCity] = useState('');
+  const [location, setLocation] = useState('');
   const [postingMode, setPostingMode] = useState<'individual' | 'showroom'>('individual');
-  const [selectedShowroomForPost, setSelectedShowroomForPost] = useState<string>(contextDealerId || (dealers[0]?.id || ''));
+  const [selectedShowroomForPost, setSelectedShowroomForPost] = useState<string>(contextDealerId || '');
   const [sellerName, setSellerName] = useState(currentUser?.displayName || '');
   const [sellerPhone, setSellerPhone] = useState(currentUser?.phoneNumber || '');
   const [sellerWhatsApp, setSellerWhatsApp] = useState(currentUser?.phoneNumber || '');
@@ -165,10 +165,10 @@ export default function DetailedVehiclePostingPage({
   const [description, setDescription] = useState('');
 
   // PAGE 4: Price & Selling Details
-  const [price, setPrice] = useState('7500000');
+  const [price, setPrice] = useState('');
   const [priceNegotiable, setPriceNegotiable] = useState(true);
-  const [documentType, setDocumentType] = useState<'Smart Card' | 'Original Book' | 'Duplicate'>('Smart Card');
-  const [tokenTaxPaid, setTokenTaxPaid] = useState<boolean>(true);
+  const [documentType, setDocumentType] = useState<'Smart Card' | 'Original Book' | 'Duplicate' | ''>('');
+  const [tokenTaxPaid, setTokenTaxPaid] = useState<boolean | null>(null);
 
   // PAGE 5: Photos & Media Upload
   const [photos, setPhotos] = useState<UploadingMedia[]>([]);
@@ -248,7 +248,7 @@ export default function DetailedVehiclePostingPage({
     }
 
     try {
-      const savedDraft = localStorage.getItem('bazar360_post_ad_draft');
+      const savedDraft = localStorage.getItem('bazar360_post_ad_draft_v2');
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
         if (parsed) {
@@ -300,7 +300,7 @@ export default function DetailedVehiclePostingPage({
         location, city, postingMode, description, documentType, tokenTaxPaid, priceNegotiable,
         selectedFeatures, step, updatedAt: new Date().toISOString()
       };
-      localStorage.setItem('bazar360_post_ad_draft', JSON.stringify(draftPayload));
+      localStorage.setItem('bazar360_post_ad_draft_v2', JSON.stringify(draftPayload));
     } catch (e) {
       // ignore
     }
@@ -312,7 +312,7 @@ export default function DetailedVehiclePostingPage({
   ]);
 
   const handleClearDraft = () => {
-    localStorage.removeItem('bazar360_post_ad_draft');
+    localStorage.removeItem('bazar360_post_ad_draft_v2');
     setDraftRestored(false);
     toast.success('Saved draft cleared.');
   };
@@ -620,7 +620,7 @@ export default function DetailedVehiclePostingPage({
 
     try {
       await dbSaveListing(payload);
-      localStorage.removeItem('bazar360_post_ad_draft');
+      localStorage.removeItem('bazar360_post_ad_draft_v2');
       toast.success(lang === 'ur' ? 'اشتہار کامیابی سے شائع ہو گیا!' : 'Advertisement published successfully on Bazar360!');
       setSuccess(true);
       setIsSubmitting(false);
