@@ -202,7 +202,7 @@ export default function DetailedVehiclePostingPage({
       if (contextListing.price) setPrice(String(contextListing.price));
       if (contextListing.mileage !== undefined && contextListing.mileage !== null) setMileage(String(contextListing.mileage));
       if (contextListing.engineCC !== undefined && contextListing.engineCC !== null) setEngineCC(String(contextListing.engineCC));
-      if (contextListing.registrationYear) setRegistrationYear(String(contextListing.registrationYear));
+      if ((contextListing as any).registrationYear) setRegistrationYear(String((contextListing as any).registrationYear));
       if (contextListing.documentType) setDocumentType(contextListing.documentType as any);
       if (typeof contextListing.tokenTaxPaid === 'boolean') setTokenTaxPaid(contextListing.tokenTaxPaid);
       if (Array.isArray(contextListing.features)) setSelectedFeatures(contextListing.features);
