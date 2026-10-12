@@ -3,7 +3,7 @@ import {
   Wrench, CheckCircle2, Clock, AlertCircle, DollarSign, User, Phone, MessageSquare, 
   Send, Star, Layers, Settings, ChevronRight, Calendar, ArrowUpRight, BarChart3, Award, Users
 } from 'lucide-react';
-import { dbFetchServiceBookings, dbUpdateServiceBookingStatus } from '../../lib/dbService';
+import { dbFetchServiceBookingsForWorkshop, dbUpdateServiceBookingStatus } from '../../lib/dbService';
 import { ServiceBooking } from '../../types';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -24,10 +24,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
   useEffect(() => {
     async function load() {
       try {
-        const bookings = await dbFetchServiceBookings();
-        // Never expose unassigned bookings or another workshop's jobs in this showroom portal.
-        const normalizedDealerName = dealerName.trim().toLowerCase();
-        const matched = bookings.filter(b => (b.assignedWorkshop || '').trim().toLowerCase() === normalizedDealerName);
+        const matched = await dbFetchServiceBookingsForWorkshop(dealerId);
         setJobs(matched);
         if (matched.length > 0 && !selectedJob) {
           setSelectedJob(matched[0]);
