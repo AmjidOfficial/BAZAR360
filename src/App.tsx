@@ -410,28 +410,9 @@ function App() {
   };
 
   // Active Session User Profile
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    let saved = null;
-    try { saved = localStorage.getItem('bazar360_user'); } catch (e) { /* ignore */ }
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          // Migration: Auto-inject standard metadata fields required by the latest rules
-          return {
-            status: 'Active',
-            lastLogin: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            ...parsed
-          };
-        }
-      } catch (e) {
-        // Fallback
-      }
-    }
-    // Default config: Allow visitors to experience the web catalog purely as guests/visitors.
-    return null;
-  });
+  // Wait for Firebase Auth and a trusted Firestore profile before treating anyone as signed in.
+  // Local storage is user-editable and must never establish a role or authenticated session.
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   const initialState = getInitialStateFromUrl();
 
