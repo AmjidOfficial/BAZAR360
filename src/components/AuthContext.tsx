@@ -38,14 +38,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    try {
-      const saved = localStorage.getItem('bazar360_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  // Never trust localStorage for authorization roles; wait for Firebase Auth + Firestore profile.
   const [loading, setLoading] = useState(true);
 
   // Mapped client roles
@@ -99,19 +92,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // New register onboarding with strict rules-compliant defaults
             profile = {
               uid: fUser.uid,
-              email: fUser.email || 'user@bazar360.online',
+              email: fUser.email || '',
               displayName: isMalak ? 'Malak Mazhar' : (fUser.displayName || 'Guest User'),
-              phoneNumber: isMalak ? '+923159085086' : (fUser.phoneNumber || ''),
+              phoneNumber: fUser.phoneNumber || '',
               photoURL: fUser.photoURL || '',
               profilePhoto: fUser.photoURL || '',
-              phoneVerified: isMalak || !!fUser.phoneNumber,
+              phoneVerified: !!fUser.phoneNumber,
               role: isMalak ? 'Dealer' : (isDeveloper ? 'Admin' : 'Individual User'),
               status: 'Active',
               createdAt: fUser.metadata?.creationTime ? new Date(fUser.metadata.creationTime).toISOString() : new Date().toISOString(),
               lastLogin: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              city: 'Peshawar',
-              state: 'Khyber Pakhtunkhwa'
+              city: '',
+              state: ''
             };
             await dbSaveUserProfile(profile);
           } else {
@@ -132,14 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 updates.displayName = 'Malak Mazhar';
                 profile.displayName = 'Malak Mazhar';
               }
-              if (!profile.phoneNumber) {
-                updates.phoneNumber = '+923159085086';
-                profile.phoneNumber = '+923159085086';
-              }
-              if (!profile.city) {
-                updates.city = 'Peshawar';
-                profile.city = 'Peshawar';
-              }
+              // Do not fabricate contact details or location for a known account.
             }
             await dbUpdateProfile(fUser.uid, updates);
           }
