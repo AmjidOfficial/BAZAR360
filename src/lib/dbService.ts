@@ -2298,14 +2298,25 @@ export async function dbAddCrmInternalNote(recordId: string, notes: any[], colle
 }
 
 export async function dbUpdateServiceBookingStatus(bookingId: string, status: ServiceBooking['status']): Promise<void> {
+  const ref = doc(db, 'service_bookings', bookingId);
   try {
-    const ref = doc(db, 'service_bookings', bookingId);
     await updateDoc(ref, {
       status,
       updatedAt: new Date().toISOString()
     });
+  } catch (err) {
+    console.warn('[ServiceBooking] Remote status update failed; retaining local state only:', err);
+    try {
+      const items = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
+      const updated = items.map((i: any) => i.id === bookingId ? { ...i, status } : i);
+      localStorage.setItem('bazar360_service_bookings', JSON.stringify(updated));
+    } catch {}
+    throw err;
+  }
 
-    // Log status change to auditLogs
+  // Audit logging is secondary: a log write failure must not falsely report that the
+  // primary status update failed after Firestore has already committed it.
+  try {
     const auditId = `audit-status-${Date.now()}`;
     await setDoc(doc(db, 'auditLogs', auditId), {
       id: auditId,
@@ -2316,13 +2327,8 @@ export async function dbUpdateServiceBookingStatus(bookingId: string, status: Se
       timestamp: new Date().toISOString(),
       activeFlag: true
     });
-  } catch (err) {
-    console.warn('[ServiceBooking] Status update Firestore bypassed, updating localStorage:', err);
-    try {
-      const items = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
-      const updated = items.map((i: any) => i.id === bookingId ? { ...i, status } : i);
-      localStorage.setItem('bazar360_service_bookings', JSON.stringify(updated));
-    } catch {}
+  } catch (auditError) {
+    console.warn('[ServiceBooking] Status updated, but audit logging failed:', auditError);
   }
 }
 
