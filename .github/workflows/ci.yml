@@ -31,26 +31,6 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      # One-time remediation on PR reopen; remove this step after the lockfile update.
-      - name: Apply compatible dependency security fixes
-        if: github.event_name == 'pull_request' && github.event.action == 'reopened'
-        run: |
-          git fetch origin fix/vehicle-sales-crm-data
-          git checkout -B fix/vehicle-sales-crm-data origin/fix/vehicle-sales-crm-data
-          npm install --save-dev --save-exact gh-pages@6.1.1
-          npm audit fix || true
-          echo "Prepared package.json and package-lock.json for review."
-
-      - name: Upload dependency remediation files
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-remediation-lockfiles
-          path: |
-            package.json
-            package-lock.json
-          if-no-files-found: error
-          retention-days: 2
-
       - name: Report dependency vulnerabilities
         run: |
           npm audit --json > /tmp/npm-audit.json || true
