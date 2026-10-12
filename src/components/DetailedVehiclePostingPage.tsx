@@ -120,6 +120,7 @@ export default function DetailedVehiclePostingPage({
   contextListing = null
 }: DetailedVehiclePostingPageProps) {
   const t = translations[lang];
+  const conciergeWhatsApp = String(import.meta.env.VITE_SUPPORT_WHATSAPP || '').replace(/\D/g, '');
 
   // Pathway Mode: 'sell_for_u' (VIP Concierge) vs 'direct_post' (Direct Self Posting)
   const [postingType, setPostingType] = useState<'sell_for_u' | 'direct_post'>('direct_post');
@@ -753,13 +754,16 @@ export default function DetailedVehiclePostingPage({
             <button
               type="button"
               onClick={() => {
+                if (!conciergeWhatsApp) {
+                  toast.error('Concierge WhatsApp is not configured yet. Please use the support contact shown on Bazar360.');
+                  return;
+                }
                 const msg = encodeURIComponent("Hello Bazar360 team, I would like to request the 'Sell For U' VIP Brokerage service for my car.");
-                window.open(`https://wa.me/923159085086?text=${msg}`, '_blank');
-                toast.success("Opening WhatsApp with Bazar360 Concierge Desk!");
+                window.open(`https://wa.me/${conciergeWhatsApp}?text=${msg}`, '_blank', 'noopener,noreferrer');
               }}
               className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Phone size={14} /> Request VIP Handover Call (+92 315 9085086)
+              <Phone size={14} /> Request VIP Handover Call
             </button>
             
             <button
