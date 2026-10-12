@@ -108,18 +108,11 @@ Tone tuning selected: ${tone}. Ensure vocabulary mirrors luxury automotive catal
 
   } catch (error: any) {
     logger.error("AI engine Cloud Function fail:", error);
-    // Graceful secure fallback matches standard specs to keep runtime working even during API downtime
-    return {
-      success: false,
-      error: error.message,
-      result: {
-        title: "Premium Certified Sedan - Pakistan Edition",
-        description: `A meticulously styled vehicle ready for immediate city drives. Passed full Bazar360 safety inspections successfully. Shipped with standard specs. (Bypassed due to: ${error.message})`,
-        tags: ["Compact", "Certified", "Slick"],
-        suggestedPricePKR: 1500000,
-        highlights: ["Clean vehicle background checked", "Pristine interior condition", "Optimal Pakistani specs"],
-      },
-    };
+    // Never invent a vehicle, inspection status, condition, or price when AI fails.
+    throw new HttpsError(
+      "unavailable",
+      "AI listing generation is temporarily unavailable. No listing content or price was generated."
+    );
   }
 });
 
@@ -217,94 +210,14 @@ export const scrapeSocials = onCall<
     throw new HttpsError("invalid-argument", "Name of the showroom must be supplied.");
   }
 
-  try {
-    const curatedCoverImages = [
-      "",
-      "",
-      "",
-      ""
-    ];
-
-    const curatedLogos = [
-      "",
-      "",
-      ""
-    ];
-
-    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const coverImage = curatedCoverImages[hash % curatedCoverImages.length];
-    
-    // Default fallback logo path for Choice dealerships
-    const avatarUrl = name.toLowerCase().includes("choice")
-      ? "./auto_choice_logo_1781509565476.jpg"
-      : curatedLogos[hash % curatedLogos.length];
-
-    const activityFeed: any[] = [];
-    const timestampStr = new Date().toISOString();
-
-    if (tiktok) {
-      activityFeed.push({
-        id: `act-tiktok-${Date.now()}`,
-        timestamp: "Just now",
-        badge: "TikTok Reel",
-        imageUrl: "",
-        title: `Trending TikTok walkaround on @${name.toLowerCase().replace(/\s+/g, "")}`,
-        description: `Watch our high-engagement video walkaround and exhaust sound review of our newly imported premium sports touring model.`,
-        price: "Available PKR",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (instagram || facebook) {
-      activityFeed.push({
-        id: `act-social-${Date.now() + 1}`,
-        timestamp: "3 hours ago",
-        badge: instagram ? "Instagram Showcase" : "Facebook Active Campaign",
-        imageUrl: "",
-        title: "Prestige Fleet Campaign Spotlight",
-        description: `Meticulously pre-purchase diagnostics passed. Spotlighting the luxury specifications of our highest-grade SUVs this month.`,
-        price: "Elite Specs",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (website) {
-      activityFeed.push({
-        id: `act-web-${Date.now() + 2}`,
-        timestamp: "Yesterday",
-        badge: "Web Direct Port",
-        imageUrl: "",
-        title: "Interactive Web Portal Online",
-        description: `Check out our newly optimized digital dealership website. Browse full certificates, schedule on-site inspections, or request direct transportation.`,
-        price: "Online Booking",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (activityFeed.length === 0) {
-      activityFeed.push({
-        id: `act-fallback-${Date.now()}`,
-        timestamp: "Just now",
-        badge: "Launch Event",
-        imageUrl: "",
-        title: `Welcome to ${name} Showroom floor`,
-        description: `We are live on Bazar360! Stop by our physical collection or use WhatsApp to request personalized walkarounds with verified specs.`,
-        price: "Direct Access",
-        createdAt: timestampStr,
-      });
-    }
-
-    return {
-      success: true,
-      avatarUrl,
-      coverImage,
-      activityFeed,
-    };
-
-  } catch (error: any) {
-    logger.error("Social Scraping Cloud Function failed:", error);
-    throw new HttpsError("internal", error.message || "Failed during social integration routine.");
-  }
+  logger.warn("scrapeSocials requested, but a verified social scraping integration is not configured.", { uid: request.auth.uid });
+  return {
+    success: false,
+    error: "Automatic social scraping is not configured. No social posts or showroom activity were generated.",
+    avatarUrl: "",
+    coverImage: "",
+    activityFeed: [],
+  };
 });
 
 /**
