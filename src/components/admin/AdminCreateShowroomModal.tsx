@@ -106,7 +106,7 @@ export const AdminCreateShowroomModal: React.FC<AdminCreateShowroomModalProps> =
         logoUrl: defaultLogo,
         avatarUrl: defaultLogo,
         avatarLetter: name.substring(0, 2).toUpperCase(),
-        description: description.trim() || `${name} Digital Showroom on Bazar360.online | The Bazar360. Fully verified vehicle inventory.`,
+        description: description.trim() || `${name} digital showroom on Bazar360.online.`,
         flagshipVerified: false,
         verified: false,
         socials: {},
