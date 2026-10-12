@@ -84,7 +84,7 @@ interface RegistrationPortalProps {
 }
 
 // Do not display fabricated visitor identities, contact details, IP addresses, or activity scores.
-const SIMULATED_VISITORS: SimVisitorLog[] = [];
+const SIMULATED_VISITORS: any[] = [];
 
 export default function RegistrationPortal({ 
   currentUser, 
