@@ -197,7 +197,7 @@ Accuracy rules:
 - Tone requested: ${tone || "Premium"}.`;
 
       const response = await executeWithRetry(() => client.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: `Translate this shorthand seller note: "${rawInput}"`,
         config: {
           systemInstruction: systemPrompt,
@@ -270,7 +270,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
       formattedContents.push({ role: 'user', parts: [{ text: message }] });
 
       const response = await executeWithRetry(() => client.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: formattedContents,
         config: {
           systemInstruction: contextPrompt,
@@ -316,7 +316,7 @@ Your task is to translate any incoming text block beautifully and accurately int
 - Return ONLY the clean, translated text block itself.`;
 
       const response = await executeWithRetry(() => client.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: `Translate this text block: "${text}"`,
         config: {
           systemInstruction: systemPrompt,
