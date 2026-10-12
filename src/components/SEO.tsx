@@ -10,13 +10,14 @@ import { CENTRAL_FAQS } from '../data/faqs';
 export async function generateMetadata({ vehicle, dealer }: { vehicle?: CarListing; dealer?: Dealer }) {
   if (!vehicle) return {};
 
-  const rawLoc = dealer?.location || "Peshawar";
-  const city = rawLoc.split(',')[0]?.trim() || "Peshawar";
+  const rawLoc = dealer?.location || (vehicle as any).location || '';
+  const city = rawLoc.split(',')[0]?.trim();
   const categoryKeyword = vehicle.fuelType === 'Hybrid' ? 'Hybrid Car' : vehicle.fuelType === 'Electric' ? 'Electric Car' : 'Car';
-  const intentPhrase = `Buy ${vehicle.condition} ${categoryKeyword} in ${city}`;
+  const intentPhrase = `Buy ${vehicle.condition} ${categoryKeyword} in ${city || 'Pakistan'}`;
 
   const finalTitle = `${intentPhrase} | ${vehicle.make} ${vehicle.model} ${vehicle.year} - Bazar360`;
-  const finalDesc = `Looking to ${intentPhrase}? Browse ${vehicle.title} (${vehicle.year}) in pristine condition for sale. Features: ${vehicle.fuelType}, ${vehicle.transmission} transmission, ${vehicle.mileage} km. Direct WhatsApp connect with zero showroom commission.`;
+  const conditionLabel = String(vehicle.condition || 'Used').toLowerCase();
+  const finalDesc = `${vehicle.title} (${vehicle.year}) is listed as ${conditionLabel}. Features: ${vehicle.fuelType}, ${vehicle.transmission} transmission, ${vehicle.mileage} km. ${intentPhrase}. Contact the seller directly through Bazar360.`;
   
   const baseImage = vehicle.imageUrl || (vehicle.images && vehicle.images[0]) || 'https://bazar360.online/favicon.png';
   const ogImage = getOptimizedUrl(baseImage, { width: 1200, height: 630, crop: 'fill', quality: 'auto' });
@@ -252,29 +253,27 @@ export const SEO: React.FC<SEOProps> = ({ type, vehicle, dealer, dealers, listin
         "@id": `https://bazar360.online/dealer/${activeDealer.id}`,
         "name": activeDealer.name,
         "image": activeDealer.coverImage || activeDealer.avatarUrl || 'https://bazar360.online/logo_new.png',
-        "telephone": activeDealer.phone || activeDealer.whatsapp || "+92 314 3600000",
+        ...(activeDealer.phone || activeDealer.whatsapp ? { "telephone": activeDealer.phone || activeDealer.whatsapp } : {}),
         "url": activeDealer.socials?.website || `https://bazar360.online/dealer/${activeDealer.id}`,
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": activeDealer.location,
-          "addressLocality": activeDealer.location.split(',').pop()?.trim() || "Peshawar",
-          "addressRegion": activeDealer.location.split(',')[1]?.trim() || "KPK",
-          "addressCountry": "PK"
-        },
+        ...(activeDealer.location ? {
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": activeDealer.location,
+            "addressLocality": activeDealer.location.split(',')[0]?.trim(),
+            ...(activeDealer.location.split(',')[1]?.trim() ? { "addressRegion": activeDealer.location.split(',')[1].trim() } : {}),
+            "addressCountry": "PK"
+          }
+        } : {}),
         "description": activeDealer.description || activeDealer.subtitle,
-        "priceRange": "$$$",
-        "geo": {
-          "@type": "GeoCoordinates",
-          "latitude": "34.0151",
-          "longitude": "71.5249"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": activeDealer.rating || 4.9,
-          "bestRating": "5",
-          "worstRating": "1",
-          "reviewCount": activeDealer.vehiclesCount || 15
-        }
+        ...(Number((activeDealer as any).rating) > 0 && Number((activeDealer as any).reviewsCount) > 0 ? {
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": Number((activeDealer as any).rating),
+            "bestRating": 5,
+            "worstRating": 1,
+            "reviewCount": Number((activeDealer as any).reviewsCount)
+          }
+        } : {})
       });
     }
 
@@ -285,7 +284,7 @@ export const SEO: React.FC<SEOProps> = ({ type, vehicle, dealer, dealers, listin
         "@type": "Vehicle",
         "@id": `https://bazar360.online/vehicle/${vehicle.id}`,
         "name": vehicle.title,
-        "image": getOptimizedUrl(vehicle.imageUrl || vehicle.images?.[0] || 'https://bazar360.online/favicon.png', { width: 1200, height: 630, crop: 'fill', quality: 'auto' }),
+        ...(vehicle.imageUrl || vehicle.images?.[0] ? { "image": getOptimizedUrl(vehicle.imageUrl || vehicle.images?.[0] || '', { width: 1200, height: 630, crop: 'fill', quality: 'auto' }) } : {}),
         "description": vehicle.description,
         "brand": {
           "@type": "Brand",
@@ -295,16 +294,20 @@ export const SEO: React.FC<SEOProps> = ({ type, vehicle, dealer, dealers, listin
         "vehicleModelDate": vehicle.year,
         "fuelType": vehicle.fuelType,
         "vehicleTransmission": vehicle.transmission,
-        "vehicleEngine": {
-          "@type": "EngineSpecification",
-          "engineDisplacement": vehicle.engineCC ? `${vehicle.engineCC} cc` : vehicle.specs?.engineSize || "1800 cc"
-        },
-        "mileageFromOdometer": {
-          "@type": "QuantitativeValue",
-          "value": vehicle.mileage,
-          "unitText": "km"
-        },
-        "color": vehicle.specs?.color || vehicle.exteriorColor || "White",
+        ...(vehicle.engineCC || vehicle.specs?.engineSize ? {
+          "vehicleEngine": {
+            "@type": "EngineSpecification",
+            "engineDisplacement": vehicle.engineCC ? `${vehicle.engineCC} cc` : vehicle.specs?.engineSize
+          }
+        } : {}),
+        ...(vehicle.mileage > 0 ? {
+          "mileageFromOdometer": {
+            "@type": "QuantitativeValue",
+            "value": vehicle.mileage,
+            "unitText": "km"
+          }
+        } : {}),
+        ...(vehicle.specs?.color || vehicle.exteriorColor ? { "color": vehicle.specs?.color || vehicle.exteriorColor } : {}),
         "offers": {
           "@type": "Offer",
           "priceCurrency": "PKR",
@@ -318,17 +321,20 @@ export const SEO: React.FC<SEOProps> = ({ type, vehicle, dealer, dealers, listin
           "itemCondition": vehicle.condition === 'New' ? "https://schema.org/NewCondition" : "https://schema.org/UsedCondition",
           "availability": vehicle.isSold ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
           "url": `https://bazar360.online/vehicle/${vehicle.id}`,
-          "seller": activeDealer ? {
-            "@type": "AutoDealer",
-            "name": activeDealer.name,
-            "telephone": activeDealer.phone || activeDealer.whatsapp || "+92 314 3600000",
-            "url": `https://bazar360.online/dealers/${activeDealer.id}`,
-            "image": activeDealer.avatarUrl || 'https://bazar360.online/logo_new.png'
-          } : {
-            "@type": "Organization",
-            "name": "Bazar360 Certified Dealer Network",
-            "url": "https://bazar360.online"
-          }
+          ...(activeDealer ? {
+            "seller": {
+              "@type": "AutoDealer",
+              "name": activeDealer.name,
+              ...(activeDealer.phone || activeDealer.whatsapp ? { "telephone": activeDealer.phone || activeDealer.whatsapp } : {}),
+              "url": `https://bazar360.online/dealers/${activeDealer.id}`,
+              ...(activeDealer.avatarUrl || activeDealer.coverImage ? { "image": activeDealer.avatarUrl || activeDealer.coverImage } : {})
+            }
+          } : vehicle.ownerDetails?.displayName ? {
+            "seller": {
+              "@type": "Person",
+              "name": vehicle.ownerDetails.displayName
+            }
+          } : {})
         }
       });
     }
