@@ -191,7 +191,7 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          className="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+          className={`relative w-full h-full flex items-center justify-center ${imageFrames.length > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
         >
           <img
             src={displayImage}
@@ -237,19 +237,19 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
         {/* Drag Hint & Orbit Indicator */}
         <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-[#060E20]/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs font-mono text-[#BBC9CF]">
           <RotateCw size={13} className="text-[#00D2FF] animate-spin" />
-          <span>Interactive 360° Drag & Orbit</span>
+          <span>{imageFrames.length > 1 ? 'Drag to browse photos' : 'Photo preview'}</span>
         </div>
 
         {/* Overall Score Badge in Corner */}
         <div className="absolute top-4 right-4 z-20 flex items-center gap-3 bg-[#060E20]/90 backdrop-blur-md p-2.5 sm:px-4 sm:py-2.5 rounded-2xl border border-[#00D2FF]/30 shadow-xl">
           <div className="w-12 h-12 rounded-xl bg-[#00D2FF]/15 border border-[#00D2FF]/40 flex flex-col items-center justify-center text-[#00D2FF]">
-            <span className="font-display font-extrabold text-base leading-none">9.8</span>
-            <span className="text-[8px] font-mono tracking-widest uppercase">Score</span>
+            <span className="font-display font-extrabold text-base leading-none">N/A</span>
+            <span className="text-[8px] font-mono tracking-widest uppercase">Report</span>
           </div>
           <div>
             <div className="flex items-center gap-1 text-[#FFB95F] text-xs font-bold">
               <ShieldCheck size={14} />
-              <span>Inspection not verified</span>
+              <span>No inspection report</span>
             </div>
             <p className="text-[11px] text-[#BBC9CF]">No independent inspection report is attached to this listing.</p>
           </div>
