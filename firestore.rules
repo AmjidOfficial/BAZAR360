@@ -111,15 +111,23 @@ service cloud.firestore {
       // Allows both registered users (private sellers) and showroom dealers to create vehicle ads with strict owner checks
       allow create: if isSignedIn() && isValidId(listingId) && isValidListing(incoming()) && (
         isAdmin() ||
-        incoming().dealerId == request.auth.uid ||
-        incoming().assignedSalesRepId == request.auth.uid ||
         (
-          incoming().dealerId == 'private' &&
-          (incoming().assignedSalesRepId == request.auth.uid || incoming().createdBy == request.auth.uid)
-        ) ||
-        (
-          exists(/databases/$(database)/documents/dealers/$(incoming().dealerId)) &&
-          getDealer(incoming().dealerId).ownerUid == request.auth.uid
+          (!('approved' in incoming()) || incoming().approved != true) &&
+          (!('verified' in incoming()) || incoming().verified != true) &&
+          (!('featured' in incoming()) || incoming().featured != true) &&
+          (!('tags' in incoming()) || (incoming().tags is list && !('Verified' in incoming().tags))) &&
+          (
+            incoming().dealerId == request.auth.uid ||
+            incoming().assignedSalesRepId == request.auth.uid ||
+            (
+              incoming().dealerId == 'private' &&
+              (incoming().assignedSalesRepId == request.auth.uid || incoming().createdBy == request.auth.uid)
+            ) ||
+            (
+              exists(/databases/$(database)/documents/dealers/$(incoming().dealerId)) &&
+              getDealer(incoming().dealerId).ownerUid == request.auth.uid
+            )
+          )
         )
       );
                     
@@ -139,7 +147,7 @@ service cloud.firestore {
             'title', 'description', 'price', 'mileage', 'images', 'imageUrl', 
             'videoUrl', 'specs', 'isSold', 'isPaused', 'isArchived', 'updatedAt',
             'make', 'model', 'year', 'condition', 'engineCC', 'exteriorColor', 'bodyCondition',
-            'fuelType', 'transmission', 'verified', 'approved', 'assignedSalesRepId', 'dealerId',
+            'fuelType', 'transmission', 'assignedSalesRepId', 'dealerId',
             'phone', 'sellerPhone', 'tags', 'assemblyType', 'tokenTaxStatus', 'tokenTaxPaid',
             'registrationCity', 'documentType', 'cloudinaryPublicId', 'cloudinaryPublicIds',
             'videoCloudinaryPublicId', 'pdfUrl', 'pdfCloudinaryPublicId', 'pdfTitle'
