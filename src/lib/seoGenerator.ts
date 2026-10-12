@@ -15,6 +15,21 @@ if (getApps().length === 0) {
 
 const db: Firestore = getFirestore(app);
 
+function escapeHtmlAttribute(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function serializeJsonLd(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+}
+
 function ensureAbsoluteUrl(url: string | undefined): string {
   if (!url) return '';
   if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
@@ -61,24 +76,27 @@ export async function generateDealerSeo(dealerId: string): Promise<string> {
         "@id": `https://bazar360.online/dealers/${dealerId}#localbusiness`,
         "name": dealer.name,
         "image": imageUrl,
-        "telephone": dealer.phone || dealer.whatsapp || "+92-314-9198403",
+        ...(dealer.phone || dealer.whatsapp ? { "telephone": dealer.phone || dealer.whatsapp } : {}),
         "url": url,
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": dealer.location || "Peshawar, KPK",
-          "addressLocality": (dealer.location || "Peshawar").split(',')[0]?.trim() || "Peshawar",
-          "addressRegion": (dealer.location || "KPK").split(',')[1]?.trim() || "KPK",
-          "addressCountry": "PK"
-        },
+        ...(dealer.location ? {
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": dealer.location,
+            "addressLocality": dealer.location.split(',')[0]?.trim(),
+            ...(dealer.location.split(',')[1]?.trim() ? { "addressRegion": dealer.location.split(',')[1].trim() } : {}),
+            "addressCountry": "PK"
+          }
+        } : {}),
         "description": description,
-        "priceRange": "$$$",
-        "aggregateRating": dealer.rating ? {
-          "@type": "AggregateRating",
-          "ratingValue": dealer.rating,
-          "bestRating": "5",
-          "worstRating": "1",
-          "reviewCount": dealer.reviewsCount || dealer.vehiclesCount || 10
-        } : undefined
+        ...(Number(dealer.rating) > 0 && Number(dealer.reviewsCount || dealer.reviewCount) > 0 ? {
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": Number(dealer.rating),
+            "bestRating": 5,
+            "worstRating": 1,
+            "reviewCount": Number(dealer.reviewsCount || dealer.reviewCount)
+          }
+        } : {})
       },
       {
         "@context": "https://schema.org",
@@ -107,22 +125,22 @@ export async function generateDealerSeo(dealerId: string): Promise<string> {
     ];
 
     return `
-      <title>${title}</title>
-      <meta name="description" content="${description}" />
+      <title>${escapeHtmlAttribute(title)}</title>
+      <meta name="description" content="${escapeHtmlAttribute(description)}" />
       <meta property="og:site_name" content="Bazar360 Online" />
-      <meta property="og:title" content="${title}" />
-      <meta property="og:description" content="${description}" />
-      <meta property="og:image" content="${imageUrl}" />
-      <meta property="og:image:secure_url" content="${imageUrl}" />
+      <meta property="og:title" content="${escapeHtmlAttribute(title)}" />
+      <meta property="og:description" content="${escapeHtmlAttribute(description)}" />
+      <meta property="og:image" content="${escapeHtmlAttribute(imageUrl)}" />
+      <meta property="og:image:secure_url" content="${escapeHtmlAttribute(imageUrl)}" />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:url" content="${url}" />
+      <meta property="og:url" content="${escapeHtmlAttribute(url)}" />
       <meta property="og:type" content="website" />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content="${title}" />
       <meta name="twitter:description" content="${description}" />
       <meta name="twitter:image" content="${imageUrl}" />
-      <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+      <script type="application/ld+json">${serializeJsonLd(jsonLd)}</script>
     `;
   } catch (e) {
     console.error('[SEO Generator] Error generating dealer SEO:', e);
