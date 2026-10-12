@@ -808,8 +808,7 @@ export default function RegistrationPortal({
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -826,10 +825,10 @@ export default function RegistrationPortal({
         }
         const newProfile = await createNewUserProfile(
           user.uid,
-          user.email || 'user-facebook@bazar360.online',
+          user.email || '',
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 Facebook User')),
           assignedRole,
-          (isGhaniEmail || isMalakEmail) ? { phoneNumber: isMalakEmail ? '+923159085086' : '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
+          (isGhaniEmail || isMalakEmail) ? { phoneNumber: user.phoneNumber || '' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via Facebook Identity.');
@@ -866,8 +865,7 @@ export default function RegistrationPortal({
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -884,10 +882,10 @@ export default function RegistrationPortal({
         }
         const newProfile = await createNewUserProfile(
           user.uid,
-          user.email || 'user-linkedin@bazar360.online',
+          user.email || '',
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 LinkedIn User')),
           assignedRole,
-          (isGhaniEmail || isMalakEmail) ? { phoneNumber: isMalakEmail ? '+923159085086' : '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
+          (isGhaniEmail || isMalakEmail) ? { phoneNumber: user.phoneNumber || '' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via LinkedIn Identity.');
@@ -925,8 +923,7 @@ export default function RegistrationPortal({
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -947,7 +944,7 @@ export default function RegistrationPortal({
           user.email || 'user@bazar360.online',
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 User')),
           assignedRole,
-          (isGhaniEmail || isMalakEmail) ? { phoneNumber: isMalakEmail ? '+923159085086' : '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
+          (isGhaniEmail || isMalakEmail) ? { phoneNumber: user.phoneNumber || '' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via Google Identity.');
@@ -1122,8 +1119,7 @@ export default function RegistrationPortal({
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -1691,7 +1687,7 @@ export default function RegistrationPortal({
                   displayName: 'Bazar360 Peshawar (Flagship)',
                   phoneNumber: '03159085086',
                   phoneVerified: true,
-                  city: 'Peshawar',
+                  city: '',
                   state: 'KP',
                   role: 'Dealer',
                   status: 'Active',
