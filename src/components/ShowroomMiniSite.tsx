@@ -733,7 +733,7 @@ export default function ShowroomMiniSite({
                             Meet Our Team
                           </h2>
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                            {team.map((member: any, idx: number) => (
+                            {team.length > 0 ? team.map((member: any, idx: number) => (
                               <div key={idx} className="bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-3xl p-6 flex flex-col items-center text-center space-y-3 shadow-xl relative overflow-hidden group hover:border-[var(--color-accent-main)]/40 transition-all">
                                 <div className="absolute inset-0 bg-gradient-to-b from-[var(--color-accent-main)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg"
@@ -754,7 +754,11 @@ export default function ShowroomMiniSite({
                                   </a>
                                 )}
                               </div>
-                            ))}
+                            )) : (
+                              <p className="text-sm text-[var(--color-text-muted)] py-4">
+                                No team member details have been provided by this showroom yet.
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
