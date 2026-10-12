@@ -376,9 +376,12 @@ function mapListingDoc(id: string, data: any): CarListing {
     id === 'listing-1784821782501' ||
     id === 'listing-1784821585212';
 
-  const resolvedDealerId = isExplicitIndividual 
-    ? 'private' 
-    : ((data.dealerId === '' || (data.dealerId && data.dealerId.includes(''))) ? '' : (data.dealerId || 'private'));
+  // Preserve valid showroom IDs. String.prototype.includes('') is always true,
+  // so using it here incorrectly erased every non-empty dealer ID.
+  const rawDealerId = typeof data.dealerId === 'string' ? data.dealerId.trim() : '';
+  const resolvedDealerId = isExplicitIndividual
+    ? 'private'
+    : (rawDealerId || 'private');
 
   const resolvedSellerType = isExplicitIndividual ? 'Individual' : (data.sellerType || (resolvedDealerId === 'private' ? 'Individual' : 'Showroom'));
 
@@ -1097,40 +1100,59 @@ export async function dbFetchBargains(): Promise<Bargain[]> {
 }
 
 export async function dbSaveLead(lead: Lead): Promise<void> {
+  if (!lead?.id) {
+    throw new Error('Cannot save a lead without an ID.');
+  }
+
   try {
     await setDoc(doc(db, 'leads', lead.id), {
       ...lead,
+      status: lead.status || 'New',
+      inquiryDate: lead.inquiryDate || lead.createdAt || new Date().toISOString(),
       createdAt: lead.createdAt || new Date().toISOString()
     });
     console.log('Lead saved:', lead.id);
   } catch (err) {
-    console.warn('Silent lead save issue:', err);
+    console.error('[CRM] Failed to save lead:', err);
+    // Do not swallow write errors: callers must not show a false success state.
+    throw err;
   }
+}
+
+function mapLeadDoc(id: string, data: Record<string, any>): Lead {
+  const metadata = data.metadata && typeof data.metadata === 'object' ? data.metadata : {};
+  const createdAt = data.createdAt || data.inquiryDate || new Date().toISOString();
+
+  return {
+    ...data,
+    id,
+    type: data.type || 'General Inquiry',
+    title: data.title || data.vehicleTitle || 'Inquiry',
+    userName: data.userName || data.name || 'Anonymous Visitor',
+    userPhone: data.userPhone || data.phone || '',
+    userEmail: data.userEmail || data.email || '',
+    city: data.city || data.location || '',
+    details: data.details || data.inquiryMessage || data.message || '',
+    metadata,
+    createdAt,
+    inquiryDate: data.inquiryDate || createdAt,
+    status: data.status || 'New',
+    vehicleId: data.vehicleId || metadata.vehicleId || '',
+    vehicleTitle: data.vehicleTitle || metadata.vehicleTitle || data.title || '',
+    vehiclePrice: typeof data.vehiclePrice === 'number' ? data.vehiclePrice : undefined,
+    vehicleImage: data.vehicleImage || metadata.vehicleImage || '',
+    showroomOwnerId: data.showroomOwnerId || '',
+    customerId: data.customerId || ''
+  } as Lead;
 }
 
 export async function dbFetchLeads(): Promise<Lead[]> {
   try {
     const snap = await getDocs(collection(db, 'leads'));
-    const list: Lead[] = [];
-    snap.forEach((doc) => {
-      const data = doc.data();
-      list.push({
-        id: doc.id,
-        type: data.type || 'General Inquiry',
-        title: data.title || 'Inquiry',
-        userName: data.userName || 'Anonymous Visitor',
-        userPhone: data.userPhone || '',
-        userEmail: data.userEmail || '',
-        city: data.city || '',
-        details: data.details || '',
-        metadata: data.metadata || {},
-        createdAt: data.createdAt || new Date().toISOString()
-      });
-    });
-    return list;
+    return snap.docs.map((leadDoc) => mapLeadDoc(leadDoc.id, leadDoc.data()));
   } catch (err) {
     console.error('dbFetchLeads Error:', err);
-    return [];
+    throw err;
   }
 }
 
@@ -2075,6 +2097,8 @@ export async function dbSubmitLead(leadData: Omit<Lead, 'id' | 'createdAt'>): Pr
 
 // Fetches leads for a specific showroom owner
 export async function dbFetchLeadsForOwner(showroomOwnerId: string): Promise<Lead[]> {
+  if (!showroomOwnerId) return [];
+
   try {
     const q = query(
       collection(db, 'leads'),
@@ -2082,11 +2106,11 @@ export async function dbFetchLeadsForOwner(showroomOwnerId: string): Promise<Lea
       orderBy('createdAt', 'desc')
     );
     const snap = await getDocs(q);
-    return snap.docs.map(doc => doc.data() as Lead);
+    // Always attach the Firestore document ID; CRM status updates depend on it.
+    return snap.docs.map((leadDoc) => mapLeadDoc(leadDoc.id, leadDoc.data()));
   } catch (err) {
     console.error('[CRM] dbFetchLeadsForOwner error:', err);
-    // Fallback to local storage or empty list
-    return [];
+    throw err;
   }
 }
 
