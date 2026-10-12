@@ -82,7 +82,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
   const completedJobs = jobs.filter(j => j.status === 'Completed');
 
   const getActiveList = () => {
-    if (activeTab === 'today') return todayJobs.length > 0 ? todayJobs : jobs.slice(0, 3);
+    if (activeTab === 'today') return todayJobs;
     if (activeTab === 'pending') return pendingJobs;
     return completedJobs;
   };
@@ -201,7 +201,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
 
                   <div className="grid grid-cols-2 gap-2 text-[10px] text-text-muted pt-2 font-mono">
                     <div><strong>Tech:</strong> {j.assignedTechnician || 'Unassigned'}</div>
-                    <div><strong>Estimate:</strong> PKR {Number(j.invoice?.amount || 14500).toLocaleString()}</div>
+                    <div><strong>Estimate:</strong> PKR {Number(j.invoice?.amount || 0).toLocaleString()}</div>
                   </div>
                 </div>
               ))
@@ -244,7 +244,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-text-muted">Quote Total:</span>
-                  <span className="text-orange-400 font-bold font-mono">PKR {Number(selectedJob.invoice?.amount || 14500).toLocaleString()}</span>
+                  <span className="text-orange-400 font-bold font-mono">PKR {Number(selectedJob.invoice?.amount || 0).toLocaleString()}</span>
                 </div>
               </div>
 
