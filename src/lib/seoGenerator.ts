@@ -64,7 +64,7 @@ export async function generateDealerSeo(dealerId: string): Promise<string> {
         "description": description,
         "contactPoint": {
           "@type": "ContactPoint",
-          "telephone": dealer.phone || dealer.whatsapp || "+92-314-9198403",
+          ...(dealer.phone || dealer.whatsapp ? { "telephone": dealer.phone || dealer.whatsapp } : {}),
           "contactType": "customer service",
           "areaServed": "PK",
           "availableLanguage": ["English", "Urdu"]
