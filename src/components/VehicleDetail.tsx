@@ -270,10 +270,10 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
         ['Owner WhatsApp:', resolvedSellerWhatsApp ? `+${formattedWhatsapp}` : 'N/A'],
         ['Listing URL:', `https://bazar360.online/listings/${car.id}`]
       ] : [
-        ['Showroom Name:', dealer?.name || 'Bazar360 - The Right Choice'],
-        ['Representatives:', 'Malak Mazhar & Muhammad Amjid'],
-        ['Phone Numbers:', '+92 315 9085086 / +92 314 9198403'],
-        ['Official Email:', dealer?.email || 'support@bazar360.online'],
+        ['Showroom Name:', dealer?.name || 'Showroom details unavailable'],
+        ['Contact Person:', (dealer as any)?.contactPerson || 'Not provided'],
+        ['Phone Number:', dealer?.phone || dealer?.whatsapp || 'Not provided'],
+        ['Official Email:', dealer?.email || 'Not provided'],
         ['Showroom URL:', `https://bazar360.online/dealers/${dealer?.id || ''}`]
       ];
       
@@ -295,7 +295,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139);
-      doc.text('Verified by Bazar360.online • Pakistan s Premier Automotive Marketplace', 14, 287);
+      doc.text('Generated from listing data • Bazar360.online', 14, 287);
       
       doc.save(`Vehicle-Fact-Sheet-${car.make}-${car.model}-${car.year}.pdf`);
       console.log('Vehicle Fact Sheet PDF downloaded successfully!');
@@ -315,7 +315,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
     >
       <Helmet>
         <title>{`${car.title} (${car.year}) | ${dealer?.name || 'Bazar360'} - Bazar360`}</title>
-        <meta name="description" content={car.description || `Buy ${car.title} (${car.year}) for PKR ${car.price} at ${dealer?.name || 'Bazar360'}. Verified inspection and authentic showroom listing.`} />
+        <meta name="description" content={car.description || `${car.title} (${car.year}) listing on Bazar360. Price: ${car.price > 0 ? `PKR ${car.price.toLocaleString()}` : 'not provided'}. Contact seller for details.`} />
         <meta property="og:title" content={`${car.title} - ${dealer?.name || 'Bazar360'}`} />
         <meta property="og:description" content={`${car.year} ${car.make} ${car.model} listing. ${car.location || dealer?.location || 'Location not provided'}. Price: ${car.price > 0 ? `PKR ${car.price.toLocaleString()}` : 'not provided'}`} />
         <meta property="og:image" content={imagesList[0]} />
@@ -390,7 +390,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
             <div className="flex flex-wrap gap-2 items-center">
               {car.verified && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-500/10 text-orange-500 rounded-md text-[10px] font-mono font-black uppercase tracking-widest border border-orange-500/20">
-                  <ShieldCheck size={14} /> Verified Listing
+                  <ShieldCheck size={14} /> Platform reviewed
                 </span>
               )}
               {car.dealerId === 'private' || car.sellerType === 'Individual' ? (
@@ -399,7 +399,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 rounded-md text-[10px] font-mono font-black uppercase tracking-widest border border-amber-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Certified Showroom Partner
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {dealer?.verified ? 'Verified Showroom' : 'Showroom on Bazar360'}
                 </span>
               )}
             </div>
@@ -800,10 +800,10 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent border border-orange-500/30 space-y-3 text-left">
                   <div className="flex items-center gap-2 text-orange-400">
                     <ShieldCheck size={18} />
-                    <span className="text-xs font-mono font-black uppercase tracking-wider">360° Digital Inspection</span>
+                    <span className="text-xs font-mono font-black uppercase tracking-wider">Inspection services</span>
                   </div>
                   <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
-                    Get an official Bazar360 200+ point diagnostic check with UV light paint spectrum analysis for this vehicle before purchase.
+                    Explore available inspection services and confirm the provider, scope, price, and availability before booking. Bazar360 does not claim that this vehicle has already been inspected.
                   </p>
                   <button
                     onClick={() => {
@@ -814,75 +814,11 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                     className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-slate-950 font-mono font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-95"
                   >
                     <Zap size={14} />
-                    <span>Book Inspection for this Car</span>
+                    <span>Explore inspection services</span>
                   </button>
                 </div>
               </div>
 
-              {/* Showroom Representatives & Advisory Contacts - Only shown for verified showrooms */}
-              {!isPrivateSeller && car.dealerId !== 'private' && (
-                <div className="pt-5 border-t border-[var(--color-border-main)] space-y-3">
-                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--color-text-muted)] text-left flex items-center gap-1.5">
-                    <ShieldCheck size={12} className="text-orange-500" />
-                    Showroom Representatives
-                  </h4>
-                  
-                  <div className="space-y-2 text-left">
-                    {/* Representative 1: Malak Mazhar */}
-                    <div className="p-3 bg-[var(--color-bg-primary)] border border-[var(--color-border-main)] rounded-2xl flex items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-[#26344F] dark:text-[var(--color-text-header)]">Malak Mazhar</p>
-                        <p className="text-[10px] font-mono text-[var(--color-text-muted)]">Sales & Inspection Advisory</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <a 
-                          href="tel:+923159085086"
-                          className="p-2 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="Call Malak Mazhar"
-                        >
-                          <Phone size={12} />
-                        </a>
-                        <a 
-                          href="https://wa.me/923159085086"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 bg-[var(--color-accent-main)]/10 hover:bg-[var(--color-accent-main)] text-[var(--color-accent-main)] hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="WhatsApp Malak Mazhar"
-                        >
-                          <MessageCircle size={12} />
-                        </a>
-                      </div>
-                    </div>
-
-                    {/* Representative 2: Muhammad Amjid */}
-                    <div className="p-3 bg-[var(--color-bg-primary)] border border-[var(--color-border-main)] rounded-2xl flex items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-[#26344F] dark:text-[var(--color-text-header)]">Muhammad Amjid</p>
-                        <p className="text-[10px] font-mono text-[var(--color-text-muted)]">Platform & Technology Advisory</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <a 
-                          href="tel:+923149198403"
-                          className="p-2 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="Call Muhammad Amjid"
-                        >
-                          <Phone size={12} />
-                        </a>
-                        <a 
-                          href="https://wa.me/923149198403"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 bg-[var(--color-accent-main)]/10 hover:bg-[var(--color-accent-main)] text-[var(--color-accent-main)] hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="WhatsApp Muhammad Amjid"
-                        >
-                          <MessageCircle size={12} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               <div className="pt-4 border-t border-[var(--color-border-main)]">
                 <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--color-text-muted)] mb-3 text-left">
                   Purchase Security
@@ -890,7 +826,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 <ul className="space-y-2 text-left">
                   <li className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
                     <CheckCircle2 size={15} className="text-[var(--color-accent-main)] shrink-0 mt-0.5" />
-                    {isPrivateSeller ? 'Verified Personal Phone Number' : 'Verified Showroom Identity'}
+                    {isPrivateSeller ? 'Seller contact supplied with this listing' : (dealer?.verified ? 'Showroom profile marked as verified' : 'Showroom profile details')}
                   </li>
                   <li className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
                     <CheckCircle2 size={15} className="text-[var(--color-accent-main)] shrink-0 mt-0.5" />
@@ -898,7 +834,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                   </li>
                   <li className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
                     <CheckCircle2 size={15} className="text-[var(--color-accent-main)] shrink-0 mt-0.5" />
-                    Bazar360 Inspection Support Available
+                    Independent vehicle inspection is recommended before purchase
                   </li>
                 </ul>
               </div>
@@ -921,7 +857,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                   Similar listings in your city
                 </h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                  Explore related {car.condition || 'new & used'} cars available in {dealer?.location?.split(',')[0] || 'Peshawar'}
+                  Explore related {car.condition || 'new and used'} listings on Bazar360
                 </p>
               </div>
             </div>
@@ -1008,7 +944,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
               onClick={() => setShow360Modal(false)}
               className="absolute -top-9 right-1 text-white hover:text-[#00D2FF] font-mono text-xs uppercase tracking-widest flex items-center gap-1 cursor-pointer"
             >
-              ✕ Close 360° Inspection
+              ✕ Close vehicle preview
             </button>
             <Vehicle360Viewer car={car} onClose={() => setShow360Modal(false)} />
           </div>
