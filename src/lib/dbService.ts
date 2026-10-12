@@ -937,9 +937,13 @@ export async function dbSaveListing(listing: CarListing): Promise<void> {
     console.log('Listing saved to database successfully:', updatedListing.id);
     toast.success('Vehicle advertisement saved to database!', { id: `listing-save-${updatedListing.id}` });
   } catch (err: any) {
-    console.warn('[Firestore] Remote sync failed, listing saved locally in fallback cache:', err);
-    toast.success('Vehicle post saved locally!', { id: `listing-save-local-${updatedListing.id}` });
+    console.warn('[Firestore] Remote listing save failed; a local draft was retained:', err);
+    toast.error('Listing is saved on this device only and was not published. Please retry when online or contact support.', {
+      id: `listing-save-local-${updatedListing.id}`
+    });
     handleFirestoreError(err, OperationType.WRITE, `${LISTINGS_COLLECTION}/${updatedListing.id}`);
+    // Keep the draft locally, but propagate the failure so callers cannot report a published listing.
+    throw err;
   }
 }
 
