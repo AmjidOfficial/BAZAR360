@@ -303,94 +303,13 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
     }
   });
 
-  // API 3: Auto-Scraping / Curated Showroom Assets
-  app.post("/api/scrape-socials", async (req, res) => {
-    try {
-      const { name, website, facebook, instagram, tiktok, youtube, twitter } = req.body;
-      if (!name) {
-        return res.status(400).json({ success: false, error: "Showroom name is required" });
-      }
-
-      const curatedCoverImages = [
-        "",
-        "",
-        "",
-        ""
-      ];
-
-      const curatedLogos = [
-        "",
-        "",
-        ""
-      ];
-
-      const hash = name.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-      const coverImage = curatedCoverImages[hash % curatedCoverImages.length];
-      const avatarUrl = name.toLowerCase().includes("choice") 
-        ? "./auto_choice_logo_1781509565476.jpg" 
-        : curatedLogos[hash % curatedLogos.length];
-
-      const activityFeed: any[] = [];
-
-      if (tiktok) {
-        activityFeed.push({
-          id: `act-tiktok-${Date.now()}`,
-          timestamp: "Just now",
-          badge: "TikTok Reel",
-          imageUrl: "",
-          title: `Trending TikTok walkaround on @${name.toLowerCase().replace(/\s+/g, '')}`,
-          description: `Watch our high-engagement video walkaround and exhaust sound review of our newly imported premium sports touring model.`,
-          price: "Available PKR"
-        });
-      }
-
-      if (instagram || facebook) {
-        activityFeed.push({
-          id: `act-social-${Date.now() + 1}`,
-          timestamp: "3 hours ago",
-          badge: instagram ? "Instagram Showcase" : "Facebook Active Campaign",
-          imageUrl: "",
-          title: "Prestige Fleet Campaign Spotlight",
-          description: `Meticulously pre-purchased diagnostics passed. Spotlighting the luxury specifications of our highest-grade SUVs this month.`,
-          price: "Elite Specs"
-        });
-      }
-
-      if (website) {
-        activityFeed.push({
-          id: `act-web-${Date.now() + 2}`,
-          timestamp: "Yesterday",
-          badge: "Web Direct Port",
-          imageUrl: "",
-          title: "Interactive Web Portal Online",
-          description: `Check out our newly optimized digital dealership website. Browse full certificates, schedule on-site inspections, or request direct transportation.`,
-          price: "Online Booking"
-        });
-      }
-
-      if (activityFeed.length === 0) {
-        activityFeed.push({
-          id: `act-fallback-${Date.now()}`,
-          timestamp: "Just now",
-          badge: "Launch Event",
-          imageUrl: "",
-          title: `Welcome to ${name} Showroom floor`,
-          description: `We are live on BAZAR360! Stop by our physical collection or use WhatsApp to request personalized walkarounds with verified specs.`,
-          price: "Direct Access"
-        });
-      }
-
-      res.json({
-        success: true,
-        avatarUrl,
-        coverImage,
-        activityFeed
-      });
-
-    } catch (error: any) {
-      console.log("Automated social scraping fallback activated.");
-      res.status(200).json({ success: false, error: "Scraping services are busy. Please configure manually." });
-    }
+  // API 3: Live social scraping is not configured in this server.
+  // Do not generate synthetic activity and present it as a showroom's real posts.
+  app.post("/api/scrape-socials", async (_req, res) => {
+    return res.status(501).json({
+      success: false,
+      error: "Automatic social scraping is not configured. Please enter verified showroom assets manually."
+    });
   });
 
   // API 4: On-Demand Translation API
@@ -510,47 +429,20 @@ Your task is to translate any incoming text block beautifully and accurately int
     }
   });
 
-  // API 6: Google Sheet Dynamic Sync & Export Service
-  app.post("/api/google-sheets/sync", async (req, res) => {
-    try {
-      const { spreadsheetId, sheetName, dataType, data } = req.body;
-      const sheetId = spreadsheetId || "1Bazar360_SpreadsheetID_Placeholder";
-      const tabName = sheetName || "Leads_and_Inventory";
-
-      if (!data || !Array.isArray(data)) {
-        return res.status(400).json({ success: false, error: "Sync data must be an array of records" });
-      }
-
-      console.log(`[Google Sheets Integration] Initializing spreadsheet sync for ID: ${sheetId}, Tab: ${tabName}`);
-      console.log(`[Google Sheets Integration] Writing ${data.length} records to sheet cells...`);
-
-      // Mock processing with randomized performance offsets to simulate real Google APIs latency (approx 400ms)
-      await new Promise(resolve => setTimeout(resolve, 450));
-
-      const columns = dataType === 'leads' 
-        ? ["Lead ID", "Inquiry Type", "User Name", "Verified Phone", "Date Enrolled", "System Rating"]
-        : ["Vehicle ID", "Ad Title", "Brand", "Model", "Year", "Appraisal Price (PKR)", "Mileage (KM)", "Status"];
-
-      const rangeEndRow = data.length + 1; // plus header row
-      const cellRange = `${tabName}!A1:${String.fromCharCode(64 + columns.length)}${rangeEndRow}`;
-
-      res.json({
-        success: true,
-        message: `✓ synchronized ${data.length} ${dataType || 'leads'} records with Google Sheets successfully.`,
-        spreadsheetId: sheetId,
-        sheetName: tabName,
-        dataType,
-        rowsSynced: data.length,
-        syncTime: new Date().toISOString(),
-        columns,
-        cellRange,
-        googleSheetUrl: `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=0`
-      });
-
-    } catch (error: any) {
-      console.error("[Google Sheets Sync] Error in /api/google-sheets/sync:", error);
-      res.status(500).json({ success: false, error: error.message || "Failed to sync spreadsheet data." });
+  // API 6: Google Sheets integration is intentionally unavailable until real
+  // Google API credentials and write verification are configured. Never report
+  // a simulated response as a successful data export.
+  app.post("/api/google-sheets/sync", requireAuth, async (req, res) => {
+    const user = (req as any).user;
+    const isAdmin = !!user?.email && ADMIN_EMAILS.includes(String(user.email).toLowerCase());
+    if (!isAdmin) {
+      return res.status(403).json({ success: false, error: "Only an authorized administrator can request a data export." });
     }
+
+    return res.status(501).json({
+      success: false,
+      error: "Google Sheets sync is not configured. No records were exported or synchronized."
+    });
   });
 
   // API 7: Cloudinary Secure Asset Destruction Service
