@@ -398,7 +398,7 @@ service cloud.firestore {
       allow update: if isAdmin() ||
         (isSignedIn() && existing().userId == request.auth.uid) ||
         (isAssignedWorkshopOwner(existing()) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']));
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'timelineLogs']));
       allow delete: if isAdmin();
     }
 
