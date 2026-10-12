@@ -95,17 +95,21 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
   const [activeView, setActiveView] = useState<'exterior' | 'interior' | 'specs'>('exterior');
   const [rotationAngle, setRotationAngle] = useState(0);
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(DEFAULT_HOTSPOTS[0]);
-  const [isAutoOrbit, setIsAutoOrbit] = useState(true);
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
 
-  // Gallery image fallback
-  const displayImage = (car?.images && car.images.length > 0) ? car.images[0] : (car?.imageUrl || 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1200&q=80');
+  // Use real uploaded gallery images as frames. A single image is a photo preview,
+  // not a simulated 360-degree inspection.
+  const imageFrames = (car?.images || []).filter((image): image is string => typeof image === 'string' && image.length > 0);
+  const normalizedAngle = ((rotationAngle % 360) + 360) % 360;
+  const frameIndex = imageFrames.length > 1
+    ? Math.floor((normalizedAngle / 360) * imageFrames.length) % imageFrames.length
+    : 0;
+  const displayImage = imageFrames[frameIndex] || car?.imageUrl || 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1200&q=80';
 
   const handlePointerDown = (e: React.PointerEvent) => {
     isDraggingRef.current = true;
     startXRef.current = e.clientX;
-    setIsAutoOrbit(false);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
@@ -145,7 +149,7 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
                 Vehicle Preview
               </span>
               <span className="px-2 py-0.5 rounded-full bg-[#00D2FF]/15 text-[#00D2FF] text-[9px] font-mono font-bold">
-                Inspection data not provided
+                {imageFrames.length > 1 ? 'Multi-photo preview' : 'Photo preview'}
               </span>
             </div>
             <h2 className="font-display font-bold text-lg sm:text-xl text-white tracking-tight">
@@ -163,7 +167,7 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
                 activeView === 'exterior' ? 'bg-[#00D2FF] text-[#060E20] shadow' : 'text-[#BBC9CF] hover:text-white'
               }`}
             >
-              Exterior 360°
+              Vehicle photos
             </button>
             <button
               onClick={() => setActiveView('specs')}
@@ -171,7 +175,7 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
                 activeView === 'specs' ? 'bg-[#00D2FF] text-[#060E20] shadow' : 'text-[#BBC9CF] hover:text-white'
               }`}
             >
-              Telemetry & Report
+              Vehicle details
             </button>
           </div>
         </div>
