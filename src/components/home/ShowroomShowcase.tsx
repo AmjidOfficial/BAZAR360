@@ -52,14 +52,14 @@ export function ShowroomShowcase({ lang, dealers, onSelectDealer, setTab, dbLoad
                       {dealer.name}
                     </h3>
                     <div className="flex items-center gap-3 mt-2 text-xs font-sans text-[var(--color-text-muted)] font-semibold">
-                      <span className="flex items-center gap-1"><Star size={12} className="text-amber-600 fill-amber-600" /> {dealer.rating || '4.9'}</span>
+                      {Number(dealer.rating) > 0 ? <span className="flex items-center gap-1"><Star size={12} className="text-amber-600 fill-amber-600" /> {dealer.rating}</span> : <span>No reviews yet</span>}
                       <span className="flex items-center gap-1 truncate"><MapPin size={12} className="text-text-muted" /> {dealer.location.split(',')[0]}</span>
                     </div>
                   </div>
                 </div>
                 <div className="mt-6 pt-6 border-t border-[var(--color-border-main)] flex justify-between items-center text-sm font-sans">
                   <span className="text-[var(--color-text-muted)] font-medium">
-                    {lang === 'en' ? 'Active Listings' : 'موجودہ گاڑیاں'}: <strong className="text-[var(--color-text-main)] font-mono ml-1">24</strong>
+                    {lang === 'en' ? 'Active Listings' : 'موجودہ گاڑیاں'}: <strong className="text-[var(--color-text-main)] font-mono ml-1">{dealer.vehiclesCount ?? 0}</strong>
                   </span>
                   <span className="text-orange-500 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                     Visit <ArrowRight size={14} />
