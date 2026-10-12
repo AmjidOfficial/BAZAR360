@@ -3,8 +3,8 @@ import {
   ShieldCheck, Search, Filter, MessageSquare, Phone, User, Clock, CheckCircle2, 
   AlertCircle, FileText, Send, Star, Layers, Settings, Hammer, Plus, Check, MapPin, Wrench, Trash2, Award
 } from 'lucide-react';
-import { dbFetchServiceBookings, dbUpdateServiceBookingStatus, dbAddCrmInternalNote } from '../../lib/dbService';
-import { ServiceBooking } from '../../types';
+import { dbFetchServiceBookings, dbUpdateServiceBookingStatus, dbAddCrmInternalNote, dbFetchDealers } from '../../lib/dbService';
+import { Dealer, ServiceBooking } from '../../types';
 import { CRMRequestStatus } from './CRMRequestStatus';
 import { syncToWhatsApp } from '../../lib/syncToWhatsApp';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
@@ -17,6 +17,8 @@ interface EnterpriseCRMAdminProps {
 
 export function EnterpriseCRMAdmin({ lang = 'en' }: EnterpriseCRMAdminProps) {
   const [records, setRecords] = useState<ServiceBooking[]>([]);
+  const [workshops, setWorkshops] = useState<Dealer[]>([]);
+  const [workshopIdInput, setWorkshopIdInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -46,8 +48,9 @@ export function EnterpriseCRMAdmin({ lang = 'en' }: EnterpriseCRMAdminProps) {
   useEffect(() => {
     async function load() {
       try {
-        const bookings = await dbFetchServiceBookings();
+        const [bookings, availableWorkshops] = await Promise.all([dbFetchServiceBookings(), dbFetchDealers()]);
         setRecords(bookings);
+        setWorkshops(availableWorkshops);
         if (bookings.length > 0 && !selectedRecord) {
           setSelectedRecord(bookings[0]);
         }
@@ -63,14 +66,16 @@ export function EnterpriseCRMAdmin({ lang = 'en' }: EnterpriseCRMAdminProps) {
   // Update states whenever record selection shifts
   useEffect(() => {
     if (selectedRecord) {
-      setWorkshopInput(selectedRecord.assignedWorkshop || '');
+      const selectedWorkshop = workshops.find(w => w.id === selectedRecord.assignedWorkshopId || w.name.trim().toLowerCase() === String(selectedRecord.assignedWorkshop || '').trim().toLowerCase());
+      setWorkshopIdInput(selectedWorkshop?.id || selectedRecord.assignedWorkshopId || '');
+      setWorkshopInput(selectedWorkshop?.name || selectedRecord.assignedWorkshop || '');
       setTechnicianInput(selectedRecord.assignedTechnician || '');
       setPriorityInput(selectedRecord.priority || 'High');
       setEstCostInput(selectedRecord.estimatedCost ?? 0);
       setEstCompletionInput(selectedRecord.estimatedCompletion || '');
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
-  }, [selectedRecord?.id]);
+  }, [selectedRecord?.id, workshops]);
 
   const handleStatusChange = async (id: string, newStatus: ServiceBooking['status']) => {
     try {
@@ -108,8 +113,14 @@ export function EnterpriseCRMAdmin({ lang = 'en' }: EnterpriseCRMAdminProps) {
     try {
       const ref = doc(db, 'service_bookings', selectedRecord.id);
       
+      const selectedWorkshop = workshops.find(w => w.id === workshopIdInput);
+      if (workshopIdInput && !selectedWorkshop) {
+        toast.error('Select a registered showroom from the list.');
+        return;
+      }
       const updatePayload = {
-        assignedWorkshop: workshopInput.trim(),
+        assignedWorkshop: selectedWorkshop?.name || '',
+        assignedWorkshopId: selectedWorkshop?.id || '',
         assignedTechnician: technicianInput.trim(),
         priority: priorityInput,
         estimatedCost: Number(estCostInput),
@@ -469,13 +480,20 @@ export function EnterpriseCRMAdmin({ lang = 'en' }: EnterpriseCRMAdminProps) {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-[9px] font-mono text-text-muted uppercase font-bold">Assigned Workshop</label>
-                        <input
-                          type="text"
-                          value={workshopInput}
-                          onChange={(e) => setWorkshopInput(e.target.value)}
-                          placeholder="e.g. Peshawar HQ"
+                        <select
+                          value={workshopIdInput}
+                          onChange={(e) => {
+                            const id = e.target.value;
+                            setWorkshopIdInput(id);
+                            setWorkshopInput(workshops.find(w => w.id === id)?.name || '');
+                          }}
                           className="w-full bg-[var(--color-bg-secondary)] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-[var(--color-text-header)] focus:outline-none"
-                        />
+                        >
+                          <option value="">Unassigned</option>
+                          {workshops.map(workshop => (
+                            <option key={workshop.id} value={workshop.id}>{workshop.name}</option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="space-y-1">
