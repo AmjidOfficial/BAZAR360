@@ -205,7 +205,7 @@ export const scrapeSocials = onCall<
     );
   }
 
-  const { name, website, facebook, instagram, tiktok } = request.data;
+  const { name } = request.data;
   if (!name) {
     throw new HttpsError("invalid-argument", "Name of the showroom must be supplied.");
   }
