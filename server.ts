@@ -590,8 +590,39 @@ Your task is to translate any incoming text block beautifully and accurately int
   app.post("/api/cloudinary/upload", express.json({ limit: '25mb' }), async (req, res) => {
     try {
       const { fileData, folder = "bazar360/uploads", resourceType = "image", tags } = req.body;
-      if (!fileData) {
+      if (typeof fileData !== 'string' || !fileData) {
         return res.status(400).json({ success: false, error: "fileData parameter is required" });
+      }
+
+      const allowedResourceTypes = ['image', 'video', 'raw'];
+      if (!allowedResourceTypes.includes(resourceType)) {
+        return res.status(400).json({ success: false, error: "Unsupported Cloudinary resource type." });
+      }
+
+      const dataUri = /^data:([^;,]+);base64,([A-Za-z0-9+/=]+)$/i.exec(fileData);
+      if (!dataUri) {
+        return res.status(400).json({ success: false, error: "Upload must be a valid base64 data URI." });
+      }
+
+      const mimeType = dataUri[1].toLowerCase();
+      const allowedMimeTypes: Record<string, RegExp> = {
+        image: /^image\/(jpeg|png|webp|gif|avif)$/i,
+        video: /^video\/(mp4|webm|quicktime|mpeg|x-m4v)$/i,
+        raw: /^application\/(pdf|octet-stream)$/i
+      };
+      if (!allowedMimeTypes[resourceType].test(mimeType)) {
+        return res.status(415).json({ success: false, error: "This file type is not allowed for the selected upload resource." });
+      }
+
+      const base64Length = dataUri[2].length;
+      const estimatedBytes = Math.floor((base64Length * 3) / 4) - (dataUri[2].endsWith('==') ? 2 : dataUri[2].endsWith('=') ? 1 : 0);
+      if (estimatedBytes > 18 * 1024 * 1024) {
+        return res.status(413).json({ success: false, error: "File exceeds the 18 MB upload limit." });
+      }
+
+      const safeFolder = String(folder || "bazar360/uploads");
+      if (!/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(safeFolder) || safeFolder.split('/').some((part: string) => part === '.' || part === '..')) {
+        return res.status(400).json({ success: false, error: "Invalid upload folder." });
       }
 
       const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || "me634xd0";
@@ -604,7 +635,7 @@ Your task is to translate any incoming text block beautifully and accurately int
 
       const uploadParams: Record<string, string> = {
         upload_preset: uploadPreset,
-        folder: folder || "bazar360/uploads"
+        folder: safeFolder
       };
       if (tags) {
         uploadParams.tags = Array.isArray(tags) ? tags.join(',') : String(tags);
