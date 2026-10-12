@@ -30,7 +30,7 @@ interface Hotspot {
   id: string;
   title: string;
   score: string;
-  status: 'Passed' | 'Perfect' | 'Verified';
+  status: 'Not assessed' | 'Information';
   description: string;
   xPercent: number;
   yPercent: number;
@@ -40,50 +40,50 @@ interface Hotspot {
 const DEFAULT_HOTSPOTS: Hotspot[] = [
   {
     id: 'engine',
-    title: 'Powertrain & OBD Diagnostics',
-    score: '9.9 / 10',
-    status: 'Perfect',
-    description: 'Computerized ECU scan shows 0 error codes. Zero oil seepage, clean manifold, verified timing.',
+    title: 'Powertrain area',
+    score: 'Not assessed',
+    status: 'Not assessed',
+    description: 'No independent engine or diagnostic report has been attached to this listing.',
     xPercent: 32,
     yPercent: 42,
     category: 'mechanical'
   },
   {
     id: 'body',
-    title: 'Body & Paint Thickness',
-    score: '100% Genuine',
-    status: 'Verified',
-    description: 'Digital magnetic elcometer gauge confirms factory paint thickness across all metal panels.',
+    title: 'Body and paint',
+    score: 'Not assessed',
+    status: 'Not assessed',
+    description: 'This marker highlights the body area only. Paint originality and body condition have not been verified.',
     xPercent: 54,
     yPercent: 35,
     category: 'body'
   },
   {
     id: 'suspension',
-    title: 'Suspension & Bushings',
-    score: '9.8 / 10',
-    status: 'Passed',
-    description: 'Struts, control arms, and stabilizer links tested under dynamic load. No unusual play.',
+    title: 'Suspension area',
+    score: 'Not assessed',
+    status: 'Not assessed',
+    description: 'No independent suspension inspection results have been provided.',
     xPercent: 28,
     yPercent: 68,
     category: 'mechanical'
   },
   {
     id: 'brakes',
-    title: 'Braking Discs & ABS',
-    score: '9.7 / 10',
-    status: 'Passed',
-    description: 'Ceramic brake pads at 85% thickness. ABS hydraulic actuator response tested and verified.',
+    title: 'Brakes and wheels',
+    score: 'Not assessed',
+    status: 'Not assessed',
+    description: 'No brake or ABS inspection results have been provided.',
     xPercent: 74,
     yPercent: 62,
     category: 'mechanical'
   },
   {
     id: 'docs',
-    title: 'Smart Card & Token Tax',
-    score: 'Verified',
-    status: 'Verified',
-    description: 'Government excise database record matched. Token tax paid up-to-date. Original documents on file.',
+    title: 'Vehicle documents',
+    score: 'Not provided',
+    status: 'Not assessed',
+    description: 'No government record verification is attached. Review original documents before buying.',
     xPercent: 65,
     yPercent: 24,
     category: 'documents'
@@ -142,10 +142,10 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono uppercase tracking-widest text-[#FFB95F] font-bold">
-                Bazar360 Verified Vault
+                Vehicle Preview
               </span>
               <span className="px-2 py-0.5 rounded-full bg-[#00D2FF]/15 text-[#00D2FF] text-[9px] font-mono font-bold">
-                180-Point Inspection
+                Inspection data not provided
               </span>
             </div>
             <h2 className="font-display font-bold text-lg sm:text-xl text-white tracking-tight">
@@ -194,7 +194,7 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
             alt={carTitle}
             className="max-h-[82%] max-w-[90%] object-contain pointer-events-none transition-transform duration-100 drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]"
             style={{
-              transform: `rotateY(${rotationAngle}deg) scale(1.02)`,
+              transform: 'scale(1.02)',
               filter: 'contrast(1.05) brightness(1.02)'
             }}
           />
@@ -245,9 +245,9 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
           <div>
             <div className="flex items-center gap-1 text-[#FFB95F] text-xs font-bold">
               <ShieldCheck size={14} />
-              <span>Bazar360 Certified</span>
+              <span>Inspection not verified</span>
             </div>
-            <p className="text-[11px] text-[#BBC9CF]">Passed 180-point inspection</p>
+            <p className="text-[11px] text-[#BBC9CF]">No independent inspection report is attached to this listing.</p>
           </div>
         </div>
       </div>
