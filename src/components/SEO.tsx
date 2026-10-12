@@ -12,12 +12,17 @@ export async function generateMetadata({ vehicle, dealer }: { vehicle?: CarListi
 
   const rawLoc = dealer?.location || (vehicle as any).location || '';
   const city = rawLoc.split(',')[0]?.trim();
-  const categoryKeyword = vehicle.fuelType === 'Hybrid' ? 'Hybrid Car' : vehicle.fuelType === 'Electric' ? 'Electric Car' : 'Car';
-  const intentPhrase = `Buy ${vehicle.condition} ${categoryKeyword} in ${city || 'Pakistan'}`;
-
-  const finalTitle = `${intentPhrase} | ${vehicle.make} ${vehicle.model} ${vehicle.year} - Bazar360`;
   const conditionLabel = String(vehicle.condition || 'Used').toLowerCase();
-  const finalDesc = `${vehicle.title} (${vehicle.year}) is listed as ${conditionLabel}. Features: ${vehicle.fuelType}, ${vehicle.transmission} transmission, ${vehicle.mileage} km. ${intentPhrase}. Contact the seller directly through Bazar360.`;
+  const categoryKeyword = vehicle.fuelType === 'Hybrid' ? 'Hybrid Car' : vehicle.fuelType === 'Electric' ? 'Electric Car' : 'Car';
+  const intentPhrase = `Buy ${conditionLabel} ${categoryKeyword} in ${city || 'Pakistan'}`;
+  const vehicleName = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(' ') || vehicle.title || 'Vehicle';
+  const specParts = [
+    vehicle.fuelType || '',
+    vehicle.transmission ? `${vehicle.transmission} transmission` : '',
+    Number(vehicle.mileage) > 0 ? `${Number(vehicle.mileage).toLocaleString()} km` : ''
+  ].filter(Boolean);
+  const finalTitle = `${intentPhrase} | ${vehicleName} - Bazar360`;
+  const finalDesc = `${vehicle.title || vehicleName} is listed as ${conditionLabel}${specParts.length ? ` with ${specParts.join(', ')}` : ''}. ${intentPhrase}. Contact the seller for more details.`;
   
   const baseImage = vehicle.imageUrl || (vehicle.images && vehicle.images[0]) || 'https://bazar360.online/favicon.png';
   const ogImage = getOptimizedUrl(baseImage, { width: 1200, height: 630, crop: 'fill', quality: 'auto' });
