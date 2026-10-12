@@ -1063,10 +1063,10 @@ export default function RegistrationPortal({
           const name = userObj.displayName || `Seller ${userObj.phoneNumber ? userObj.phoneNumber.substring(userObj.phoneNumber.length - 4) : ''}`;
           profile = await createNewUserProfile(
             userObj.uid,
-            userObj.email || `${userObj.uid}@bazar360.online`,
+            userObj.email || '',
             name,
             'Private Seller',
-            { phoneNumber: userObj.phoneNumber || '', city: 'Peshawar' }
+            { phoneNumber: userObj.phoneNumber || '', city: '' }
           );
         }
         setCurrentUser(profile);
