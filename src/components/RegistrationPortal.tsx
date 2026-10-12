@@ -941,7 +941,7 @@ export default function RegistrationPortal({
         }
         const newProfile = await createNewUserProfile(
           user.uid,
-          user.email || 'user@bazar360.online',
+          user.email || '',
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 User')),
           assignedRole,
           (isGhaniEmail || isMalakEmail) ? { phoneNumber: user.phoneNumber || '' } : { phoneNumber: user.phoneNumber || '' }
@@ -1112,8 +1112,7 @@ export default function RegistrationPortal({
         if (isGhaniEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Ghani Khan';
-          fetchedProfile.phoneNumber = '03556908996';
-          fetchedProfile.city = 'Peshawar';
+          // Do not populate a personal phone number or location without user confirmation.
           changed = true;
         }
         if (isMalakEmail) {
@@ -1141,7 +1140,7 @@ export default function RegistrationPortal({
           user.email || emailLower,
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (emailLower.split('@')[0])),
           assignedRole,
-          isMalakEmail ? { phoneNumber: '+923159085086', city: 'Peshawar' } : (isGhaniEmail ? { phoneNumber: '03556908996', city: 'Peshawar' } : {})
+          { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Logged in and profile initialized.');
