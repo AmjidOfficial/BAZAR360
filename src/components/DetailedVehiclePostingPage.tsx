@@ -197,10 +197,15 @@ export default function DetailedVehiclePostingPage({
     if (contextListing) {
       if (contextListing.make) setMake(contextListing.make);
       if (contextListing.model) setModel(contextListing.model);
+      if (contextListing.variant) setVariant(contextListing.variant);
       if (contextListing.year) setYear(contextListing.year);
       if (contextListing.price) setPrice(String(contextListing.price));
-      if (contextListing.mileage) setMileage(String(contextListing.mileage));
-      if (contextListing.engineCC) setEngineCC(String(contextListing.engineCC));
+      if (contextListing.mileage !== undefined && contextListing.mileage !== null) setMileage(String(contextListing.mileage));
+      if (contextListing.engineCC !== undefined && contextListing.engineCC !== null) setEngineCC(String(contextListing.engineCC));
+      if (contextListing.registrationYear) setRegistrationYear(String(contextListing.registrationYear));
+      if (contextListing.documentType) setDocumentType(contextListing.documentType as any);
+      if (typeof contextListing.tokenTaxPaid === 'boolean') setTokenTaxPaid(contextListing.tokenTaxPaid);
+      if (Array.isArray(contextListing.features)) setSelectedFeatures(contextListing.features);
       if (contextListing.transmission) setTransmission(contextListing.transmission as any);
       if (contextListing.fuelType) setFuelType(contextListing.fuelType as any);
       if (contextListing.exteriorColor) setColor(contextListing.exteriorColor);
