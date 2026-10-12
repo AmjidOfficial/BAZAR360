@@ -53,7 +53,8 @@ import { uploadToCloudinary, deleteFromCloudinary, getOptimizedUrl } from '../li
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  sendPasswordResetEmail, 
+  sendPasswordResetEmail,
+  onAuthStateChanged, 
   sendEmailVerification, 
   signInWithPopup,
   updatePassword,
@@ -93,6 +94,13 @@ export default function RegistrationPortal({
   onClose 
 }: RegistrationPortalProps) {
   
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsEmailVerified(!!user?.emailVerified);
+    });
+    return unsubscribe;
+  }, []);
+
   // Tab within portal
   const [isLoginMode, setIsLoginMode] = useState<boolean>(true);
   const [glassTheme, setGlassTheme] = useState<'light' | 'dark'>('light');
@@ -108,8 +116,8 @@ export default function RegistrationPortal({
   const [regEmail, setRegEmail] = useState<string>('');
   const [regPass, setRegPass] = useState<string>('');
   const [regRole, setRegRole] = useState<'Private Seller' | 'Buyer' | 'Dealer' | 'Admin' | 'Sales Representative' | 'Showroom Owner'>('Buyer');
-  const [regCity, setRegCity] = useState<string>('Peshawar');
-  const [regProvince, setRegProvince] = useState<string>('Khyber Pakhtunkhwa');
+  const [regCity, setRegCity] = useState<string>('');
+  const [regProvince, setRegProvince] = useState<string>('');
   const [regCountry, setRegCountry] = useState<string>('Pakistan');
   const [regCompany, setRegCompany] = useState<string>('');
   const [regLang, setRegLang] = useState<'en' | 'ur'>('en');
@@ -132,7 +140,7 @@ export default function RegistrationPortal({
   const [resetEmail, setResetEmail] = useState<string>('');
   const [selectedAmjidRole, setSelectedAmjidRole] = useState<'Admin' | 'Dealer' | 'Buyer'>('Admin');
   const [isForgotPasswordMode, setIsForgotPasswordMode] = useState<boolean>(false);
-  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(true);
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(false);
 
   // Security & Settings state variables
   const [changePassNew, setChangePassNew] = useState<string>('');
@@ -724,8 +732,8 @@ export default function RegistrationPortal({
       lastLogin: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       phoneNumber: extraFields.phoneNumber || regPhone || '',
-      city: extraFields.city || regCity || 'Peshawar',
-      state: extraFields.province || regProvince || 'Khyber Pakhtunkhwa',
+      city: extraFields.city || regCity || '',
+      state: extraFields.province || regProvince || '',
       country: extraFields.country || regCountry || 'Pakistan',
       preferredLanguage: 'en',
       profilePhoto: extraFields.profilePhoto || regProfilePhoto || '',
@@ -733,7 +741,7 @@ export default function RegistrationPortal({
       whatsappNumber: extraFields.phoneNumber || regPhone || '',
       acceptedTerms: true,
       preferredTheme: 'light',
-      province: extraFields.province || regProvince || 'Khyber Pakhtunkhwa',
+      province: extraFields.province || regProvince || '',
       address: extraFields.address || '',
       bio: '',
       postalCode: '',
@@ -2284,6 +2292,7 @@ export default function RegistrationPortal({
                         onChange={e => setRegCity(e.target.value)}
                         className="w-full bg-[var(--color-bg-secondary)] border border-white/10 rounded-xl p-2.5 text-xs text-[var(--color-text-header)] focus:outline-none cursor-pointer"
                       >
+                        <option value="">Select city</option>
                         <option value="Peshawar">Peshawar</option>
                         <option value="Islamabad">Islamabad</option>
                         <option value="Lahore">Lahore</option>
@@ -2299,6 +2308,7 @@ export default function RegistrationPortal({
                         onChange={e => setRegProvince(e.target.value)}
                         className="w-full bg-[var(--color-bg-secondary)] border border-white/10 rounded-xl p-2.5 text-xs text-[var(--color-text-header)] focus:outline-none cursor-pointer"
                       >
+                        <option value="">Select province/territory</option>
                         <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa (KP)</option>
                         <option value="Punjab">Punjab</option>
                         <option value="Sindh">Sindh</option>
@@ -2604,7 +2614,7 @@ export default function RegistrationPortal({
                 <div className="space-y-3 bg-bg-secondary/40 p-4 rounded-2xl border border-white/5 text-xs">
                   <div className="flex justify-between items-center">
                     <span className="text-text-muted font-medium">Member Since:</span>
-                    <span className="font-mono text-[var(--color-text-header)] font-semibold">June 2026</span>
+                    <span className="font-mono text-[var(--color-text-header)] font-semibold">{currentUser?.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'Not available'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-text-muted font-medium">Verification State:</span>
