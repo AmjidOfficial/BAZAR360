@@ -95,7 +95,7 @@ export function VehicleCard({
   const rawHp = car.specs?.horspower || '';
   const calculatedHP = rawHp 
     ? (rawHp.toString().toLowerCase().includes('hp') || rawHp.toString().toLowerCase().includes('bhp') ? rawHp : `${rawHp} HP`)
-    : `${car.engineCC || 1500} CC`;
+    : (car.engineCC ? `${car.engineCC} CC` : 'Specs not provided');
 
   return (
     <motion.div
