@@ -600,15 +600,21 @@ export default function MarketplaceHero({ lang, onSearch, setTab, listings = [],
                         <ChevronRight size={14} />
                       </button>
 
-                      <a
-                        href={`https://wa.me/${activeHeroCar.sellerWhatsApp || activeHeroCar.sellerPhone || '923159085086'}?text=${encodeURIComponent(`Hi, I am interested in your ${activeHeroCar.year} ${activeHeroCar.make} ${activeHeroCar.model} listed on Bazar360.`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3.5 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
-                        title="Contact Seller on WhatsApp"
-                      >
-                        <span>WhatsApp</span>
-                      </a>
+                      {(activeHeroCar.sellerWhatsApp || activeHeroCar.sellerPhone || activeHeroCar.ownerDetails?.phone) ? (
+                        <a
+                          href={`https://wa.me/${(activeHeroCar.sellerWhatsApp || activeHeroCar.sellerPhone || activeHeroCar.ownerDetails?.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I am interested in your ${activeHeroCar.year} ${activeHeroCar.make} ${activeHeroCar.model} listed on Bazar360.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3.5 py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer shrink-0"
+                          title="Contact Seller on WhatsApp"
+                        >
+                          <span>WhatsApp</span>
+                        </a>
+                      ) : (
+                        <span className="px-3.5 py-2.5 rounded-xl text-text-muted border border-[var(--color-border-main)] text-xs font-bold shrink-0" title="Seller contact details have not been provided">
+                          Contact unavailable
+                        </span>
+                      )}
                     </div>
 
                   </div>
