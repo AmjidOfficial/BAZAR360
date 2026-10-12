@@ -119,13 +119,16 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
     isDraggingRef.current = false;
   };
 
-  const carTitle = car ? `${car.year || ''} ${car.make || ''} ${car.model || ''}` : '2024 Audi e-tron GT Quattro';
-  const carPrice = car?.price ? `PKR ${car.price.toLocaleString()}` : 'PKR 28,500,000';
-  const sellerPhone = car?.sellerWhatsApp || car?.sellerPhone || '923159085086';
+  const carTitle = car ? `${car.year || ''} ${car.make || ''} ${car.model || ''}`.trim() || 'Vehicle details unavailable' : 'Vehicle details unavailable';
+  const carPrice = typeof car?.price === 'number' && car.price > 0
+    ? `PKR ${car.price.toLocaleString()}`
+    : 'Price not provided';
+  const sellerPhone = car?.sellerWhatsApp || car?.sellerPhone || car?.ownerDetails?.phone || '';
 
   const handleWhatsAppInquiry = () => {
-    const text = encodeURIComponent(`Hi, I am viewing the 360° Certified inspection for the ${carTitle} on Bazar360.online. I would like to schedule an inspection / test drive.`);
-    window.open(`https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
+    if (!sellerPhone) return;
+    const text = encodeURIComponent(`Hi, I am viewing the 360° vehicle view for the ${carTitle} on Bazar360.online. I would like to ask about the vehicle and arrange a viewing.`);
+    window.open(`https://wa.me/${sellerPhone.replace(/[^0-9]/g, '')}?text=${text}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -275,17 +278,24 @@ export const Vehicle360Viewer: React.FC<Vehicle360ViewerProps> = ({ car, onClose
           <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               onClick={handleWhatsAppInquiry}
-              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-slate-950 font-sans font-bold text-xs flex items-center justify-center gap-2 shadow-lg cursor-pointer transition active:scale-95"
+              disabled={!sellerPhone}
+              title={!sellerPhone ? 'Seller contact details have not been provided' : 'Contact seller on WhatsApp'}
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-slate-950 font-sans font-bold text-xs flex items-center justify-center gap-2 shadow-lg cursor-pointer transition active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <MessageSquare size={15} />
               <span>WhatsApp Showroom</span>
             </button>
-            <a
-              href={`tel:${sellerPhone}`}
-              className="px-3.5 py-2.5 rounded-xl bg-[#222A3D] hover:bg-[#2D3449] border border-white/10 text-white font-mono text-xs flex items-center justify-center transition"
-            >
-              <Phone size={14} />
-            </a>
+            {sellerPhone ? (
+              <a
+                href={`tel:${sellerPhone}`}
+                className="px-3.5 py-2.5 rounded-xl bg-[#222A3D] hover:bg-[#2D3449] border border-white/10 text-white font-mono text-xs flex items-center justify-center transition"
+                aria-label="Call seller"
+              >
+                <Phone size={14} />
+              </a>
+            ) : (
+              <span className="px-3.5 py-2.5 text-xs text-[#BBC9CF]" title="Seller contact details have not been provided">Contact unavailable</span>
+            )}
           </div>
         </div>
       )}
