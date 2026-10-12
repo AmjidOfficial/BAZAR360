@@ -2232,6 +2232,41 @@ export async function dbSubmitServiceBooking(bookingData: Omit<ServiceBooking, '
   }
 }
 
+export async function dbFetchServiceBookingsForWorkshop(workshopId: string): Promise<ServiceBooking[]> {
+  if (!workshopId) return [];
+  try {
+    const q = query(
+      collection(db, 'service_bookings'),
+      where('assignedWorkshopId', '==', workshopId)
+    );
+    const snap = await getDocs(q);
+    const remoteBookings = snap.docs.map((bookingDoc) => ({
+      ...(bookingDoc.data() as ServiceBooking),
+      id: bookingDoc.id
+    }));
+    let localBookings: ServiceBooking[] = [];
+    try {
+      localBookings = (JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]') as ServiceBooking[])
+        .filter(booking => booking.assignedWorkshopId === workshopId);
+    } catch {}
+    const combined = [...remoteBookings];
+    localBookings.forEach(booking => {
+      if (!combined.some(item => item.id === booking.id)) combined.push(booking);
+    });
+    return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (err) {
+    console.warn('[Workshop] Could not fetch assigned bookings:', err);
+    try {
+      const localBookings = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]') as ServiceBooking[];
+      return localBookings
+        .filter(booking => booking.assignedWorkshopId === workshopId)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch {
+      return [];
+    }
+  }
+}
+
 export async function dbFetchServiceBookings(userPhoneOrUid?: string): Promise<ServiceBooking[]> {
   try {
     const snap = await getDocs(collection(db, 'service_bookings'));
