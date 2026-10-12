@@ -88,10 +88,12 @@ export const ShowroomsSection: React.FC<ShowroomsSectionProps> = ({
                   )}
 
                   {/* Rating */}
-                  <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-[var(--color-accent-main)] text-xs font-mono font-bold border border-white/20 flex items-center gap-1">
-                    <Star size={12} className="fill-[var(--color-accent-main)] text-[var(--color-accent-main)]" />
-                    <span>{dealer.rating || 4.9}</span>
-                  </div>
+                  {Number(dealer.rating) > 0 && (
+                    <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-[var(--color-accent-main)] text-xs font-mono font-bold border border-white/20 flex items-center gap-1" aria-label={`Rating ${dealer.rating} out of 5`}>
+                      <Star size={12} className="fill-[var(--color-accent-main)] text-[var(--color-accent-main)]" />
+                      <span>{dealer.rating}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Content */}
