@@ -381,11 +381,24 @@ service cloud.firestore {
                (!('inquiryMessage' in data) || (data.inquiryMessage is string && data.inquiryMessage.size() <= 4000));
       }
 
-      // Bookings hold customer contact details, so reads and mutations are restricted to
-      // admins and the customer who owns the record.
-      allow get, list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      function isAssignedWorkshopOwner(data) {
+        return isSignedIn() &&
+               ('assignedWorkshopId' in data) &&
+               data.assignedWorkshopId is string &&
+               exists(/databases/$(database)/documents/dealers/$(data.assignedWorkshopId)) &&
+               get(/databases/$(database)/documents/dealers/$(data.assignedWorkshopId)).data.ownerUid == request.auth.uid;
+      }
+
+      // Customer contact details are only readable by the customer, admins, and
+      // the owner of the specifically assigned workshop.
+      allow get, list: if isAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid) ||
+        isAssignedWorkshopOwner(resource.data);
       allow create: if isValidBooking(incoming());
-      allow update: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow update: if isAdmin() ||
+        (isSignedIn() && existing().userId == request.auth.uid) ||
+        (isAssignedWorkshopOwner(existing()) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']));
       allow delete: if isAdmin();
     }
 
