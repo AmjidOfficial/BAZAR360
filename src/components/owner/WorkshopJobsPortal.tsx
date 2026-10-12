@@ -21,19 +21,13 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
   const [activeTab, setActiveTab] = useState<'today' | 'pending' | 'completed'>('today');
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
 
-  // Staff roster
-  const staff = [
-    { name: 'Engr. Amjid Khan', role: 'Senior Master Inspector', activeJobs: 2 },
-    { name: 'Mechanic Farhan Ghani', role: 'EV Powertrain Specialist', activeJobs: 1 },
-    { name: 'Technician Mazhar Ali', role: 'PPF & Detailing Artisan', activeJobs: 3 }
-  ];
-
   useEffect(() => {
     async function load() {
       try {
         const bookings = await dbFetchServiceBookings();
-        // Show bookings matching this dealer/showroom or general ones as fallback for showroom management demo
-        const matched = bookings.filter(b => b.assignedWorkshop?.toLowerCase().includes(dealerName.toLowerCase()) || !b.assignedWorkshop);
+        // Never expose unassigned bookings or another workshop's jobs in this showroom portal.
+        const normalizedDealerName = dealerName.trim().toLowerCase();
+        const matched = bookings.filter(b => (b.assignedWorkshop || '').trim().toLowerCase() === normalizedDealerName);
         setJobs(matched);
         if (matched.length > 0 && !selectedJob) {
           setSelectedJob(matched[0]);
@@ -272,17 +266,9 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
               <div className="space-y-2.5">
                 <span className="text-[10px] font-mono text-text-muted uppercase font-black tracking-wider block">Assigned Technician Roster</span>
                 <div className="space-y-2">
-                  {staff.map((s, idx) => (
-                    <div key={idx} className="p-3 bg-[var(--color-bg-secondary)]/40 border border-white/5 rounded-xl flex justify-between items-center">
-                      <div>
-                        <p className="text-xs font-black text-[var(--color-text-header)] uppercase">{s.name}</p>
-                        <p className="text-[9px] text-text-muted">{s.role}</p>
-                      </div>
-                      <span className="text-[8px] font-mono bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded font-black uppercase">
-                        {s.activeJobs} Jobs Active
-                      </span>
-                    </div>
-                  ))}
+                  <p className="rounded-xl border border-[var(--color-border-main)] p-3 text-xs text-[var(--color-text-muted)]">
+                    No technician roster has been configured for this workshop yet.
+                  </p>
                 </div>
               </div>
 
