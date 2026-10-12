@@ -109,10 +109,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
             await dbSaveUserProfile(profile);
           } else {
-            // Update last login without overwriting existing profile data
+            // Firebase Auth is authoritative for the account email and verified phone.
             const updates: Partial<UserProfile> = {
-              lastLogin: new Date().toISOString()
+              lastLogin: new Date().toISOString(),
+              phoneVerified: !!fUser.phoneNumber
             };
+            profile.phoneVerified = !!fUser.phoneNumber;
+            if (fUser.phoneNumber) {
+              updates.phoneNumber = fUser.phoneNumber;
+              profile.phoneNumber = fUser.phoneNumber;
+            }
             if (isDeveloper && profile.role !== 'Admin') {
               updates.role = 'Admin';
               profile.role = 'Admin';
@@ -151,11 +157,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to profile updates to invalidate state cache and update immediately
   useEffect(() => {
-    const handleProfileUpdate = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail) {
-        setCurrentUser(customEvent.detail);
+    const handleProfileUpdate = () => {
+      const authUser = auth.currentUser;
+      if (!authUser) {
+        setCurrentUser(null);
+        return;
       }
+      dbFetchUserProfile(authUser.uid)
+        .then((profile) => {
+          if (!profile) return;
+          const trustedProfile = {
+            ...profile,
+            uid: authUser.uid,
+            email: authUser.email || '',
+            phoneNumber: authUser.phoneNumber || profile.phoneNumber || '',
+            phoneVerified: !!authUser.phoneNumber
+          };
+          setCurrentUser(trustedProfile);
+          localStorage.setItem('bazar360_user', JSON.stringify(trustedProfile));
+        })
+        .catch((error) => console.warn('[AuthContext] Profile refresh failed:', error));
     };
     window.addEventListener('bazar360_profile_updated', handleProfileUpdate);
     return () => {
