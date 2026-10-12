@@ -66,7 +66,7 @@ export function EnterpriseCRMAdmin({ lang = 'en' }: EnterpriseCRMAdminProps) {
       setWorkshopInput(selectedRecord.assignedWorkshop || '');
       setTechnicianInput(selectedRecord.assignedTechnician || '');
       setPriorityInput(selectedRecord.priority || 'High');
-      setEstCostInput(selectedRecord.estimatedCost || 14500);
+      setEstCostInput(selectedRecord.estimatedCost ?? 0);
       setEstCompletionInput(selectedRecord.estimatedCompletion || '');
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
