@@ -1,8 +1,6 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -11,101 +9,145 @@ service firebase.storage {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isSuperUser() {
-      return isSignedIn() && (
-        request.auth.token.email == 'khattakghani94@gmail.com' ||
-        request.auth.token.email == 'amjid.bisconni@gmail.com'
-      );
+    // Roles must be granted by trusted server-side Firebase Auth custom claims.
+    // Never grant broad access based on a hard-coded email address.
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.role != null
+        && (request.auth.token.role == 'admin'
+          || request.auth.token.role == 'Admin'
+          || request.auth.token.role == 'super_admin');
     }
 
     function isValidImage() {
-      return request.resource.contentType.matches('image/.*')
-        && request.resource.size < 10 * 1024 * 1024; // Limit to 10MB
+      return request.resource != null
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size <= 10 * 1024 * 1024;
     }
 
     function isValidVideo() {
-      return request.resource.contentType.matches('video/.*')
-        && request.resource.size < 100 * 1024 * 1024; // Limit to 100MB
+      return request.resource != null
+        && request.resource.contentType.matches('video/.*')
+        && request.resource.size <= 100 * 1024 * 1024;
     }
 
     function isValidDocument() {
-      return (
-        request.resource.contentType == 'application/pdf' ||
-        request.resource.contentType == 'application/msword' ||
-        request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        request.resource.contentType == 'image/jpeg' ||
-        request.resource.contentType == 'image/png'
-      ) && request.resource.size < 25 * 1024 * 1024; // Limit to 25MB
+      return request.resource != null
+        && (
+          request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'application/msword'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+          || request.resource.contentType == 'image/jpeg'
+          || request.resource.contentType == 'image/png'
+        )
+        && request.resource.size <= 25 * 1024 * 1024;
     }
 
-    // 0. Global Unrestricted Override for Super Users (Ghani & Amjid)
-    match /{allPaths=**} {
-      allow read, write: if isSuperUser();
+    function ownsShowroom(showroomId) {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/dealers/$(showroomId))
+        && firestore.get(/databases/(default)/documents/dealers/$(showroomId)).data.ownerUid == request.auth.uid;
     }
 
-    // 1. Profile Photos (Owners write/update, public read)
+    function canManageVehicle(vehicleId) {
+      return isSignedIn()
+        && firestore.exists(/databases/(default)/documents/listings/$(vehicleId))
+        && (
+          firestore.get(/databases/(default)/documents/listings/$(vehicleId)).data.ownerUid == request.auth.uid
+          || firestore.get(/databases/(default)/documents/listings/$(vehicleId)).data.createdBy == request.auth.uid
+          || firestore.get(/databases/(default)/documents/listings/$(vehicleId)).data.assignedSalesRepId == request.auth.uid
+          || firestore.get(/databases/(default)/documents/listings/$(vehicleId)).data.dealerId == request.auth.uid
+          || (
+            firestore.get(/databases/(default)/documents/listings/$(vehicleId)).data.dealerId is string
+            && firestore.exists(/databases/(default)/documents/dealers/$(firestore.get(/databases/(default)/documents/listings/$(vehicleId)).data.dealerId))
+            && firestore.get(/databases/(default)/documents/dealers/$(firestore.get(/databases/(default)/documents/listings/$(vehicleId)).data.dealerId)).data.ownerUid == request.auth.uid
+          )
+        );
+    }
+
+    // There is intentionally no global privileged-user override. Every path
+    // below has its own access rule, including private verification evidence.
+
+    // Profile photos: public read, owner upload.
     match /profile-photos/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isOwner(userId) && isValidImage();
+      allow create, update: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId);
     }
 
-    // 2. Showroom Logos
+    // Showroom branding: only the showroom owner or trusted admin may change it.
     match /showroom-logos/{showroomId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow create, update: if (ownsShowroom(showroomId) || isAdmin()) && isValidImage();
+      allow delete: if ownsShowroom(showroomId) || isAdmin();
     }
 
-    // 3. Showroom Banners
     match /showroom-banners/{showroomId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow create, update: if (ownsShowroom(showroomId) || isAdmin()) && isValidImage();
+      allow delete: if ownsShowroom(showroomId) || isAdmin();
     }
 
-    // 4. Vehicle Images (Public read, authenticated users write)
+    // Vehicle media: public read, but uploads must belong to the listing owner,
+    // assigned representative, showroom owner, or trusted admin.
     match /vehicle-images/{vehicleId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow create, update: if (canManageVehicle(vehicleId) || isAdmin()) && isValidImage();
+      allow delete: if canManageVehicle(vehicleId) || isAdmin();
     }
 
-    // 5. Vehicle Videos (Public read, authenticated users write)
     match /vehicle-videos/{vehicleId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidVideo();
+      allow create, update: if (canManageVehicle(vehicleId) || isAdmin()) && isValidVideo();
+      allow delete: if canManageVehicle(vehicleId) || isAdmin();
     }
 
-    // 6. Verification and Business Documents (Private: only owner or authenticated staff read/write)
+    // Verification and business documents are private by default.
     match /documents/{userId}/{allPaths=**} {
-      allow read: if isOwner(userId) || isSignedIn();
-      allow write: if isOwner(userId) && isValidDocument();
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if (isOwner(userId) || isAdmin()) && isValidDocument();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // 7. Inspection Reports
+    // Inspection reports may contain sensitive evidence; restrict them to the
+    // listing owner, assigned rep, showroom owner, or trusted admin.
     match /inspection-reports/{vehicleId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if isSignedIn() && isValidDocument();
+      allow read: if canManageVehicle(vehicleId) || isAdmin();
+      allow create, update: if (canManageVehicle(vehicleId) || isAdmin()) && isValidDocument();
+      allow delete: if canManageVehicle(vehicleId) || isAdmin();
     }
 
-    // 8. Advertisements Banners
+    // Only trusted admins may manage platform-owned promotional/editorial media.
     match /advertisements/{adId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
     }
 
-    // 9. Blog and News Images
     match /blog-images/{blogId}/{allPaths=**} {
       allow read: if true;
-      allow write: if isSignedIn() && isValidImage();
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
     }
 
-    // 10. Temporary uploads
+    // Temporary files are private and scoped to the user's UID.
     match /temporary/{userId}/{allPaths=**} {
-      allow read, write: if isOwner(userId);
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource != null
+        && request.resource.size <= 25 * 1024 * 1024;
     }
 
-    // 11. Showroom Dynamic Structured Media Gallery Sourcing
+    // Legacy showroom media path: owner of the showroom only.
     match /showrooms/{ownerId}/vehicles/{vehicleId}/{fileName} {
       allow read: if true;
-      allow write: if isOwner(ownerId) && isValidImage();
+      allow create, update: if (isOwner(ownerId) || isAdmin()) && isValidImage();
+      allow delete: if isOwner(ownerId) || isAdmin();
+    }
+
+    // Default deny for every path not explicitly listed above.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
