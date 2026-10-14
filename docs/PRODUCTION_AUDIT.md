@@ -49,3 +49,12 @@ The primary Lovable project is Bazar360 Automotive Hub, ID ae91a5f8-d23c-40d7-a8
 3. Review Firebase and Supabase schema/security assumptions before selecting the canonical data layer.
 4. Build the migration matrix and create a protected migration branch.
 5. Run build/tests and verify deployment before proposing repository deletion.
+
+
+## Additional findings from continued inspection
+- GitHub combined commit status for the documentation commit returned no status entries. The available workflow-runs query returned no associated runs for that commit. No CI pass can be claimed.
+- The master Firebase deployment workflow targets Firebase project ID `bazar360-2026`, but the live console project and deployed revision were not validated.
+- The primary Lovable Automotive Hub and Bazar360 Express file inventories both list a root `.env` file. Its contents were deliberately not read because it may contain credentials. Confirm whether these files are tracked and contain real secrets; if so, remove them from version control and rotate affected credentials. Do not paste secrets into chat or reports.
+- A local Git clone was attempted but failed because this runtime could not resolve `github.com`. Local npm build and tests were therefore not executed.
+- Lovable agent-driven auditing/editing was blocked because the connected authorization lacks the `projects:write` scope. Read-only project metadata and file access did work.
+- The master prompt, initial audit, migration matrix, architecture decisions, and test status documents have been committed. These are documentation commits only; they do not mean application code has been rebuilt or repositories merged.
