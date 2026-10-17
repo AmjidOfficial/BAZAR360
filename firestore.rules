@@ -84,8 +84,14 @@ service cloud.firestore {
       match /reviews/{reviewId} {
         allow get: if true;
         allow list: if request.query.limit == null || request.query.limit <= 100;
-        allow create: if isSignedIn() && isValidId(reviewId) &&
-                      incoming().author is string && incoming().rating is number;
+        allow create: if isSignedIn() && isValidId(reviewId)
+                      && incoming().rating is number
+                      && incoming().rating >= 1 && incoming().rating <= 5
+                      && incoming().keys().hasAny(['userId', 'authorId'])
+                      && (
+                        (('userId' in incoming()) && incoming().userId == request.auth.uid)
+                        || (('authorId' in incoming()) && incoming().authorId == request.auth.uid)
+                      );
         allow update, delete: if isAdmin();
       }
     }
@@ -109,7 +115,10 @@ service cloud.firestore {
       }
       
       // Allows both registered users (private sellers) and showroom dealers to create vehicle ads with strict owner checks
-      allow create: if isSignedIn() && isValidId(listingId) && isValidListing(incoming()) && (
+      allow create: if isSignedIn() && isValidId(listingId) && isValidListing(incoming())
+        && (!('verified' in incoming()) || incoming().verified == false)
+        && (!('approved' in incoming()) || incoming().approved == false)
+        && (!('featured' in incoming()) || incoming().featured == false) && (
         isAdmin() ||
         incoming().dealerId == request.auth.uid ||
         incoming().assignedSalesRepId == request.auth.uid ||
@@ -139,7 +148,7 @@ service cloud.firestore {
             'title', 'description', 'price', 'mileage', 'images', 'imageUrl', 
             'videoUrl', 'specs', 'isSold', 'isPaused', 'isArchived', 'updatedAt',
             'make', 'model', 'year', 'condition', 'engineCC', 'exteriorColor', 'bodyCondition',
-            'fuelType', 'transmission', 'verified', 'approved', 'assignedSalesRepId', 'dealerId',
+            'fuelType', 'transmission',
             'phone', 'sellerPhone', 'tags', 'assemblyType', 'tokenTaxStatus', 'tokenTaxPaid',
             'registrationCity', 'documentType', 'cloudinaryPublicId', 'cloudinaryPublicIds',
             'videoCloudinaryPublicId', 'pdfUrl', 'pdfCloudinaryPublicId', 'pdfTitle'
@@ -279,10 +288,18 @@ service cloud.firestore {
         request.auth.uid in resource.data.participants ||
         isAdmin()
       );
-      allow create: if isSignedIn() && request.auth.uid in incoming().participants;
-      allow update: if isSignedIn() && (
-        request.auth.uid in resource.data.participants ||
-        isAdmin()
+      allow create: if isSignedIn()
+        && incoming().participants is list
+        && incoming().participants.size() >= 2
+        && incoming().participants.size() <= 20
+        && request.auth.uid in incoming().participants;
+      allow update: if isAdmin() || (
+        isSignedIn()
+        && request.auth.uid in resource.data.participants
+        && incoming().participants == existing().participants
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'lastMessage', 'lastMessageAt', 'updatedAt', 'unreadCounts', 'readBy', 'typing'
+        ])
       );
       
       match /messages/{messageId} {
