@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Phone, MessageSquare, Send, CheckCircle, Sparkles, MapPin, Clock, ExternalLink } from 'lucide-react';
 import { dbSaveLead } from '../lib/dbService';
+import { auth } from '../firebase';
 import { Lead } from '../types';
 
 interface ContactDrawerProps {
@@ -17,6 +18,7 @@ export default function ContactDrawer({ isOpen, onClose, lang, initialMessage }:
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   React.useEffect(() => {
     if (isOpen) {
@@ -80,8 +82,10 @@ export default function ContactDrawer({ isOpen, onClose, lang, initialMessage }:
     if (!name || !phone || !message) return;
 
     setIsSubmitting(true);
+    setSubmitError('');
     const newLead: Lead = {
       id: `support-lead-${Date.now()}`,
+      customerId: auth.currentUser?.uid || 'guest',
       type: 'Support Request',
       title: `Support Inquiry from ${name}`,
       userName: name,
@@ -103,6 +107,9 @@ export default function ContactDrawer({ isOpen, onClose, lang, initialMessage }:
       setMessage('');
     } catch (error) {
       console.error("Error saving support inquiry:", error);
+      setSubmitError(lang === 'ur'
+        ? 'انکوائری بھیجی نہیں جا سکی۔ براہ کرم دوبارہ کوشش کریں۔'
+        : 'Your inquiry could not be sent. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -300,6 +307,12 @@ export default function ContactDrawer({ isOpen, onClose, lang, initialMessage }:
                       className="w-full bg-slate-50 dark:bg-bg-primary border border-slate-200 dark:border-white/5 text-sm rounded-xl p-3 focus:border-sky-500 dark:focus:border-[var(--color-accent-main)] outline-none text-slate-900 dark:text-[var(--color-text-header)] placeholder-slate-400 dark:placeholder-gray-600"
                     />
                   </div>
+
+                  {submitError && (
+                    <p role="alert" className="text-xs font-semibold text-red-600 dark:text-red-400" aria-live="polite">
+                      {submitError}
+                    </p>
+                  )}
 
                   <button
                     type="submit"

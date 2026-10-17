@@ -290,6 +290,7 @@ export interface ServiceBooking {
   // New CRM and Full-Lifecycle properties
   priority?: 'Low' | 'Medium' | 'High' | 'Critical';
   assignedWorkshop?: string;
+  assignedWorkshopId?: string;
   assignedTechnician?: string;
   estimatedCompletion?: string;
   photos?: string[];

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Type-check and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Report dependency vulnerabilities
+        run: |
+          npm audit --json > /tmp/npm-audit.json || true
+          node -e "const a=require('/tmp/npm-audit.json'); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(name + ' | severity=' + v.severity + ' | direct=' + v.isDirect + ' | range=' + v.range + ' | fix=' + JSON.stringify(v.fixAvailable) + ' | advisories=' + (v.via || []).map(x => typeof x === 'string' ? x : x.title + ' [' + x.url + ']').join('; ')); console.log('All dependency vulnerabilities:', JSON.stringify(a.metadata?.vulnerabilities || {}));"
+          npm audit --omit=dev --json > /tmp/npm-audit-prod.json || true
+          node -e "const a=require('/tmp/npm-audit-prod.json'); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log('PRODUCTION ' + name + ' | severity=' + v.severity + ' | direct=' + v.isDirect + ' | range=' + v.range + ' | fix=' + JSON.stringify(v.fixAvailable) + ' | advisories=' + (v.via || []).map(x => typeof x === 'string' ? x : x.title + ' [' + x.url + ']').join('; ')); console.log('Production dependency vulnerabilities:', JSON.stringify(a.metadata?.vulnerabilities || {}));"
+
+      - name: Type-check
+        run: npm run lint
+
+      - name: Build production frontend and server
+        run: npm run build
+
+  validate-functions:
+    name: Build Firebase Cloud Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install function dependencies
+        run: npm install
+
+      - name: Build Cloud Functions
+        run: npm run build

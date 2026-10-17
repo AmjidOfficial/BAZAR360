@@ -376,9 +376,12 @@ function mapListingDoc(id: string, data: any): CarListing {
     id === 'listing-1784821782501' ||
     id === 'listing-1784821585212';
 
-  const resolvedDealerId = isExplicitIndividual 
-    ? 'private' 
-    : ((data.dealerId === '' || (data.dealerId && data.dealerId.includes(''))) ? '' : (data.dealerId || 'private'));
+  // Preserve valid showroom IDs. String.prototype.includes('') is always true,
+  // so using it here incorrectly erased every non-empty dealer ID.
+  const rawDealerId = typeof data.dealerId === 'string' ? data.dealerId.trim() : '';
+  const resolvedDealerId = isExplicitIndividual
+    ? 'private'
+    : (rawDealerId || 'private');
 
   const resolvedSellerType = isExplicitIndividual ? 'Individual' : (data.sellerType || (resolvedDealerId === 'private' ? 'Individual' : 'Showroom'));
 
@@ -713,6 +716,7 @@ export async function dbRegisterDealership(dealer: Omit<Dealer, 'activityFeed'>)
   } catch (err) {
     toast.error('Failed to register showroom.');
     handleFirestoreError(err, OperationType.WRITE, `${DEALERS_COLLECTION}/${dealer.id}`);
+    throw err;
   }
 }
 
@@ -934,9 +938,13 @@ export async function dbSaveListing(listing: CarListing): Promise<void> {
     console.log('Listing saved to database successfully:', updatedListing.id);
     toast.success('Vehicle advertisement saved to database!', { id: `listing-save-${updatedListing.id}` });
   } catch (err: any) {
-    console.warn('[Firestore] Remote sync failed, listing saved locally in fallback cache:', err);
-    toast.success('Vehicle post saved locally!', { id: `listing-save-local-${updatedListing.id}` });
+    console.warn('[Firestore] Remote listing save failed; a local draft was retained:', err);
+    toast.error('Listing is saved on this device only and was not published. Please retry when online or contact support.', {
+      id: `listing-save-local-${updatedListing.id}`
+    });
     handleFirestoreError(err, OperationType.WRITE, `${LISTINGS_COLLECTION}/${updatedListing.id}`);
+    // Keep the draft locally, but propagate the failure so callers cannot report a published listing.
+    throw err;
   }
 }
 
@@ -1097,40 +1105,59 @@ export async function dbFetchBargains(): Promise<Bargain[]> {
 }
 
 export async function dbSaveLead(lead: Lead): Promise<void> {
+  if (!lead?.id) {
+    throw new Error('Cannot save a lead without an ID.');
+  }
+
   try {
     await setDoc(doc(db, 'leads', lead.id), {
       ...lead,
+      status: lead.status || 'New',
+      inquiryDate: lead.inquiryDate || lead.createdAt || new Date().toISOString(),
       createdAt: lead.createdAt || new Date().toISOString()
     });
     console.log('Lead saved:', lead.id);
   } catch (err) {
-    console.warn('Silent lead save issue:', err);
+    console.error('[CRM] Failed to save lead:', err);
+    // Do not swallow write errors: callers must not show a false success state.
+    throw err;
   }
+}
+
+function mapLeadDoc(id: string, data: Record<string, any>): Lead {
+  const metadata = data.metadata && typeof data.metadata === 'object' ? data.metadata : {};
+  const createdAt = data.createdAt || data.inquiryDate || new Date().toISOString();
+
+  return {
+    ...data,
+    id,
+    type: data.type || 'General Inquiry',
+    title: data.title || data.vehicleTitle || 'Inquiry',
+    userName: data.userName || data.name || 'Anonymous Visitor',
+    userPhone: data.userPhone || data.phone || '',
+    userEmail: data.userEmail || data.email || '',
+    city: data.city || data.location || '',
+    details: data.details || data.inquiryMessage || data.message || '',
+    metadata,
+    createdAt,
+    inquiryDate: data.inquiryDate || createdAt,
+    status: data.status || 'New',
+    vehicleId: data.vehicleId || metadata.vehicleId || '',
+    vehicleTitle: data.vehicleTitle || metadata.vehicleTitle || data.title || '',
+    vehiclePrice: typeof data.vehiclePrice === 'number' ? data.vehiclePrice : undefined,
+    vehicleImage: data.vehicleImage || metadata.vehicleImage || '',
+    showroomOwnerId: data.showroomOwnerId || '',
+    customerId: data.customerId || ''
+  } as Lead;
 }
 
 export async function dbFetchLeads(): Promise<Lead[]> {
   try {
     const snap = await getDocs(collection(db, 'leads'));
-    const list: Lead[] = [];
-    snap.forEach((doc) => {
-      const data = doc.data();
-      list.push({
-        id: doc.id,
-        type: data.type || 'General Inquiry',
-        title: data.title || 'Inquiry',
-        userName: data.userName || 'Anonymous Visitor',
-        userPhone: data.userPhone || '',
-        userEmail: data.userEmail || '',
-        city: data.city || '',
-        details: data.details || '',
-        metadata: data.metadata || {},
-        createdAt: data.createdAt || new Date().toISOString()
-      });
-    });
-    return list;
+    return snap.docs.map((leadDoc) => mapLeadDoc(leadDoc.id, leadDoc.data()));
   } catch (err) {
     console.error('dbFetchLeads Error:', err);
-    return [];
+    throw err;
   }
 }
 
@@ -2075,6 +2102,8 @@ export async function dbSubmitLead(leadData: Omit<Lead, 'id' | 'createdAt'>): Pr
 
 // Fetches leads for a specific showroom owner
 export async function dbFetchLeadsForOwner(showroomOwnerId: string): Promise<Lead[]> {
+  if (!showroomOwnerId) return [];
+
   try {
     const q = query(
       collection(db, 'leads'),
@@ -2082,11 +2111,11 @@ export async function dbFetchLeadsForOwner(showroomOwnerId: string): Promise<Lea
       orderBy('createdAt', 'desc')
     );
     const snap = await getDocs(q);
-    return snap.docs.map(doc => doc.data() as Lead);
+    // Always attach the Firestore document ID; CRM status updates depend on it.
+    return snap.docs.map((leadDoc) => mapLeadDoc(leadDoc.id, leadDoc.data()));
   } catch (err) {
     console.error('[CRM] dbFetchLeadsForOwner error:', err);
-    // Fallback to local storage or empty list
-    return [];
+    throw err;
   }
 }
 
@@ -2203,6 +2232,41 @@ export async function dbSubmitServiceBooking(bookingData: Omit<ServiceBooking, '
   }
 }
 
+export async function dbFetchServiceBookingsForWorkshop(workshopId: string): Promise<ServiceBooking[]> {
+  if (!workshopId) return [];
+  try {
+    const q = query(
+      collection(db, 'service_bookings'),
+      where('assignedWorkshopId', '==', workshopId)
+    );
+    const snap = await getDocs(q);
+    const remoteBookings = snap.docs.map((bookingDoc) => ({
+      ...(bookingDoc.data() as ServiceBooking),
+      id: bookingDoc.id
+    }));
+    let localBookings: ServiceBooking[] = [];
+    try {
+      localBookings = (JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]') as ServiceBooking[])
+        .filter(booking => booking.assignedWorkshopId === workshopId);
+    } catch {}
+    const combined = [...remoteBookings];
+    localBookings.forEach(booking => {
+      if (!combined.some(item => item.id === booking.id)) combined.push(booking);
+    });
+    return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (err) {
+    console.warn('[Workshop] Could not fetch assigned bookings:', err);
+    try {
+      const localBookings = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]') as ServiceBooking[];
+      return localBookings
+        .filter(booking => booking.assignedWorkshopId === workshopId)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch {
+      return [];
+    }
+  }
+}
+
 export async function dbFetchServiceBookings(userPhoneOrUid?: string): Promise<ServiceBooking[]> {
   try {
     const snap = await getDocs(collection(db, 'service_bookings'));
@@ -2218,6 +2282,9 @@ export async function dbFetchServiceBookings(userPhoneOrUid?: string): Promise<S
     let localBookings: ServiceBooking[] = [];
     try {
       localBookings = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
+      if (userPhoneOrUid) {
+        localBookings = localBookings.filter(b => b.userPhone === userPhoneOrUid || b.userId === userPhoneOrUid);
+      }
     } catch {}
 
     const combined = [...list];
@@ -2230,8 +2297,13 @@ export async function dbFetchServiceBookings(userPhoneOrUid?: string): Promise<S
     return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (err) {
     console.warn('[ServiceBooking] Fetching offline service bookings:', err);
+    // An unrestricted offline fallback would expose other customers' booking data.
+    if (!userPhoneOrUid) return [];
     try {
-      return JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
+      const localBookings = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]') as ServiceBooking[];
+      return localBookings
+        .filter(b => b.userPhone === userPhoneOrUid || b.userId === userPhoneOrUid)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch {
       return [];
     }
@@ -2269,14 +2341,25 @@ export async function dbAddCrmInternalNote(recordId: string, notes: any[], colle
 }
 
 export async function dbUpdateServiceBookingStatus(bookingId: string, status: ServiceBooking['status']): Promise<void> {
+  const ref = doc(db, 'service_bookings', bookingId);
   try {
-    const ref = doc(db, 'service_bookings', bookingId);
     await updateDoc(ref, {
       status,
       updatedAt: new Date().toISOString()
     });
+  } catch (err) {
+    console.warn('[ServiceBooking] Remote status update failed; retaining local state only:', err);
+    try {
+      const items = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
+      const updated = items.map((i: any) => i.id === bookingId ? { ...i, status } : i);
+      localStorage.setItem('bazar360_service_bookings', JSON.stringify(updated));
+    } catch {}
+    throw err;
+  }
 
-    // Log status change to auditLogs
+  // Audit logging is secondary: a log write failure must not falsely report that the
+  // primary status update failed after Firestore has already committed it.
+  try {
     const auditId = `audit-status-${Date.now()}`;
     await setDoc(doc(db, 'auditLogs', auditId), {
       id: auditId,
@@ -2287,13 +2370,8 @@ export async function dbUpdateServiceBookingStatus(bookingId: string, status: Se
       timestamp: new Date().toISOString(),
       activeFlag: true
     });
-  } catch (err) {
-    console.warn('[ServiceBooking] Status update Firestore bypassed, updating localStorage:', err);
-    try {
-      const items = JSON.parse(localStorage.getItem('bazar360_service_bookings') || '[]');
-      const updated = items.map((i: any) => i.id === bookingId ? { ...i, status } : i);
-      localStorage.setItem('bazar360_service_bookings', JSON.stringify(updated));
-    } catch {}
+  } catch (auditError) {
+    console.warn('[ServiceBooking] Status updated, but audit logging failed:', auditError);
   }
 }
 

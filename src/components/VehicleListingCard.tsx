@@ -272,10 +272,10 @@ export default function VehicleListingCard({
                   setIsVerifyModalOpen(true);
                 }}
                 className="bg-[var(--color-accent-main)] hover:bg-emerald-600 border border-[var(--color-accent-main)]/25 text-[var(--color-text-header)] text-[9px] font-sans font-black uppercase tracking-widest px-2.5 py-1.5 rounded-full shadow-md flex items-center gap-1 cursor-pointer animate-pulse"
-                title="Bazar360 Verified. Click to view detailed inspection report."
+                title="Platform-reviewed listing. This is not a mechanical inspection report."
               >
                 <ShieldCheck size={10} className="stroke-[3.5]" />
-                <span>Verified</span>
+                <span>Platform reviewed</span>
               </button>
             )}
             {status === 'Sold' ? (

@@ -22,26 +22,22 @@ interface VehicleDetailProps {
 }
 
 export function getContactDataForListing(car: CarListing, dealer?: Dealer) {
-  const isIndividualSeller = 
-    car.dealerId === 'private' || 
-    car.dealerId === 'private-seller' || 
-    car.dealerId === 'individual' || 
-    car.sellerType === 'Individual' || 
-    (car.sellerType as string) === 'individual' || 
-    dealer?.id === 'private' || 
-    !car.dealerId ||
-    Boolean(car.sellerPhone && car.sellerName && car.sellerName !== 'Bazar360');
+  const sellerType = String(car.sellerType || '').trim().toLowerCase();
+  const privateIds = ['private', 'private-seller', 'individual'];
+  const isIndividualSeller = privateIds.includes(String(car.dealerId || '').toLowerCase()) ||
+    ['individual', 'individual user', 'private seller', 'private'].includes(sellerType) ||
+    (!car.dealerId && !dealer);
 
-  const resolvedSellerName = isIndividualSeller 
-    ? (car.sellerName || car.createdBy || 'Individual User') 
-    : (dealer?.name || 'Bazar360 Showroom');
-  const resolvedSellerLocation = car.location || car.registrationCity || (isIndividualSeller ? 'Pakistan' : dealer?.location) || 'Peshawar, Pakistan';
-  const resolvedSellerPhone = isIndividualSeller 
-    ? (car.sellerPhone || car.phone || 'Contact Seller') 
-    : (dealer?.phone || '+923159085086');
-  const resolvedSellerWhatsApp = isIndividualSeller 
-    ? (car.sellerWhatsApp || car.sellerPhone || car.phone || '') 
-    : (dealer?.whatsapp || '923159085086');
+  const resolvedSellerName = isIndividualSeller
+    ? (car.sellerName || car.ownerDetails?.displayName || 'Individual seller')
+    : (dealer?.name || 'Showroom details unavailable');
+  const resolvedSellerLocation = car.location || car.registrationCity || dealer?.location || 'Location not provided';
+  const resolvedSellerPhone = isIndividualSeller
+    ? (car.sellerPhone || car.phone || '')
+    : (dealer?.phone || '');
+  const resolvedSellerWhatsApp = isIndividualSeller
+    ? (car.sellerWhatsApp || car.sellerPhone || car.phone || '')
+    : (dealer?.whatsapp || dealer?.phone || '');
 
   return {
     isPrivateSeller: isIndividualSeller,
@@ -88,7 +84,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
     });
   }, [car]);
 
-  const videoUrl = car.videoUrl || "https://assets.mixkit.co/videos/preview/mixkit-car-headlights-in-the-dark-34440-large.mp4";
+  const videoUrl = car.videoUrl || '';
 
   const imagesList = useMemo(() => {
     if (car.images && car.images.length > 0) {
@@ -153,42 +149,46 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
     formattedWhatsapp
   } = contactData;
 
-  const carCity = (resolvedSellerLocation || 'Peshawar').split(',')[0].trim().toLowerCase();
+  const carCity = (car.location || car.registrationCity || dealer?.location || '').split(',')[0].trim().toLowerCase();
   const similarListings = useMemo(() => {
     if (!allListings || allListings.length === 0) return [];
     return allListings
       .filter(item => item.id !== car.id)
       .filter(item => {
-        const itemCity = (item.location || 'Peshawar').split(',')[0].trim().toLowerCase();
-        return itemCity.includes(carCity) || carCity.includes(itemCity) || item.make.toLowerCase() === car.make.toLowerCase();
+        const itemCity = (item.location || item.registrationCity || '').split(',')[0].trim().toLowerCase();
+        const sameCity = !!carCity && !!itemCity && (itemCity.includes(carCity) || carCity.includes(itemCity));
+        return sameCity || item.make.toLowerCase() === car.make.toLowerCase();
       })
       .slice(0, 4);
   }, [allListings, car.id, car.make, carCity]);
 
   const vehicleSchema = useMemo(() => {
+    const isSold = car.isSold === true || car.status === 'Sold';
+    const isReserved = car.status === 'Reserved';
+    const seller = isPrivateSeller
+      ? { '@type': 'Person', name: resolvedSellerName }
+      : {
+          '@type': 'AutoDealer',
+          name: dealer?.name || 'Showroom details unavailable',
+          ...(dealer?.phone ? { telephone: dealer.phone } : {})
+        };
+
     return {
       '@context': 'https://schema.org',
       '@type': 'Car',
-      name: car.title,
-      description: car.description || `${car.year} ${car.make} ${car.model} available at ${dealer?.name || 'Bazar360'}`,
-      image: imagesList[0],
+      name: car.title || `${car.year || ''} ${car.make || ''} ${car.model || ''}`.trim(),
+      description: car.description || `${car.year} ${car.make} ${car.model} listing on Bazar360. Contact the seller for more details.`,
+      ...(imagesList[0] ? { image: imagesList[0] } : {}),
       offers: {
         '@type': 'Offer',
         priceCurrency: 'PKR',
-        price: car.price,
-        itemCondition: car.condition === 'Used' ? 'https://schema.org/UsedCondition' : 'https://schema.org/NewCondition',
-        availability: 'https://schema.org/InStock',
-        seller: {
-          '@type': 'AutoDealer',
-          name: dealer?.name || 'Bazar360 Bazar360',
-          telephone: dealer?.phone || '+923149198403'
-        }
+        price: car.price > 0 ? car.price : undefined,
+        ...(car.condition === 'Used' ? { itemCondition: 'https://schema.org/UsedCondition' } : car.condition === 'New' ? { itemCondition: 'https://schema.org/NewCondition' } : {}),
+        ...(isSold ? { availability: 'https://schema.org/OutOfStock' } : isReserved ? { availability: 'https://schema.org/LimitedAvailability' } : { availability: 'https://schema.org/InStock' }),
+        seller
       },
-      brand: {
-        '@type': 'Brand',
-        name: car.make || 'Automotive'
-      },
-      model: car.model,
+      ...(car.make ? { brand: { '@type': 'Brand', name: car.make } } : {}),
+      ...(car.model ? { model: car.model } : {}),
       productionDate: car.year ? String(car.year) : undefined,
       mileageFromOdometer: car.mileage ? {
         '@type': 'QuantitativeValue',
@@ -196,7 +196,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
         unitCode: 'KMT'
       } : undefined
     };
-  }, [car, dealer, imagesList]);
+  }, [car, dealer, imagesList, isPrivateSeller, resolvedSellerName]);
 
   const handleDownloadFactSheet = () => {
     try {
@@ -211,7 +211,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
       
       doc.setFontSize(10);
       doc.setTextColor(255, 107, 0);
-      doc.text('OFFICIAL VEHICLE FACT SHEET & INSPECTION REPORT', 14, 30);
+      doc.text('VEHICLE FACT SHEET - LISTING DATA ONLY', 14, 30);
       
       doc.setTextColor(30, 41, 59);
       doc.setFontSize(18);
@@ -270,10 +270,10 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
         ['Owner WhatsApp:', resolvedSellerWhatsApp ? `+${formattedWhatsapp}` : 'N/A'],
         ['Listing URL:', `https://bazar360.online/listings/${car.id}`]
       ] : [
-        ['Showroom Name:', dealer?.name || 'Bazar360 - The Right Choice'],
-        ['Representatives:', 'Malak Mazhar & Muhammad Amjid'],
-        ['Phone Numbers:', '+92 315 9085086 / +92 314 9198403'],
-        ['Official Email:', dealer?.email || 'support@bazar360.online'],
+        ['Showroom Name:', dealer?.name || 'Showroom details unavailable'],
+        ['Contact Person:', (dealer as any)?.contactPerson || 'Not provided'],
+        ['Phone Number:', dealer?.phone || dealer?.whatsapp || 'Not provided'],
+        ['Official Email:', dealer?.email || 'Not provided'],
         ['Showroom URL:', `https://bazar360.online/dealers/${dealer?.id || ''}`]
       ];
       
@@ -295,7 +295,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139);
-      doc.text('Verified by Bazar360.online • Pakistan s Premier Automotive Marketplace', 14, 287);
+      doc.text('Generated from listing data • Bazar360.online', 14, 287);
       
       doc.save(`Vehicle-Fact-Sheet-${car.make}-${car.model}-${car.year}.pdf`);
       console.log('Vehicle Fact Sheet PDF downloaded successfully!');
@@ -315,9 +315,9 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
     >
       <Helmet>
         <title>{`${car.title} (${car.year}) | ${dealer?.name || 'Bazar360'} - Bazar360`}</title>
-        <meta name="description" content={car.description || `Buy ${car.title} (${car.year}) for PKR ${car.price} at ${dealer?.name || 'Bazar360'}. Verified inspection and authentic showroom listing.`} />
-        <meta property="og:title" content={`${car.title} - ${dealer?.name || 'Bazar360 Bazar360'}`} />
-        <meta property="og:description" content={`Verified ${car.year} ${car.make} ${car.model} in ${dealer?.location || 'Pakistan'}. Price: PKR ${car.price.toLocaleString()}`} />
+        <meta name="description" content={car.description || `${car.title} (${car.year}) listing on Bazar360. Price: ${car.price > 0 ? `PKR ${car.price.toLocaleString()}` : 'not provided'}. Contact seller for details.`} />
+        <meta property="og:title" content={`${car.title} - ${dealer?.name || 'Bazar360'}`} />
+        <meta property="og:description" content={`${car.year} ${car.make} ${car.model} listing. ${car.location || dealer?.location || 'Location not provided'}. Price: ${car.price > 0 ? `PKR ${car.price.toLocaleString()}` : 'not provided'}`} />
         <meta property="og:image" content={imagesList[0]} />
         <meta property="og:url" content={window.location.href} />
         <meta property="og:type" content="product" />
@@ -344,8 +344,8 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#00D2FF] to-[#3B82F6] hover:brightness-110 text-slate-950 font-black text-xs uppercase tracking-wider transition shadow-md shadow-cyan-500/20 cursor-pointer"
             >
               <RotateCw size={14} className="stroke-[2.5]" />
-              <span className="hidden sm:inline">360° Inspection</span>
-              <span className="sm:hidden">360°</span>
+              <span className="hidden sm:inline">Vehicle Preview</span>
+              <span className="sm:hidden">Preview</span>
             </button>
             <button 
               onClick={() => setShowARModal(true)}
@@ -390,7 +390,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
             <div className="flex flex-wrap gap-2 items-center">
               {car.verified && (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-500/10 text-orange-500 rounded-md text-[10px] font-mono font-black uppercase tracking-widest border border-orange-500/20">
-                  <ShieldCheck size={14} /> Verified Listing
+                  <ShieldCheck size={14} /> Platform reviewed
                 </span>
               )}
               {car.dealerId === 'private' || car.sellerType === 'Individual' ? (
@@ -399,7 +399,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 text-amber-500 rounded-md text-[10px] font-mono font-black uppercase tracking-widest border border-amber-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Certified Showroom Partner
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> {dealer?.verified ? 'Verified Showroom' : 'Showroom on Bazar360'}
                 </span>
               )}
             </div>
@@ -462,7 +462,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
             {car.images && car.images.map((img, idx) => (
               <div 
                 key={`img-${idx}`}
-                className="relative shrink-0 cursor-pointer hover:scale-[1.03] transition-all"
+                className={`relative shrink-0 ${videoUrl ? 'cursor-pointer hover:scale-[1.03]' : 'hidden'} transition-all`}
                 onClick={() => {
                   setActiveMedia({ type: 'image', url: img });
                 }}
@@ -728,7 +728,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 ) : (
                   <div className="space-y-1">
                     <span className="inline-block bg-[var(--color-accent-main)]/10 text-[var(--color-accent-main)] text-[10px] font-mono font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-[var(--color-accent-main)]/20">
-                      Bazar360 Certified Showroom
+                      {dealer?.verified ? 'Verified Showroom' : 'Showroom on Bazar360'}
                     </span>
                     <h3 className="text-lg font-black text-[#26344F] dark:text-[var(--color-text-header)] uppercase tracking-tight">{resolvedSellerName}</h3>
                     <p className="text-xs text-[var(--color-text-muted)] flex items-center justify-center gap-1">
@@ -741,13 +741,17 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                   <p className="text-[11px] font-black text-[var(--color-text-muted)] uppercase tracking-wider">
                     {isPrivateSeller ? 'Direct Ad Owner Contact:' : 'Showroom Main Phone:'}
                   </p>
-                  <a 
-                    href={`tel:${resolvedSellerPhone}`}
-                    className="text-sm font-extrabold text-orange-500 font-mono tracking-widest bg-[var(--color-bg-primary)] hover:bg-slate-100 dark:hover:bg-bg-tertiary py-2.5 px-4 rounded-xl border border-[var(--color-border-main)] inline-flex items-center gap-2 select-all cursor-pointer shadow-sm transition-all"
-                  >
-                    <Phone size={14} className="text-orange-500" /> 
-                    <span>{resolvedSellerPhone}</span>
-                  </a>
+                  {resolvedSellerPhone ? (
+                    <a
+                      href={`tel:${resolvedSellerPhone}`}
+                      className="text-sm font-extrabold text-orange-500 font-mono tracking-widest bg-[var(--color-bg-primary)] hover:bg-slate-100 dark:hover:bg-bg-tertiary py-2.5 px-4 rounded-xl border border-[var(--color-border-main)] inline-flex items-center gap-2 select-all cursor-pointer shadow-sm transition-all"
+                    >
+                      <Phone size={14} className="text-orange-500" />
+                      <span>{resolvedSellerPhone}</span>
+                    </a>
+                  ) : (
+                    <span className="text-xs text-[var(--color-text-muted)]">Phone number not provided</span>
+                  )}
                   {resolvedSellerWhatsApp && (
                     <a 
                       href={`https://wa.me/${formattedWhatsapp}`}
@@ -764,13 +768,19 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
 
               {/* Action Buttons for Direct Owner Contact */}
               <div className="space-y-3">
-                <a 
-                  href={`tel:${resolvedSellerPhone}`}
-                  className="w-full py-3.5 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-secondary)] dark:bg-white dark:text-[#26344F] dark:hover:bg-gray-200 text-[var(--color-text-header)] font-mono font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
-                >
-                  <Phone size={14} />
-                  {isPrivateSeller ? 'Call Individual Seller' : 'Call Showroom'}
-                </a>
+                {resolvedSellerPhone ? (
+                  <a
+                    href={`tel:${resolvedSellerPhone}`}
+                    className="w-full py-3.5 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-secondary)] dark:bg-white dark:text-[#26344F] dark:hover:bg-gray-200 text-[var(--color-text-header)] font-mono font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
+                  >
+                    <Phone size={14} />
+                    {isPrivateSeller ? 'Call Individual Seller' : 'Call Showroom'}
+                  </a>
+                ) : (
+                  <div className="w-full py-3.5 text-center text-xs text-[var(--color-text-muted)] border border-[var(--color-border-main)] rounded-xl">
+                    Seller phone number not provided
+                  </div>
+                )}
                 
                 {formattedWhatsapp && (
                   <a 
@@ -790,10 +800,10 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent border border-orange-500/30 space-y-3 text-left">
                   <div className="flex items-center gap-2 text-orange-400">
                     <ShieldCheck size={18} />
-                    <span className="text-xs font-mono font-black uppercase tracking-wider">360° Digital Inspection</span>
+                    <span className="text-xs font-mono font-black uppercase tracking-wider">Inspection services</span>
                   </div>
                   <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
-                    Get an official Bazar360 200+ point diagnostic check with UV light paint spectrum analysis for this vehicle before purchase.
+                    Explore available inspection services and confirm the provider, scope, price, and availability before booking. Bazar360 does not claim that this vehicle has already been inspected.
                   </p>
                   <button
                     onClick={() => {
@@ -804,75 +814,11 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                     className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-slate-950 font-mono font-black text-xs uppercase tracking-widest rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md active:scale-95"
                   >
                     <Zap size={14} />
-                    <span>Book Inspection for this Car</span>
+                    <span>Explore inspection services</span>
                   </button>
                 </div>
               </div>
 
-              {/* Showroom Representatives & Advisory Contacts - Only shown for verified showrooms */}
-              {!isPrivateSeller && car.dealerId !== 'private' && (
-                <div className="pt-5 border-t border-[var(--color-border-main)] space-y-3">
-                  <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--color-text-muted)] text-left flex items-center gap-1.5">
-                    <ShieldCheck size={12} className="text-orange-500" />
-                    Showroom Representatives
-                  </h4>
-                  
-                  <div className="space-y-2 text-left">
-                    {/* Representative 1: Malak Mazhar */}
-                    <div className="p-3 bg-[var(--color-bg-primary)] border border-[var(--color-border-main)] rounded-2xl flex items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-[#26344F] dark:text-[var(--color-text-header)]">Malak Mazhar</p>
-                        <p className="text-[10px] font-mono text-[var(--color-text-muted)]">Sales & Inspection Advisory</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <a 
-                          href="tel:+923159085086"
-                          className="p-2 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="Call Malak Mazhar"
-                        >
-                          <Phone size={12} />
-                        </a>
-                        <a 
-                          href="https://wa.me/923159085086"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 bg-[var(--color-accent-main)]/10 hover:bg-[var(--color-accent-main)] text-[var(--color-accent-main)] hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="WhatsApp Malak Mazhar"
-                        >
-                          <MessageCircle size={12} />
-                        </a>
-                      </div>
-                    </div>
-
-                    {/* Representative 2: Muhammad Amjid */}
-                    <div className="p-3 bg-[var(--color-bg-primary)] border border-[var(--color-border-main)] rounded-2xl flex items-center justify-between gap-2">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-[#26344F] dark:text-[var(--color-text-header)]">Muhammad Amjid</p>
-                        <p className="text-[10px] font-mono text-[var(--color-text-muted)]">Platform & Technology Advisory</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <a 
-                          href="tel:+923149198403"
-                          className="p-2 bg-orange-500/10 hover:bg-orange-500 text-orange-500 hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="Call Muhammad Amjid"
-                        >
-                          <Phone size={12} />
-                        </a>
-                        <a 
-                          href="https://wa.me/923149198403"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 bg-[var(--color-accent-main)]/10 hover:bg-[var(--color-accent-main)] text-[var(--color-accent-main)] hover:text-[var(--color-text-header)] rounded-lg transition-all"
-                          title="WhatsApp Muhammad Amjid"
-                        >
-                          <MessageCircle size={12} />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
               <div className="pt-4 border-t border-[var(--color-border-main)]">
                 <h4 className="text-[10px] font-mono font-bold uppercase tracking-widest text-[var(--color-text-muted)] mb-3 text-left">
                   Purchase Security
@@ -880,7 +826,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                 <ul className="space-y-2 text-left">
                   <li className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
                     <CheckCircle2 size={15} className="text-[var(--color-accent-main)] shrink-0 mt-0.5" />
-                    {isPrivateSeller ? 'Verified Personal Phone Number' : 'Verified Showroom Identity'}
+                    {isPrivateSeller ? 'Seller contact supplied with this listing' : (dealer?.verified ? 'Showroom profile marked as verified' : 'Showroom profile details')}
                   </li>
                   <li className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
                     <CheckCircle2 size={15} className="text-[var(--color-accent-main)] shrink-0 mt-0.5" />
@@ -888,7 +834,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                   </li>
                   <li className="flex items-start gap-2.5 text-xs text-[var(--color-text-muted)] leading-relaxed">
                     <CheckCircle2 size={15} className="text-[var(--color-accent-main)] shrink-0 mt-0.5" />
-                    Bazar360 Inspection Support Available
+                    Independent vehicle inspection is recommended before purchase
                   </li>
                 </ul>
               </div>
@@ -911,7 +857,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
                   Similar listings in your city
                 </h3>
                 <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                  Explore related {car.condition || 'new & used'} cars available in {dealer?.location?.split(',')[0] || 'Peshawar'}
+                  Explore related {car.condition || 'new and used'} listings on Bazar360
                 </p>
               </div>
             </div>
@@ -998,7 +944,7 @@ export function VehicleDetail({ car: propCar, dealer, allListings = [], onSelect
               onClick={() => setShow360Modal(false)}
               className="absolute -top-9 right-1 text-white hover:text-[#00D2FF] font-mono text-xs uppercase tracking-widest flex items-center gap-1 cursor-pointer"
             >
-              ✕ Close 360° Inspection
+              ✕ Close vehicle preview
             </button>
             <Vehicle360Viewer car={car} onClose={() => setShow360Modal(false)} />
           </div>

@@ -53,7 +53,8 @@ import { uploadToCloudinary, deleteFromCloudinary, getOptimizedUrl } from '../li
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  sendPasswordResetEmail, 
+  sendPasswordResetEmail,
+  onAuthStateChanged, 
   sendEmailVerification, 
   signInWithPopup,
   updatePassword,
@@ -83,28 +84,8 @@ interface RegistrationPortalProps {
   onClose?: () => void;
 }
 
-// Live presets for visitor tracking simulation
-interface SimVisitorLog {
-  id: string;
-  name: string;
-  phone: string;
-  ip_address: string;
-  device_type: string;
-  browser: string;
-  city: string;
-  visit_count: number;
-  last_visit: string;
-  score: number;
-  category: 'Cold' | 'Warm' | 'Hot' | 'VIP';
-}
-
-const SIMULATED_VISITORS: SimVisitorLog[] = [
-  { id: 'v-01', name: 'Malak Mazhar', phone: '03159085086', ip_address: '182.180.45.12', device_type: 'Mobile', browser: 'Chrome Mobile', city: 'Peshawar', visit_count: 14, last_visit: '2 mins ago', score: 92, category: 'VIP' },
-  { id: 'v-02', name: 'Zia-ur-Rehman', phone: '03149198403', ip_address: '111.88.234.90', device_type: 'Mobile', browser: 'Safari', city: 'Peshawar', visit_count: 5, last_visit: '15 mins ago', score: 78, category: 'Hot' },
-  { id: 'v-03', name: 'Amjid Khan', phone: '03125678901', ip_address: '202.163.120.4', device_type: 'Desktop', browser: 'Chrome', city: 'Islamabad', visit_count: 2, last_visit: '1 hour ago', score: 45, category: 'Warm' },
-  { id: 'v-04', name: 'Sajid Afridi', phone: '03339123456', ip_address: '175.107.12.87', device_type: 'Mobile', browser: 'Samsung Internet', city: 'Rawalpindi', visit_count: 1, last_visit: 'Yesterday', score: 20, category: 'Cold' },
-  { id: 'v-05', name: 'Imran Peshawar', phone: '03157771234', ip_address: '182.176.99.112', device_type: 'Desktop', browser: 'Edge', city: 'Peshawar', visit_count: 19, last_visit: '4 mins ago', score: 98, category: 'VIP' }
-];
+// Do not display fabricated visitor identities, contact details, IP addresses, or activity scores.
+const SIMULATED_VISITORS: any[] = [];
 
 export default function RegistrationPortal({ 
   currentUser, 
@@ -113,6 +94,13 @@ export default function RegistrationPortal({
   onClose 
 }: RegistrationPortalProps) {
   
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsEmailVerified(!!user?.emailVerified);
+    });
+    return unsubscribe;
+  }, []);
+
   // Tab within portal
   const [isLoginMode, setIsLoginMode] = useState<boolean>(true);
   const [glassTheme, setGlassTheme] = useState<'light' | 'dark'>('light');
@@ -128,8 +116,8 @@ export default function RegistrationPortal({
   const [regEmail, setRegEmail] = useState<string>('');
   const [regPass, setRegPass] = useState<string>('');
   const [regRole, setRegRole] = useState<'Private Seller' | 'Buyer' | 'Dealer' | 'Admin' | 'Sales Representative' | 'Showroom Owner'>('Buyer');
-  const [regCity, setRegCity] = useState<string>('Peshawar');
-  const [regProvince, setRegProvince] = useState<string>('Khyber Pakhtunkhwa');
+  const [regCity, setRegCity] = useState<string>('');
+  const [regProvince, setRegProvince] = useState<string>('');
   const [regCountry, setRegCountry] = useState<string>('Pakistan');
   const [regCompany, setRegCompany] = useState<string>('');
   const [regLang, setRegLang] = useState<'en' | 'ur'>('en');
@@ -152,7 +140,7 @@ export default function RegistrationPortal({
   const [resetEmail, setResetEmail] = useState<string>('');
   const [selectedAmjidRole, setSelectedAmjidRole] = useState<'Admin' | 'Dealer' | 'Buyer'>('Admin');
   const [isForgotPasswordMode, setIsForgotPasswordMode] = useState<boolean>(false);
-  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(true);
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(false);
 
   // Security & Settings state variables
   const [changePassNew, setChangePassNew] = useState<string>('');
@@ -744,8 +732,8 @@ export default function RegistrationPortal({
       lastLogin: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       phoneNumber: extraFields.phoneNumber || regPhone || '',
-      city: extraFields.city || regCity || 'Peshawar',
-      state: extraFields.province || regProvince || 'Khyber Pakhtunkhwa',
+      city: extraFields.city || regCity || '',
+      state: extraFields.province || regProvince || '',
       country: extraFields.country || regCountry || 'Pakistan',
       preferredLanguage: 'en',
       profilePhoto: extraFields.profilePhoto || regProfilePhoto || '',
@@ -753,7 +741,7 @@ export default function RegistrationPortal({
       whatsappNumber: extraFields.phoneNumber || regPhone || '',
       acceptedTerms: true,
       preferredTheme: 'light',
-      province: extraFields.province || regProvince || 'Khyber Pakhtunkhwa',
+      province: extraFields.province || regProvince || '',
       address: extraFields.address || '',
       bio: '',
       postalCode: '',
@@ -828,8 +816,7 @@ export default function RegistrationPortal({
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -846,10 +833,10 @@ export default function RegistrationPortal({
         }
         const newProfile = await createNewUserProfile(
           user.uid,
-          user.email || 'user-facebook@bazar360.online',
+          user.email || '',
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 Facebook User')),
           assignedRole,
-          (isGhaniEmail || isMalakEmail) ? { phoneNumber: isMalakEmail ? '+923159085086' : '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
+          (isGhaniEmail || isMalakEmail) ? { phoneNumber: user.phoneNumber || '' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via Facebook Identity.');
@@ -886,8 +873,7 @@ export default function RegistrationPortal({
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -904,10 +890,10 @@ export default function RegistrationPortal({
         }
         const newProfile = await createNewUserProfile(
           user.uid,
-          user.email || 'user-linkedin@bazar360.online',
+          user.email || '',
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 LinkedIn User')),
           assignedRole,
-          (isGhaniEmail || isMalakEmail) ? { phoneNumber: isMalakEmail ? '+923159085086' : '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
+          (isGhaniEmail || isMalakEmail) ? { phoneNumber: user.phoneNumber || '' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via LinkedIn Identity.');
@@ -945,8 +931,7 @@ export default function RegistrationPortal({
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -964,10 +949,10 @@ export default function RegistrationPortal({
         }
         const newProfile = await createNewUserProfile(
           user.uid,
-          user.email || 'user@bazar360.online',
+          user.email || '',
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (user.displayName || 'Bazar360 User')),
           assignedRole,
-          (isGhaniEmail || isMalakEmail) ? { phoneNumber: isMalakEmail ? '+923159085086' : '03556908996', city: 'Peshawar' } : { phoneNumber: user.phoneNumber || '' }
+          (isGhaniEmail || isMalakEmail) ? { phoneNumber: user.phoneNumber || '' } : { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Welcome! Profile successfully created via Google Identity.');
@@ -1086,10 +1071,10 @@ export default function RegistrationPortal({
           const name = userObj.displayName || `Seller ${userObj.phoneNumber ? userObj.phoneNumber.substring(userObj.phoneNumber.length - 4) : ''}`;
           profile = await createNewUserProfile(
             userObj.uid,
-            userObj.email || `${userObj.uid}@bazar360.online`,
+            userObj.email || '',
             name,
             'Private Seller',
-            { phoneNumber: userObj.phoneNumber || '', city: 'Peshawar' }
+            { phoneNumber: userObj.phoneNumber || '', city: '' }
           );
         }
         setCurrentUser(profile);
@@ -1135,15 +1120,13 @@ export default function RegistrationPortal({
         if (isGhaniEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Ghani Khan';
-          fetchedProfile.phoneNumber = '03556908996';
-          fetchedProfile.city = 'Peshawar';
+          // Do not populate a personal phone number or location without user confirmation.
           changed = true;
         }
         if (isMalakEmail) {
           fetchedProfile.role = 'Dealer';
           fetchedProfile.displayName = 'Malak Mazhar';
-          fetchedProfile.phoneNumber = '+923159085086';
-          fetchedProfile.city = 'Peshawar';
+          // Keep contact and location fields empty until the account owner provides them.
           changed = true;
         }
         if (changed) {
@@ -1165,7 +1148,7 @@ export default function RegistrationPortal({
           user.email || emailLower,
           isMalakEmail ? 'Malak Mazhar' : (isGhaniEmail ? 'Ghani Khan' : (emailLower.split('@')[0])),
           assignedRole,
-          isMalakEmail ? { phoneNumber: '+923159085086', city: 'Peshawar' } : (isGhaniEmail ? { phoneNumber: '03556908996', city: 'Peshawar' } : {})
+          { phoneNumber: user.phoneNumber || '' }
         );
         setCurrentUser(newProfile);
         setSuccessMessage('✓ Logged in and profile initialized.');
@@ -1711,7 +1694,7 @@ export default function RegistrationPortal({
                   displayName: 'Bazar360 Peshawar (Flagship)',
                   phoneNumber: '03159085086',
                   phoneVerified: true,
-                  city: 'Peshawar',
+                  city: '',
                   state: 'KP',
                   role: 'Dealer',
                   status: 'Active',
@@ -2309,6 +2292,7 @@ export default function RegistrationPortal({
                         onChange={e => setRegCity(e.target.value)}
                         className="w-full bg-[var(--color-bg-secondary)] border border-white/10 rounded-xl p-2.5 text-xs text-[var(--color-text-header)] focus:outline-none cursor-pointer"
                       >
+                        <option value="">Select city</option>
                         <option value="Peshawar">Peshawar</option>
                         <option value="Islamabad">Islamabad</option>
                         <option value="Lahore">Lahore</option>
@@ -2324,6 +2308,7 @@ export default function RegistrationPortal({
                         onChange={e => setRegProvince(e.target.value)}
                         className="w-full bg-[var(--color-bg-secondary)] border border-white/10 rounded-xl p-2.5 text-xs text-[var(--color-text-header)] focus:outline-none cursor-pointer"
                       >
+                        <option value="">Select province/territory</option>
                         <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa (KP)</option>
                         <option value="Punjab">Punjab</option>
                         <option value="Sindh">Sindh</option>
@@ -2629,7 +2614,7 @@ export default function RegistrationPortal({
                 <div className="space-y-3 bg-bg-secondary/40 p-4 rounded-2xl border border-white/5 text-xs">
                   <div className="flex justify-between items-center">
                     <span className="text-text-muted font-medium">Member Since:</span>
-                    <span className="font-mono text-[var(--color-text-header)] font-semibold">June 2026</span>
+                    <span className="font-mono text-[var(--color-text-header)] font-semibold">{currentUser?.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'Not available'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-text-muted font-medium">Verification State:</span>
@@ -4060,7 +4045,7 @@ export default function RegistrationPortal({
                         <Users size={18} className="text-sky-500" /> Visitor Intelligence Stream (Showroom Specific)
                       </h3>
                       <span className="bg-sky-100 text-sky-700 text-[9px] font-mono font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
-                        Active Tracker Live
+                        Awaiting live data
                       </span>
                     </div>
 
@@ -4077,7 +4062,13 @@ export default function RegistrationPortal({
                           </tr>
                         </thead>
                         <tbody>
-                          {SIMULATED_VISITORS.map(v => (
+                          {SIMULATED_VISITORS.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="py-8 px-4 text-center text-sm text-text-muted">
+                                No verified visitor events are available yet. Real activity will appear here when tracking data is connected.
+                              </td>
+                            </tr>
+                          ) : SIMULATED_VISITORS.map(v => (
                             <tr key={v.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                               <td className="py-2.5 font-bold">
                                 <div>{v.name}</div>
@@ -4105,7 +4096,7 @@ export default function RegistrationPortal({
                   </div>
 
                   <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mt-4 text-[10px] text-text-muted leading-normal font-mono uppercase tracking-wide">
-                    📊 Bazar360 AI evaluates visit duration, favorites saved, and phone clicks to generate exact lead temperatures.
+                    Analytics should reflect recorded activity only. This panel does not show fabricated visitor records or estimated lead scores.
                   </div>
                 </div>
               </div>

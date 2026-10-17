@@ -38,14 +38,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    try {
-      const saved = localStorage.getItem('bazar360_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  // Never trust localStorage for authorization roles; wait for Firebase Auth + Firestore profile.
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Mapped client roles
@@ -99,26 +93,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // New register onboarding with strict rules-compliant defaults
             profile = {
               uid: fUser.uid,
-              email: fUser.email || 'user@bazar360.online',
+              email: fUser.email || '',
               displayName: isMalak ? 'Malak Mazhar' : (fUser.displayName || 'Guest User'),
-              phoneNumber: isMalak ? '+923159085086' : (fUser.phoneNumber || ''),
+              phoneNumber: fUser.phoneNumber || '',
               photoURL: fUser.photoURL || '',
               profilePhoto: fUser.photoURL || '',
-              phoneVerified: isMalak || !!fUser.phoneNumber,
+              phoneVerified: !!fUser.phoneNumber,
               role: isMalak ? 'Dealer' : (isDeveloper ? 'Admin' : 'Individual User'),
               status: 'Active',
               createdAt: fUser.metadata?.creationTime ? new Date(fUser.metadata.creationTime).toISOString() : new Date().toISOString(),
               lastLogin: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              city: 'Peshawar',
-              state: 'Khyber Pakhtunkhwa'
+              city: '',
+              state: ''
             };
             await dbSaveUserProfile(profile);
           } else {
-            // Update last login without overwriting existing profile data
+            // Firebase Auth is authoritative for the account email and verified phone.
             const updates: Partial<UserProfile> = {
-              lastLogin: new Date().toISOString()
+              lastLogin: new Date().toISOString(),
+              phoneVerified: !!fUser.phoneNumber
             };
+            profile.phoneVerified = !!fUser.phoneNumber;
+            if (fUser.phoneNumber) {
+              updates.phoneNumber = fUser.phoneNumber;
+              profile.phoneNumber = fUser.phoneNumber;
+            }
             if (isDeveloper && profile.role !== 'Admin') {
               updates.role = 'Admin';
               profile.role = 'Admin';
@@ -132,14 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 updates.displayName = 'Malak Mazhar';
                 profile.displayName = 'Malak Mazhar';
               }
-              if (!profile.phoneNumber) {
-                updates.phoneNumber = '+923159085086';
-                profile.phoneNumber = '+923159085086';
-              }
-              if (!profile.city) {
-                updates.city = 'Peshawar';
-                profile.city = 'Peshawar';
-              }
+              // Do not fabricate contact details or location for a known account.
             }
             await dbUpdateProfile(fUser.uid, updates);
           }
@@ -164,11 +157,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to profile updates to invalidate state cache and update immediately
   useEffect(() => {
-    const handleProfileUpdate = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail) {
-        setCurrentUser(customEvent.detail);
+    const handleProfileUpdate = () => {
+      const authUser = auth.currentUser;
+      if (!authUser) {
+        setCurrentUser(null);
+        return;
       }
+      dbFetchUserProfile(authUser.uid)
+        .then((profile) => {
+          if (!profile) return;
+          const trustedProfile = {
+            ...profile,
+            uid: authUser.uid,
+            email: authUser.email || '',
+            phoneNumber: authUser.phoneNumber || profile.phoneNumber || '',
+            phoneVerified: !!authUser.phoneNumber
+          };
+          setCurrentUser(trustedProfile);
+          localStorage.setItem('bazar360_user', JSON.stringify(trustedProfile));
+        })
+        .catch((error) => console.warn('[AuthContext] Profile refresh failed:', error));
     };
     window.addEventListener('bazar360_profile_updated', handleProfileUpdate);
     return () => {

@@ -59,21 +59,21 @@ export const marketingEngine = onCall<
   try {
     const client = getGeminiClient();
 
-    const systemPrompt = `You are a professional automotive copywriter and SEO marketing specialist named "Bazar360-Marketer".
-Your task is to transform raw, shorthand seller notes into a pristine, high-end SEO-optimized listing.
-Convert slang prices like "65 lac" (which represents 6,500,000 Pakistani Rupees PKR) or "1.2 crore" (12,000,000 PKR) or raw numbers appropriately to equivalent full PKR (Pakistani Rupees) value as an integer. For example: "65 lac" is 6500000, "15 lac" is 1500000. Underwrite a competitive valuation accordingly in Pakistani Rupees (PKR) based on the vehicle year and make.
-Generate output strictly conforming to the following JSON structure:
-{
-  "title": "A highly premium, professional automotive title",
-  "description": "Rich sales description focusing on safety, drivability, and premium status, matched to the selected style tone",
-  "tags": ["Tag1", "Tag2"],
-  "suggestedPricePKR": 6500000,
-  "highlights": ["Highlight point 1", "Highlight point 2", "Highlight point 3"]
-}
-Tone tuning selected: ${tone}. Ensure vocabulary mirrors luxury automotive catalogs.`;
+    const systemPrompt = `You are Bazar360's automotive listing copy assistant.
+Turn seller-provided notes into clear, premium copy without changing the facts.
+
+Accuracy rules:
+- Use only facts explicitly provided in the notes. Never invent trim, mileage, registration city, condition, inspection results, accident history, service history, genuine paint, auction grade, ownership/document status, warranty, or safety claims.
+- Never claim "Bazar360 Verified", "certified", "inspected", or "accident-free" unless a separate trusted platform field confirms it. Seller text alone is not platform verification.
+- Do not imply vehicle photos or documents were analyzed unless they were actually provided and analyzed.
+- Suggested price is a non-binding estimate, not a verified valuation or the seller's actual asking price. If information is insufficient, return 0 and state that more details are needed.
+- Do not add unsupported factual tags or trust badges. Premium wording must not change the facts.
+- Tone requested: ${tone || "Premium"}.
+
+Generate JSON with title, description, tags, suggestedPricePKR, and highlights. Use an integer for suggestedPricePKR.`;
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.8-flash",
       contents: `Translate this shorthand seller note: "${rawInput}"`,
       config: {
         systemInstruction: systemPrompt,
@@ -108,18 +108,11 @@ Tone tuning selected: ${tone}. Ensure vocabulary mirrors luxury automotive catal
 
   } catch (error: any) {
     logger.error("AI engine Cloud Function fail:", error);
-    // Graceful secure fallback matches standard specs to keep runtime working even during API downtime
-    return {
-      success: false,
-      error: error.message,
-      result: {
-        title: "Premium Certified Sedan - Pakistan Edition",
-        description: `A meticulously styled vehicle ready for immediate city drives. Passed full Bazar360 safety inspections successfully. Shipped with standard specs. (Bypassed due to: ${error.message})`,
-        tags: ["Compact", "Certified", "Slick"],
-        suggestedPricePKR: 1500000,
-        highlights: ["Clean vehicle background checked", "Pristine interior condition", "Optimal Pakistani specs"],
-      },
-    };
+    // Never invent a vehicle, inspection status, condition, or price when AI fails.
+    throw new HttpsError(
+      "unavailable",
+      "AI listing generation is temporarily unavailable. No listing content or price was generated."
+    );
   }
 });
 
@@ -165,7 +158,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
     formattedContents.push({ role: "user", parts: [{ text: message }] });
 
     const response = await client.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-3.8-flash",
       contents: formattedContents,
       config: {
         systemInstruction: contextPrompt,
@@ -212,99 +205,19 @@ export const scrapeSocials = onCall<
     );
   }
 
-  const { name, website, facebook, instagram, tiktok } = request.data;
+  const { name } = request.data;
   if (!name) {
     throw new HttpsError("invalid-argument", "Name of the showroom must be supplied.");
   }
 
-  try {
-    const curatedCoverImages = [
-      "",
-      "",
-      "",
-      ""
-    ];
-
-    const curatedLogos = [
-      "",
-      "",
-      ""
-    ];
-
-    const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const coverImage = curatedCoverImages[hash % curatedCoverImages.length];
-    
-    // Default fallback logo path for Choice dealerships
-    const avatarUrl = name.toLowerCase().includes("choice")
-      ? "./auto_choice_logo_1781509565476.jpg"
-      : curatedLogos[hash % curatedLogos.length];
-
-    const activityFeed: any[] = [];
-    const timestampStr = new Date().toISOString();
-
-    if (tiktok) {
-      activityFeed.push({
-        id: `act-tiktok-${Date.now()}`,
-        timestamp: "Just now",
-        badge: "TikTok Reel",
-        imageUrl: "",
-        title: `Trending TikTok walkaround on @${name.toLowerCase().replace(/\s+/g, "")}`,
-        description: `Watch our high-engagement video walkaround and exhaust sound review of our newly imported premium sports touring model.`,
-        price: "Available PKR",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (instagram || facebook) {
-      activityFeed.push({
-        id: `act-social-${Date.now() + 1}`,
-        timestamp: "3 hours ago",
-        badge: instagram ? "Instagram Showcase" : "Facebook Active Campaign",
-        imageUrl: "",
-        title: "Prestige Fleet Campaign Spotlight",
-        description: `Meticulously pre-purchase diagnostics passed. Spotlighting the luxury specifications of our highest-grade SUVs this month.`,
-        price: "Elite Specs",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (website) {
-      activityFeed.push({
-        id: `act-web-${Date.now() + 2}`,
-        timestamp: "Yesterday",
-        badge: "Web Direct Port",
-        imageUrl: "",
-        title: "Interactive Web Portal Online",
-        description: `Check out our newly optimized digital dealership website. Browse full certificates, schedule on-site inspections, or request direct transportation.`,
-        price: "Online Booking",
-        createdAt: timestampStr,
-      });
-    }
-
-    if (activityFeed.length === 0) {
-      activityFeed.push({
-        id: `act-fallback-${Date.now()}`,
-        timestamp: "Just now",
-        badge: "Launch Event",
-        imageUrl: "",
-        title: `Welcome to ${name} Showroom floor`,
-        description: `We are live on Bazar360! Stop by our physical collection or use WhatsApp to request personalized walkarounds with verified specs.`,
-        price: "Direct Access",
-        createdAt: timestampStr,
-      });
-    }
-
-    return {
-      success: true,
-      avatarUrl,
-      coverImage,
-      activityFeed,
-    };
-
-  } catch (error: any) {
-    logger.error("Social Scraping Cloud Function failed:", error);
-    throw new HttpsError("internal", error.message || "Failed during social integration routine.");
-  }
+  logger.warn("scrapeSocials requested, but a verified social scraping integration is not configured.", { uid: request.auth.uid });
+  return {
+    success: false,
+    error: "Automatic social scraping is not configured. No social posts or showroom activity were generated.",
+    avatarUrl: "",
+    coverImage: "",
+    activityFeed: [],
+  };
 });
 
 /**

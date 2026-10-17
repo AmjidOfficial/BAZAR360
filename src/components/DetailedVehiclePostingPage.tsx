@@ -120,6 +120,7 @@ export default function DetailedVehiclePostingPage({
   contextListing = null
 }: DetailedVehiclePostingPageProps) {
   const t = translations[lang];
+  const conciergeWhatsApp = String((import.meta as any).env?.VITE_SUPPORT_WHATSAPP || '').replace(/\D/g, '');
 
   // Pathway Mode: 'sell_for_u' (VIP Concierge) vs 'direct_post' (Direct Self Posting)
   const [postingType, setPostingType] = useState<'sell_for_u' | 'direct_post'>('direct_post');
@@ -129,9 +130,9 @@ export default function DetailedVehiclePostingPage({
 
   // PAGE 1: Cascading Vehicle Selection State
   const [vehicleType, setVehicleType] = useState<string>('car');
-  const [make, setMake] = useState<string>('Toyota');
-  const [model, setModel] = useState<string>('Corolla');
-  const [variant, setVariant] = useState<string>('Grande');
+  const [make, setMake] = useState<string>('');
+  const [model, setModel] = useState<string>('');
+  const [variant, setVariant] = useState<string>('');
 
   // Popup Sheet Selector State: 'none' | 'make' | 'model' | 'variant'
   const [activePopup, setActivePopup] = useState<'none' | 'make' | 'model' | 'variant'>('none');
@@ -140,24 +141,24 @@ export default function DetailedVehiclePostingPage({
   const [customInputValue, setCustomInputValue] = useState('');
 
   // PAGE 2: Vehicle Information & Specs
-  const [year, setYear] = useState<number>(2024);
-  const [registrationCity, setRegistrationCity] = useState('Islamabad');
-  const [registrationYear, setRegistrationYear] = useState<string>('2024');
-  const [color, setColor] = useState('White');
-  const [mileage, setMileage] = useState('15000');
-  const [engineCC, setEngineCC] = useState('1800');
-  const [transmission, setTransmission] = useState<'Automatic' | 'Manual'>('Automatic');
-  const [fuelType, setFuelType] = useState<'Petrol' | 'Diesel' | 'Hybrid' | 'Electric'>('Petrol');
-  const [condition, setCondition] = useState<'New' | 'Used'>('Used');
-  const [bodyCondition, setBodyCondition] = useState<'Total Genuine' | 'Minor Touch-ups' | 'Major Repaint'>('Total Genuine');
-  const [assemblyType, setAssemblyType] = useState<'Local' | 'Imported'>('Local');
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(['Alloy Rims', 'Power Windows', 'Push Start', 'Dual Airbags', 'ABS']);
+  const [year, setYear] = useState<number>(0);
+  const [registrationCity, setRegistrationCity] = useState('');
+  const [registrationYear, setRegistrationYear] = useState<string>('');
+  const [color, setColor] = useState('');
+  const [mileage, setMileage] = useState('');
+  const [engineCC, setEngineCC] = useState('');
+  const [transmission, setTransmission] = useState<'Automatic' | 'Manual' | ''>('');
+  const [fuelType, setFuelType] = useState<'Petrol' | 'Diesel' | 'Hybrid' | 'Electric' | ''>('');
+  const [condition, setCondition] = useState<'New' | 'Used' | ''>('');
+  const [bodyCondition, setBodyCondition] = useState<'Total Genuine' | 'Minor Touch-ups' | 'Major Repaint' | ''>('');
+  const [assemblyType, setAssemblyType] = useState<'Local' | 'Imported' | ''>('');
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
   // PAGE 3: Location & Seller Description
-  const [city, setCity] = useState('Peshawar');
-  const [location, setLocation] = useState('Ring Road, Peshawar, Pakistan');
+  const [city, setCity] = useState('');
+  const [location, setLocation] = useState('');
   const [postingMode, setPostingMode] = useState<'individual' | 'showroom'>('individual');
-  const [selectedShowroomForPost, setSelectedShowroomForPost] = useState<string>(contextDealerId || (dealers[0]?.id || ''));
+  const [selectedShowroomForPost, setSelectedShowroomForPost] = useState<string>(contextDealerId || '');
   const [sellerName, setSellerName] = useState(currentUser?.displayName || '');
   const [sellerPhone, setSellerPhone] = useState(currentUser?.phoneNumber || '');
   const [sellerWhatsApp, setSellerWhatsApp] = useState(currentUser?.phoneNumber || '');
@@ -165,10 +166,10 @@ export default function DetailedVehiclePostingPage({
   const [description, setDescription] = useState('');
 
   // PAGE 4: Price & Selling Details
-  const [price, setPrice] = useState('7500000');
+  const [price, setPrice] = useState('');
   const [priceNegotiable, setPriceNegotiable] = useState(true);
-  const [documentType, setDocumentType] = useState<'Smart Card' | 'Original Book' | 'Duplicate'>('Smart Card');
-  const [tokenTaxPaid, setTokenTaxPaid] = useState<boolean>(true);
+  const [documentType, setDocumentType] = useState<'Smart Card' | 'Original Book' | 'Duplicate' | ''>('');
+  const [tokenTaxPaid, setTokenTaxPaid] = useState<boolean | null>(null);
 
   // PAGE 5: Photos & Media Upload
   const [photos, setPhotos] = useState<UploadingMedia[]>([]);
@@ -196,10 +197,15 @@ export default function DetailedVehiclePostingPage({
     if (contextListing) {
       if (contextListing.make) setMake(contextListing.make);
       if (contextListing.model) setModel(contextListing.model);
+      if (contextListing.variant) setVariant(contextListing.variant);
       if (contextListing.year) setYear(contextListing.year);
       if (contextListing.price) setPrice(String(contextListing.price));
-      if (contextListing.mileage) setMileage(String(contextListing.mileage));
-      if (contextListing.engineCC) setEngineCC(String(contextListing.engineCC));
+      if (contextListing.mileage !== undefined && contextListing.mileage !== null) setMileage(String(contextListing.mileage));
+      if (contextListing.engineCC !== undefined && contextListing.engineCC !== null) setEngineCC(String(contextListing.engineCC));
+      if ((contextListing as any).registrationYear) setRegistrationYear(String((contextListing as any).registrationYear));
+      if (contextListing.documentType) setDocumentType(contextListing.documentType as any);
+      if (typeof contextListing.tokenTaxPaid === 'boolean') setTokenTaxPaid(contextListing.tokenTaxPaid);
+      if (Array.isArray(contextListing.features)) setSelectedFeatures(contextListing.features);
       if (contextListing.transmission) setTransmission(contextListing.transmission as any);
       if (contextListing.fuelType) setFuelType(contextListing.fuelType as any);
       if (contextListing.exteriorColor) setColor(contextListing.exteriorColor);
@@ -248,7 +254,7 @@ export default function DetailedVehiclePostingPage({
     }
 
     try {
-      const savedDraft = localStorage.getItem('bazar360_post_ad_draft');
+      const savedDraft = localStorage.getItem('bazar360_post_ad_draft_v2');
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
         if (parsed) {
@@ -300,7 +306,7 @@ export default function DetailedVehiclePostingPage({
         location, city, postingMode, description, documentType, tokenTaxPaid, priceNegotiable,
         selectedFeatures, step, updatedAt: new Date().toISOString()
       };
-      localStorage.setItem('bazar360_post_ad_draft', JSON.stringify(draftPayload));
+      localStorage.setItem('bazar360_post_ad_draft_v2', JSON.stringify(draftPayload));
     } catch (e) {
       // ignore
     }
@@ -312,7 +318,7 @@ export default function DetailedVehiclePostingPage({
   ]);
 
   const handleClearDraft = () => {
-    localStorage.removeItem('bazar360_post_ad_draft');
+    localStorage.removeItem('bazar360_post_ad_draft_v2');
     setDraftRestored(false);
     toast.success('Saved draft cleared.');
   };
@@ -513,9 +519,44 @@ export default function DetailedVehiclePostingPage({
       setStep(1);
       return;
     }
-    if (!price || parseFloat(price) <= 0) {
+    if (!year || year < 1980 || year > new Date().getFullYear() + 1) {
+      toast.error('Please select a valid manufacturing year.');
+      setStep(2);
+      return;
+    }
+    if (!registrationCity || !registrationYear || !color || !mileage || Number(mileage.replace(/,/g, '')) < 0 || !engineCC || Number(engineCC) <= 0 || !transmission || !fuelType || !condition || !bodyCondition || !assemblyType) {
+      toast.error('Complete the required vehicle specifications using the actual vehicle details.');
+      setStep(2);
+      return;
+    }
+    if (!city && !location) {
+      toast.error('Please provide the vehicle location.');
+      setStep(3);
+      return;
+    }
+    if (!price || parseFloat(price.replace(/,/g, '')) <= 0) {
       toast.error('Please enter a valid price in PKR.');
       setStep(4);
+      return;
+    }
+    if (!documentType || tokenTaxPaid === null) {
+      toast.error('Please select the document type and indicate the token tax status.');
+      setStep(4);
+      return;
+    }
+    if (postingMode === 'showroom' && !selectedShowroomForPost) {
+      toast.error('Select the showroom that owns this listing.');
+      setStep(3);
+      return;
+    }
+    if (postingMode === 'individual' && !sellerPhone.trim()) {
+      toast.error('Please provide a contact phone number for buyers.');
+      setStep(3);
+      return;
+    }
+    if (!photos.some(p => p.cloudinaryUrl || (p.status === 'success' && p.previewUrl && p.previewUrl !== NO_IMAGE_SVG))) {
+      toast.error('Upload at least one real vehicle photo before publishing.');
+      setStep(5);
       return;
     }
 
@@ -534,7 +575,7 @@ export default function DetailedVehiclePostingPage({
     const primaryImage = finalImages[coverPhotoIndex] || finalImages[0];
     const numPrice = parseFloat(price.replace(/,/g, '')) || 0;
     const numMileage = parseFloat(mileage.replace(/,/g, '')) || 0;
-    const numEngine = parseInt(engineCC) || 1300;
+    const numEngine = parseInt(engineCC, 10);
 
     const listingTitle = `${year} ${make} ${model} ${variant}`;
     
@@ -576,10 +617,10 @@ export default function DetailedVehiclePostingPage({
       bodyCondition,
       assemblyType,
       location: location || `${city}, Pakistan`,
-      description: description || `Clean ${year} ${make} ${model} ${variant} available for sale in ${city}.`,
-      sellerPhone: sellerPhone || currentUser?.phoneNumber || '03159085086',
-      sellerWhatsApp: sellerWhatsApp || sellerPhone || currentUser?.phoneNumber || '03159085086',
-      sellerName: sellerName || currentUser?.displayName || 'Bazar360 Verified Seller',
+      description: description || `Vehicle listing for ${year} ${make} ${model} ${variant}. Contact the seller for full condition and service details.`,
+      sellerPhone: sellerPhone || currentUser?.phoneNumber || '',
+      sellerWhatsApp: sellerWhatsApp || sellerPhone || currentUser?.phoneNumber || '',
+      sellerName: sellerName || currentUser?.displayName || 'Bazar360 Seller',
       sellerEmail: currentUser?.email || '',
       sellerType: postingMode === 'showroom' ? 'Showroom' : 'Individual',
       dealerId: postingMode === 'showroom' ? selectedShowroomForPost : 'private',
@@ -597,30 +638,30 @@ export default function DetailedVehiclePostingPage({
       },
       cloudinaryFolderPath: vehicleFolder,
       mediaMetadata: mediaMeta.length > 0 ? mediaMeta : undefined,
-      featured: true,
-      verified: true,
-      approved: true,
+      featured: false,
+      verified: false,
+      approved: currentUser?.role === 'Admin' || currentUser?.role === 'Super Admin',
       createdAt: contextListing?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       images: finalImages,
       imageUrl: primaryImage,
       primaryImage,
-      tokenTaxPaid,
+      tokenTaxPaid: tokenTaxPaid === true,
       documentType,
       range: `Registration Year: ${registrationYear}`,
       features: selectedFeatures,
-      tags: ['Verified', 'Bazar360'],
+      tags: ['Bazar360'],
       specs: {
         color,
         engineSize: engineCC + ' CC',
-        horspower: 'Standard Specs',
+        horspower: '',
         regionalSpecs: assemblyType
       }
     };
 
     try {
       await dbSaveListing(payload);
-      localStorage.removeItem('bazar360_post_ad_draft');
+      localStorage.removeItem('bazar360_post_ad_draft_v2');
       toast.success(lang === 'ur' ? 'اشتہار کامیابی سے شائع ہو گیا!' : 'Advertisement published successfully on Bazar360!');
       setSuccess(true);
       setIsSubmitting(false);
@@ -718,13 +759,16 @@ export default function DetailedVehiclePostingPage({
             <button
               type="button"
               onClick={() => {
+                if (!conciergeWhatsApp) {
+                  toast.error('Concierge WhatsApp is not configured yet. Please use the support contact shown on Bazar360.');
+                  return;
+                }
                 const msg = encodeURIComponent("Hello Bazar360 team, I would like to request the 'Sell For U' VIP Brokerage service for my car.");
-                window.open(`https://wa.me/923159085086?text=${msg}`, '_blank');
-                toast.success("Opening WhatsApp with Bazar360 Concierge Desk!");
+                window.open(`https://wa.me/${conciergeWhatsApp}?text=${msg}`, '_blank', 'noopener,noreferrer');
               }}
               className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              <Phone size={14} /> Request VIP Handover Call (+92 315 9085086)
+              <Phone size={14} /> Request VIP Handover Call
             </button>
             
             <button
@@ -1038,6 +1082,7 @@ export default function DetailedVehiclePostingPage({
                     onChange={(e) => setYear(Number(e.target.value))}
                     className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] focus:border-orange-500 outline-none"
                   >
+                    <option value={0}>Select manufacturing year</option>
                     {Array.from({ length: 45 }, (_, i) => 2026 - i).map((y) => (
                       <option key={y} value={y}>{y}</option>
                     ))}
@@ -1198,6 +1243,7 @@ export default function DetailedVehiclePostingPage({
                     onChange={(e) => setBodyCondition(e.target.value as any)}
                     className="w-full px-3 py-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] outline-none"
                   >
+                    <option value="">Select body condition</option>
                     <option value="Total Genuine">Total Genuine</option>
                     <option value="Minor Touch-ups">Minor Touch-ups</option>
                     <option value="Major Repaint">Major Repaint</option>
@@ -1310,6 +1356,7 @@ export default function DetailedVehiclePostingPage({
                     }}
                     className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] outline-none"
                   >
+                    <option value="">Select registration city</option>
                     {PAKISTAN_CITIES.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -1513,6 +1560,7 @@ export default function DetailedVehiclePostingPage({
                     onChange={(e) => setDocumentType(e.target.value as any)}
                     className="w-full px-3 py-2.5 bg-[var(--color-bg-secondary)] border border-[var(--color-border-main)] rounded-xl text-xs font-mono font-bold text-[var(--color-text-main)] outline-none"
                   >
+                    <option value="">Select document type</option>
                     <option value="Smart Card">Smart Card</option>
                     <option value="Original Book">Original Book</option>
                     <option value="Duplicate">Duplicate Book</option>
@@ -1525,14 +1573,16 @@ export default function DetailedVehiclePostingPage({
                   </label>
                   <button
                     type="button"
-                    onClick={() => setTokenTaxPaid(!tokenTaxPaid)}
+                    onClick={() => setTokenTaxPaid(tokenTaxPaid === null ? true : !tokenTaxPaid)}
                     className={`w-full py-2.5 px-3 rounded-xl text-xs font-mono font-bold transition border cursor-pointer ${
-                      tokenTaxPaid
-                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-500'
-                        : 'bg-rose-500/15 border-rose-500 text-rose-500'
+                      tokenTaxPaid === null
+                        ? 'bg-[var(--color-bg-secondary)] border-[var(--color-border-main)] text-[var(--color-text-muted)]'
+                        : tokenTaxPaid
+                          ? 'bg-emerald-500/15 border-emerald-500 text-emerald-500'
+                          : 'bg-rose-500/15 border-rose-500 text-rose-500'
                     }`}
                   >
-                    {tokenTaxPaid ? 'Token Tax Up to Date' : 'Token Tax Unpaid'}
+                    {tokenTaxPaid === null ? 'Select token tax status' : tokenTaxPaid ? 'Seller reports tax paid' : 'Seller reports tax unpaid'}
                   </button>
                 </div>
               </div>

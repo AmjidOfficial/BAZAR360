@@ -169,14 +169,36 @@ function IdentityBanner({ currentUser }: { currentUser: any }) {
   let greeting = 'Welcome, Guest. Login to access full features.';
 
   if (currentUser) {
-    if (currentUser.role === 'dealer' || currentUser.role === 'admin') {
-      identity = 'Showroom Owner';
+    // Normalize legacy and current role labels before deciding which identity to show.
+    const normalizedRole = String(currentUser.role || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+
+    const showroomRoles = new Set([
+      'dealer',
+      'showroom owner',
+      'verified seller',
+      'sales rep',
+      'sales representative'
+    ]);
+    const adminRoles = new Set(['admin', 'super admin']);
+
+    if (adminRoles.has(normalizedRole)) {
+      identity = 'Administrator';
       bannerColor = 'bg-amber-500/10 border-amber-500/20 text-amber-500';
-      greeting = `Welcome back, ${currentUser.name || 'Owner'}. Your showroom dashboard is active.`;
+      greeting = `Welcome back, ${currentUser.name || currentUser.displayName || 'Admin'}. Your admin dashboard is active.`;
+    } else if (showroomRoles.has(normalizedRole)) {
+      identity = normalizedRole === 'sales rep' || normalizedRole === 'sales representative'
+        ? 'Sales Representative'
+        : 'Showroom Owner';
+      bannerColor = 'bg-amber-500/10 border-amber-500/20 text-amber-500';
+      greeting = `Welcome back, ${currentUser.name || currentUser.displayName || 'User'}. Your dashboard is active.`;
     } else {
       identity = 'Registered User';
       bannerColor = 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500';
-      greeting = `Welcome back, ${currentUser.name || 'User'}. Explore personalized recommendations.`;
+      greeting = `Welcome back, ${currentUser.name || currentUser.displayName || 'User'}. Explore personalized recommendations.`;
     }
   }
 
@@ -388,28 +410,9 @@ function App() {
   };
 
   // Active Session User Profile
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
-    let saved = null;
-    try { saved = localStorage.getItem('bazar360_user'); } catch (e) { /* ignore */ }
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed === 'object') {
-          // Migration: Auto-inject standard metadata fields required by the latest rules
-          return {
-            status: 'Active',
-            lastLogin: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            ...parsed
-          };
-        }
-      } catch (e) {
-        // Fallback
-      }
-    }
-    // Default config: Allow visitors to experience the web catalog purely as guests/visitors.
-    return null;
-  });
+  // Wait for Firebase Auth and a trusted Firestore profile before treating anyone as signed in.
+  // Local storage is user-editable and must never establish a role or authenticated session.
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   const initialState = getInitialStateFromUrl();
 
@@ -1037,9 +1040,9 @@ function App() {
             const photo = fetchedProfile.photoURL || fetchedProfile.profilePhoto || firebaseUser.photoURL || '';
             activeProfile = {
               ...fetchedProfile,
-              displayName: fetchedProfile.displayName || firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan (Admin)' : 'Muhammad Amjid (Founder)')),
+              displayName: fetchedProfile.displayName || firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan' : (isAmjid ? 'Muhammad Amjid' : 'Bazar360 Member'))),
               phoneNumber: fetchedProfile.phoneNumber || firebaseUser.phoneNumber || '',
-              city: fetchedProfile.city || 'Peshawar',
+              city: fetchedProfile.city || '',
               photoURL: photo,
               profilePhoto: photo,
               createdAt: fetchedProfile.createdAt || (firebaseUser.metadata?.creationTime ? new Date(firebaseUser.metadata.creationTime).toISOString() : new Date().toISOString())
@@ -1062,28 +1065,35 @@ function App() {
             dbUpdateProfile(firebaseUser.uid, { lastLogin: new Date().toISOString() }).catch(err => console.warn("Last login update skip:", err));
 
           } else if (localProfile && localProfile.uid === firebaseUser.uid) {
-            activeProfile = { ...localProfile };
+            // Local storage is user-editable; preserve preferences, but never trust its role,
+            // email, or phone-verification flags for authorization.
+            activeProfile = {
+              ...localProfile,
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || localProfile.displayName || 'Bazar360 Member',
+              phoneNumber: firebaseUser.phoneNumber || '',
+              phoneVerified: !!firebaseUser.phoneNumber,
+              role: isMalak ? 'Dealer' : ((isAmjid || isGhani) ? 'Admin' : 'Buyer')
+            };
             setCurrentUser(activeProfile);
-            dbSaveUserProfile(activeProfile).catch(err => console.warn("Profile persistence sync skip:", err));
+            try { localStorage.setItem('bazar360_user', JSON.stringify(activeProfile)); } catch (e) {}
           } else {
             // First-time signup fallback: create a robust, rules-compliant profile
             const photo = firebaseUser.photoURL || '';
             activeProfile = {
               uid: firebaseUser.uid,
-              email: firebaseUser.email || 'amjid.bisconni@gmail.com',
-              displayName: firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan (Admin)' : 'Muhammad Amjid (Founder)')),
-              phoneNumber: firebaseUser.phoneNumber || (isMalak ? '+923159085086' : (isGhani ? '+92 355 6908995' : '+92 314 3600000')),
+              email: firebaseUser.email || '',
+              displayName: firebaseUser.displayName || (isMalak ? 'Malak Mazhar' : (isGhani ? 'Ghani Khan' : (isAmjid ? 'Muhammad Amjid' : 'Bazar360 Member'))),
+              phoneNumber: firebaseUser.phoneNumber || '',
               photoURL: photo,
               profilePhoto: photo,
-              phoneVerified: isMalak || isGhani || !!firebaseUser.phoneNumber,
-              city: (isMalak || isGhani) ? 'Peshawar' : 'Lahore',
-              state: (isMalak || isGhani) ? 'Khyber Pakhtunkhwa' : 'Punjab',
+              phoneVerified: !!firebaseUser.phoneNumber,
+              city: (isMalak || isGhani) ? 'Peshawar' : '',
+              state: (isMalak || isGhani) ? 'Khyber Pakhtunkhwa' : '',
               role: isMalak ? 'Dealer' : ((isAmjid || isGhani) ? 'Admin' : 'Buyer'),
               status: 'Active',
-              socials: {
-                facebook: 'https://facebook.com/amjid.bazar360',
-                instagram: 'https://instagram.com/amjid_b360'
-              },
+              socials: {},
               createdAt: firebaseUser.metadata?.creationTime ? new Date(firebaseUser.metadata.creationTime).toISOString() : new Date().toISOString(),
               lastLogin: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -1380,11 +1390,21 @@ function App() {
 
   // RBAC query view filtering based on permissions
   const visibleListings = listings.filter((l) => {
-    if (l.approved !== false) return true; // Show all approved listings
-    // Non-approved listings only visible to Admins, Showroom Owners, or the listing author
-    const isModerator = currentUser?.role === 'Admin' || currentUser?.role === 'Showroom Owner';
-    const isOwner = currentUser && l.assignedSalesRepId === currentUser.uid;
-    return isModerator || isOwner;
+    if (l.approved !== false) return true; // Public inventory includes approved listings only.
+    // Normalize legacy role labels so equivalent roles receive consistent access.
+    const normalizedRole = String(currentUser?.role || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+    const isModerator = ['admin', 'super admin', 'showroom owner', 'dealer'].includes(normalizedRole);
+    const isAssignedSalesRep = !!currentUser && l.assignedSalesRepId === currentUser.uid;
+    const isListingAuthor = !!currentUser && (
+      l.createdBy === currentUser.uid ||
+      l.ownerId === currentUser.uid ||
+      l.dealerId === currentUser.uid
+    );
+    return isModerator || isAssignedSalesRep || isListingAuthor;
   });
 
   const prioritizedListings = visibleListings;

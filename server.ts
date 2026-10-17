@@ -185,33 +185,19 @@ async function startServer() {
 
       const client = getGeminiClient();
 
-      const systemPrompt = `You are "BAZAR360-Marketer", a Senior Automotive Copywriter, SEO Marketing Specialist, and Automotive Valuation Expert for the Bazar360 marketplace (https://bazar360.online).
+      const systemPrompt = `You are BAZAR360's automotive listing copy assistant.
+Turn seller-provided notes into clear, premium copy without changing the facts.
 
-YOUR GOAL:
-Analyze vehicle metadata (Make, Model, Year, Mileage, Condition/Grade, Price, Registration City) alongside visual photo descriptions/observations to produce high-converting, professional, trustworthy, and persuasive vehicle listing content.
-
-COPYWRITING INSTRUCTIONS:
-1. PERSUASIVE HOOK & SEO TITLE: Create an authoritative headline with Year, Make, Model, Trim, and trust badge (e.g. Total Genuine, Islamabad Reg, Low Mileage, Bazar360 Verified).
-2. TRUST & TRANSPARENCY: Highlight vehicle authenticity, documented service history, genuine paint/auction grade, and structural integrity to build immediate buyer confidence.
-3. VISUAL ANALYSIS INTEGRATION: Synthesize any image descriptions or visual notes into the narrative (e.g., highlighting paint depth, wheel condition, interior upholstery, and dashboard tech).
-4. PAKISTANI MARKET CONTEXT: Handle PKR currency, Lacs/Crores, and local terminology ("Bumper-to-Bumper Genuine", "Auction Grade 4.5", "KPK/Punjab Reg").
-5. TONE SELECTION: Style tone requested is "${tone || 'Premium'}". Maintain a luxury catalog tone with active verbs and high value perception.
-
-Generate output strictly conforming to the following JSON structure:
-{
-  "title": "A highly persuasive, SEO-optimized vehicle headline",
-  "description": "Rich sales description focusing on performance, comfort, safety, visual condition, and verification, tailored for fast conversion",
-  "tags": ["Make", "Model", "ConditionTag", "CityTag", "Bazar360Verified"],
-  "suggestedPricePKR": 6500000,
-  "highlights": [
-    "Key mechanical/spec highlight",
-    "Exterior & visual condition highlight",
-    "Interior & comfort highlight"
-  ]
-}`;
+Accuracy rules:
+- Use only facts explicitly provided in the notes. Never invent trim, mileage, registration city, condition, inspection results, accident history, service history, genuine paint, auction grade, ownership/document status, warranty, or safety claims.
+- Never claim "Bazar360 Verified", "certified", "inspected", or "accident-free" unless a trusted platform field confirms it. Seller text alone is not platform verification.
+- Do not imply vehicle photos or documents were analyzed unless they were actually provided and analyzed.
+- Suggested price is a non-binding estimate, not a verified valuation or the seller's asking price. If details are insufficient, return 0 and request more information.
+- Do not add unsupported factual tags or trust badges. Premium wording must not change the facts.
+- Tone requested: ${tone || "Premium"}.`;
 
       const response = await executeWithRetry(() => client.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: `Translate this shorthand seller note: "${rawInput}"`,
         config: {
           systemInstruction: systemPrompt,
@@ -284,7 +270,7 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
       formattedContents.push({ role: 'user', parts: [{ text: message }] });
 
       const response = await executeWithRetry(() => client.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: formattedContents,
         config: {
           systemInstruction: contextPrompt,
@@ -303,94 +289,13 @@ Incorporate details of our showcase fleet where appropriate. Maintain roleplay p
     }
   });
 
-  // API 3: Auto-Scraping / Curated Showroom Assets
-  app.post("/api/scrape-socials", async (req, res) => {
-    try {
-      const { name, website, facebook, instagram, tiktok, youtube, twitter } = req.body;
-      if (!name) {
-        return res.status(400).json({ success: false, error: "Showroom name is required" });
-      }
-
-      const curatedCoverImages = [
-        "",
-        "",
-        "",
-        ""
-      ];
-
-      const curatedLogos = [
-        "",
-        "",
-        ""
-      ];
-
-      const hash = name.split("").reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
-      const coverImage = curatedCoverImages[hash % curatedCoverImages.length];
-      const avatarUrl = name.toLowerCase().includes("choice") 
-        ? "./auto_choice_logo_1781509565476.jpg" 
-        : curatedLogos[hash % curatedLogos.length];
-
-      const activityFeed: any[] = [];
-
-      if (tiktok) {
-        activityFeed.push({
-          id: `act-tiktok-${Date.now()}`,
-          timestamp: "Just now",
-          badge: "TikTok Reel",
-          imageUrl: "",
-          title: `Trending TikTok walkaround on @${name.toLowerCase().replace(/\s+/g, '')}`,
-          description: `Watch our high-engagement video walkaround and exhaust sound review of our newly imported premium sports touring model.`,
-          price: "Available PKR"
-        });
-      }
-
-      if (instagram || facebook) {
-        activityFeed.push({
-          id: `act-social-${Date.now() + 1}`,
-          timestamp: "3 hours ago",
-          badge: instagram ? "Instagram Showcase" : "Facebook Active Campaign",
-          imageUrl: "",
-          title: "Prestige Fleet Campaign Spotlight",
-          description: `Meticulously pre-purchased diagnostics passed. Spotlighting the luxury specifications of our highest-grade SUVs this month.`,
-          price: "Elite Specs"
-        });
-      }
-
-      if (website) {
-        activityFeed.push({
-          id: `act-web-${Date.now() + 2}`,
-          timestamp: "Yesterday",
-          badge: "Web Direct Port",
-          imageUrl: "",
-          title: "Interactive Web Portal Online",
-          description: `Check out our newly optimized digital dealership website. Browse full certificates, schedule on-site inspections, or request direct transportation.`,
-          price: "Online Booking"
-        });
-      }
-
-      if (activityFeed.length === 0) {
-        activityFeed.push({
-          id: `act-fallback-${Date.now()}`,
-          timestamp: "Just now",
-          badge: "Launch Event",
-          imageUrl: "",
-          title: `Welcome to ${name} Showroom floor`,
-          description: `We are live on BAZAR360! Stop by our physical collection or use WhatsApp to request personalized walkarounds with verified specs.`,
-          price: "Direct Access"
-        });
-      }
-
-      res.json({
-        success: true,
-        avatarUrl,
-        coverImage,
-        activityFeed
-      });
-
-    } catch (error: any) {
-      console.log("Automated social scraping fallback activated.");
-      res.status(200).json({ success: false, error: "Scraping services are busy. Please configure manually." });
-    }
+  // API 3: Live social scraping is not configured in this server.
+  // Do not generate synthetic activity and present it as a showroom's real posts.
+  app.post("/api/scrape-socials", async (_req, res) => {
+    return res.status(501).json({
+      success: false,
+      error: "Automatic social scraping is not configured. Please enter verified showroom assets manually."
+    });
   });
 
   // API 4: On-Demand Translation API
@@ -411,7 +316,7 @@ Your task is to translate any incoming text block beautifully and accurately int
 - Return ONLY the clean, translated text block itself.`;
 
       const response = await executeWithRetry(() => client.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.8-flash",
         contents: `Translate this text block: "${text}"`,
         config: {
           systemInstruction: systemPrompt,
@@ -510,47 +415,20 @@ Your task is to translate any incoming text block beautifully and accurately int
     }
   });
 
-  // API 6: Google Sheet Dynamic Sync & Export Service
-  app.post("/api/google-sheets/sync", async (req, res) => {
-    try {
-      const { spreadsheetId, sheetName, dataType, data } = req.body;
-      const sheetId = spreadsheetId || "1Bazar360_SpreadsheetID_Placeholder";
-      const tabName = sheetName || "Leads_and_Inventory";
-
-      if (!data || !Array.isArray(data)) {
-        return res.status(400).json({ success: false, error: "Sync data must be an array of records" });
-      }
-
-      console.log(`[Google Sheets Integration] Initializing spreadsheet sync for ID: ${sheetId}, Tab: ${tabName}`);
-      console.log(`[Google Sheets Integration] Writing ${data.length} records to sheet cells...`);
-
-      // Mock processing with randomized performance offsets to simulate real Google APIs latency (approx 400ms)
-      await new Promise(resolve => setTimeout(resolve, 450));
-
-      const columns = dataType === 'leads' 
-        ? ["Lead ID", "Inquiry Type", "User Name", "Verified Phone", "Date Enrolled", "System Rating"]
-        : ["Vehicle ID", "Ad Title", "Brand", "Model", "Year", "Appraisal Price (PKR)", "Mileage (KM)", "Status"];
-
-      const rangeEndRow = data.length + 1; // plus header row
-      const cellRange = `${tabName}!A1:${String.fromCharCode(64 + columns.length)}${rangeEndRow}`;
-
-      res.json({
-        success: true,
-        message: `✓ synchronized ${data.length} ${dataType || 'leads'} records with Google Sheets successfully.`,
-        spreadsheetId: sheetId,
-        sheetName: tabName,
-        dataType,
-        rowsSynced: data.length,
-        syncTime: new Date().toISOString(),
-        columns,
-        cellRange,
-        googleSheetUrl: `https://docs.google.com/spreadsheets/d/${sheetId}/edit#gid=0`
-      });
-
-    } catch (error: any) {
-      console.error("[Google Sheets Sync] Error in /api/google-sheets/sync:", error);
-      res.status(500).json({ success: false, error: error.message || "Failed to sync spreadsheet data." });
+  // API 6: Google Sheets integration is intentionally unavailable until real
+  // Google API credentials and write verification are configured. Never report
+  // a simulated response as a successful data export.
+  app.post("/api/google-sheets/sync", requireAuth, async (req, res) => {
+    const user = (req as any).user;
+    const isAdmin = !!user?.email && ADMIN_EMAILS.includes(String(user.email).toLowerCase());
+    if (!isAdmin) {
+      return res.status(403).json({ success: false, error: "Only an authorized administrator can request a data export." });
     }
+
+    return res.status(501).json({
+      success: false,
+      error: "Google Sheets sync is not configured. No records were exported or synchronized."
+    });
   });
 
   // API 7: Cloudinary Secure Asset Destruction Service
@@ -712,8 +590,39 @@ Your task is to translate any incoming text block beautifully and accurately int
   app.post("/api/cloudinary/upload", express.json({ limit: '25mb' }), async (req, res) => {
     try {
       const { fileData, folder = "bazar360/uploads", resourceType = "image", tags } = req.body;
-      if (!fileData) {
+      if (typeof fileData !== 'string' || !fileData) {
         return res.status(400).json({ success: false, error: "fileData parameter is required" });
+      }
+
+      const allowedResourceTypes = ['image', 'video', 'raw'];
+      if (!allowedResourceTypes.includes(resourceType)) {
+        return res.status(400).json({ success: false, error: "Unsupported Cloudinary resource type." });
+      }
+
+      const dataUri = /^data:([^;,]+);base64,([A-Za-z0-9+/=]+)$/i.exec(fileData);
+      if (!dataUri) {
+        return res.status(400).json({ success: false, error: "Upload must be a valid base64 data URI." });
+      }
+
+      const mimeType = dataUri[1].toLowerCase();
+      const allowedMimeTypes: Record<string, RegExp> = {
+        image: /^image\/(jpeg|png|webp|gif|avif)$/i,
+        video: /^video\/(mp4|webm|quicktime|mpeg|x-m4v)$/i,
+        raw: /^application\/(pdf|octet-stream)$/i
+      };
+      if (!allowedMimeTypes[resourceType].test(mimeType)) {
+        return res.status(415).json({ success: false, error: "This file type is not allowed for the selected upload resource." });
+      }
+
+      const base64Length = dataUri[2].length;
+      const estimatedBytes = Math.floor((base64Length * 3) / 4) - (dataUri[2].endsWith('==') ? 2 : dataUri[2].endsWith('=') ? 1 : 0);
+      if (estimatedBytes > 18 * 1024 * 1024) {
+        return res.status(413).json({ success: false, error: "File exceeds the 18 MB upload limit." });
+      }
+
+      const safeFolder = String(folder || "bazar360/uploads");
+      if (!/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(safeFolder) || safeFolder.split('/').some((part: string) => part === '.' || part === '..')) {
+        return res.status(400).json({ success: false, error: "Invalid upload folder." });
       }
 
       const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || "me634xd0";
@@ -726,7 +635,7 @@ Your task is to translate any incoming text block beautifully and accurately int
 
       const uploadParams: Record<string, string> = {
         upload_preset: uploadPreset,
-        folder: folder || "bazar360/uploads"
+        folder: safeFolder
       };
       if (tags) {
         uploadParams.tags = Array.isArray(tags) ? tags.join(',') : String(tags);

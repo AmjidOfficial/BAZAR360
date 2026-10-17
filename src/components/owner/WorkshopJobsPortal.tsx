@@ -3,7 +3,7 @@ import {
   Wrench, CheckCircle2, Clock, AlertCircle, DollarSign, User, Phone, MessageSquare, 
   Send, Star, Layers, Settings, ChevronRight, Calendar, ArrowUpRight, BarChart3, Award, Users
 } from 'lucide-react';
-import { dbFetchServiceBookings, dbUpdateServiceBookingStatus } from '../../lib/dbService';
+import { dbFetchServiceBookingsForWorkshop, dbUpdateServiceBookingStatus } from '../../lib/dbService';
 import { ServiceBooking } from '../../types';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -21,19 +21,10 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
   const [activeTab, setActiveTab] = useState<'today' | 'pending' | 'completed'>('today');
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
 
-  // Staff roster
-  const staff = [
-    { name: 'Engr. Amjid Khan', role: 'Senior Master Inspector', activeJobs: 2 },
-    { name: 'Mechanic Farhan Ghani', role: 'EV Powertrain Specialist', activeJobs: 1 },
-    { name: 'Technician Mazhar Ali', role: 'PPF & Detailing Artisan', activeJobs: 3 }
-  ];
-
   useEffect(() => {
     async function load() {
       try {
-        const bookings = await dbFetchServiceBookings();
-        // Show bookings matching this dealer/showroom or general ones as fallback for showroom management demo
-        const matched = bookings.filter(b => b.assignedWorkshop?.toLowerCase().includes(dealerName.toLowerCase()) || !b.assignedWorkshop);
+        const matched = await dbFetchServiceBookingsForWorkshop(dealerId);
         setJobs(matched);
         if (matched.length > 0 && !selectedJob) {
           setSelectedJob(matched[0]);
@@ -82,7 +73,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
   const completedJobs = jobs.filter(j => j.status === 'Completed');
 
   const getActiveList = () => {
-    if (activeTab === 'today') return todayJobs.length > 0 ? todayJobs : jobs.slice(0, 3);
+    if (activeTab === 'today') return todayJobs;
     if (activeTab === 'pending') return pendingJobs;
     return completedJobs;
   };
@@ -90,8 +81,8 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
   const activeList = getActiveList();
 
   // Financial aggregates
-  const totalCompletedRevenue = completedJobs.reduce((sum, j) => sum + (j.invoice?.status === 'Paid' ? (j.invoice.amount || 14500) : 0), 0);
-  const outstandingInvoices = jobs.reduce((sum, j) => sum + (j.status === 'Completed' && j.invoice?.status !== 'Paid' ? (j.invoice?.amount || 14500) : 0), 0);
+  const totalCompletedRevenue = completedJobs.reduce((sum, j) => sum + (j.invoice?.status === 'Paid' ? (Number(j.invoice.amount) || 0) : 0), 0);
+  const outstandingInvoices = jobs.reduce((sum, j) => sum + (j.status === 'Completed' && j.invoice?.status !== 'Paid' ? (Number(j.invoice?.amount) || 0) : 0), 0);
 
   return (
     <div className="space-y-6 text-left animate-fadeIn font-sans">
@@ -104,7 +95,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <Wrench size={22} className="animate-spin" />
           </div>
           <div>
-            <span className="text-xl font-black text-[var(--color-text-header)] font-mono">{todayJobs.length || 2}</span>
+            <span className="text-xl font-black text-[var(--color-text-header)] font-mono">{todayJobs.length}</span>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Active Jobs (Today)</span>
           </div>
         </div>
@@ -114,7 +105,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <DollarSign size={22} />
           </div>
           <div>
-            <span className="text-xl font-black text-[var(--color-accent-main)] font-mono">PKR {totalCompletedRevenue.toLocaleString() || '185,000'}</span>
+            <span className="text-xl font-black text-[var(--color-accent-main)] font-mono">PKR {totalCompletedRevenue.toLocaleString()}</span>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Settled Invoice Revenue</span>
           </div>
         </div>
@@ -124,7 +115,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <Clock size={22} />
           </div>
           <div>
-            <span className="text-xl font-black text-amber-400 font-mono">PKR {outstandingInvoices.toLocaleString() || '43,500'}</span>
+            <span className="text-xl font-black text-amber-400 font-mono">PKR {outstandingInvoices.toLocaleString()}</span>
             <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Outstanding Invoices</span>
           </div>
         </div>
@@ -134,8 +125,8 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
             <Users size={22} />
           </div>
           <div>
-            <span className="text-xl font-black text-indigo-400 font-mono">{staff.length}</span>
-            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Specialized Mechanics</span>
+            <span className="text-xl font-black text-indigo-400 font-mono">Not set</span>
+            <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block mt-0.5">Technician roster</span>
           </div>
         </div>
 
@@ -201,7 +192,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
 
                   <div className="grid grid-cols-2 gap-2 text-[10px] text-text-muted pt-2 font-mono">
                     <div><strong>Tech:</strong> {j.assignedTechnician || 'Unassigned'}</div>
-                    <div><strong>Estimate:</strong> PKR {Number(j.invoice?.amount || 14500).toLocaleString()}</div>
+                    <div><strong>Estimate:</strong> PKR {Number(j.invoice?.amount || 0).toLocaleString()}</div>
                   </div>
                 </div>
               ))
@@ -244,7 +235,7 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-text-muted">Quote Total:</span>
-                  <span className="text-orange-400 font-bold font-mono">PKR {Number(selectedJob.invoice?.amount || 14500).toLocaleString()}</span>
+                  <span className="text-orange-400 font-bold font-mono">PKR {Number(selectedJob.invoice?.amount || 0).toLocaleString()}</span>
                 </div>
               </div>
 
@@ -272,17 +263,9 @@ export function WorkshopJobsPortal({ dealerId, dealerName, lang = 'en' }: Worksh
               <div className="space-y-2.5">
                 <span className="text-[10px] font-mono text-text-muted uppercase font-black tracking-wider block">Assigned Technician Roster</span>
                 <div className="space-y-2">
-                  {staff.map((s, idx) => (
-                    <div key={idx} className="p-3 bg-[var(--color-bg-secondary)]/40 border border-white/5 rounded-xl flex justify-between items-center">
-                      <div>
-                        <p className="text-xs font-black text-[var(--color-text-header)] uppercase">{s.name}</p>
-                        <p className="text-[9px] text-text-muted">{s.role}</p>
-                      </div>
-                      <span className="text-[8px] font-mono bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded font-black uppercase">
-                        {s.activeJobs} Jobs Active
-                      </span>
-                    </div>
-                  ))}
+                  <p className="rounded-xl border border-[var(--color-border-main)] p-3 text-xs text-[var(--color-text-muted)]">
+                    No technician roster has been configured for this workshop yet.
+                  </p>
                 </div>
               </div>
 

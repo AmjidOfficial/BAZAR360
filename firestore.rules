@@ -111,15 +111,23 @@ service cloud.firestore {
       // Allows both registered users (private sellers) and showroom dealers to create vehicle ads with strict owner checks
       allow create: if isSignedIn() && isValidId(listingId) && isValidListing(incoming()) && (
         isAdmin() ||
-        incoming().dealerId == request.auth.uid ||
-        incoming().assignedSalesRepId == request.auth.uid ||
         (
-          incoming().dealerId == 'private' &&
-          (incoming().assignedSalesRepId == request.auth.uid || incoming().createdBy == request.auth.uid)
-        ) ||
-        (
-          exists(/databases/$(database)/documents/dealers/$(incoming().dealerId)) &&
-          getDealer(incoming().dealerId).ownerUid == request.auth.uid
+          (!('approved' in incoming()) || incoming().approved != true) &&
+          (!('verified' in incoming()) || incoming().verified != true) &&
+          (!('featured' in incoming()) || incoming().featured != true) &&
+          (!('tags' in incoming()) || (incoming().tags is list && !('Verified' in incoming().tags))) &&
+          (
+            incoming().dealerId == request.auth.uid ||
+            incoming().assignedSalesRepId == request.auth.uid ||
+            (
+              incoming().dealerId == 'private' &&
+              (incoming().assignedSalesRepId == request.auth.uid || incoming().createdBy == request.auth.uid)
+            ) ||
+            (
+              exists(/databases/$(database)/documents/dealers/$(incoming().dealerId)) &&
+              getDealer(incoming().dealerId).ownerUid == request.auth.uid
+            )
+          )
         )
       );
                     
@@ -139,7 +147,7 @@ service cloud.firestore {
             'title', 'description', 'price', 'mileage', 'images', 'imageUrl', 
             'videoUrl', 'specs', 'isSold', 'isPaused', 'isArchived', 'updatedAt',
             'make', 'model', 'year', 'condition', 'engineCC', 'exteriorColor', 'bodyCondition',
-            'fuelType', 'transmission', 'verified', 'approved', 'assignedSalesRepId', 'dealerId',
+            'fuelType', 'transmission', 'assignedSalesRepId', 'dealerId',
             'phone', 'sellerPhone', 'tags', 'assemblyType', 'tokenTaxStatus', 'tokenTaxPaid',
             'registrationCity', 'documentType', 'cloudinaryPublicId', 'cloudinaryPublicIds',
             'videoCloudinaryPublicId', 'pdfUrl', 'pdfCloudinaryPublicId', 'pdfTitle'
@@ -200,19 +208,70 @@ service cloud.firestore {
     // ==========================================
     
     match /leads/{leadId} {
+      // A lead may reference the showroom document ID rather than the owner's UID.
+      // Resolve that relationship through the showroom's trusted ownerUid field.
+      function isLeadShowroomOwner(leadData) {
+        return isSignedIn() && (
+          (
+            'showroomOwnerId' in leadData &&
+            request.auth.uid == leadData.showroomOwnerId
+          ) ||
+          (
+            'showroomOwnerId' in leadData &&
+            leadData.showroomOwnerId is string &&
+            exists(/databases/$(database)/documents/dealers/$(leadData.showroomOwnerId)) &&
+            get(/databases/$(database)/documents/dealers/$(leadData.showroomOwnerId)).data.ownerUid == request.auth.uid
+          )
+        );
+      }
+
+      function isAssignedLeadSalesRep(leadData) {
+        return isSignedIn() &&
+          'assignedSalesRepId' in leadData &&
+          leadData.assignedSalesRepId is string &&
+          request.auth.uid == leadData.assignedSalesRepId;
+      }
+
       allow read: if isSignedIn() && (
-        isOwner(resource.data.customerId) || 
-        isOwner(resource.data.showroomOwnerId) || 
+        (('customerId' in resource.data) && isOwner(resource.data.customerId)) ||
+        isLeadShowroomOwner(resource.data) ||
+        isAssignedLeadSalesRep(resource.data) ||
         isAdmin()
       );
-      allow create: if isSignedIn() && (
-        isOwner(incoming().customerId) || 
-        incoming().customerId == 'guest'
-      );
-      allow update: if isSignedIn() && (
-        isOwner(resource.data.showroomOwnerId) || 
-        isAdmin()
-      );
+
+      function isValidGuestLead(data) {
+        return data.customerId == 'guest' &&
+          data.userName is string && data.userName.size() >= 2 && data.userName.size() <= 100 &&
+          data.userPhone is string && data.userPhone.size() >= 7 && data.userPhone.size() <= 30 &&
+          data.type is string && data.type.size() > 0 && data.type.size() <= 80 &&
+          data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+          data.details is string && data.details.size() <= 2000 &&
+          data.createdAt is string &&
+          (!('userEmail' in data) || data.userEmail is string && data.userEmail.size() <= 254) &&
+          (!('city' in data) || data.city is string && data.city.size() <= 100) &&
+          (!('status' in data) || data.status in ['New', 'Pending']) &&
+          (!('metadata' in data) || data.metadata is map && data.metadata.keys().size() <= 10) &&
+          data.keys().hasOnly([
+            'id', 'customerId', 'showroomOwnerId', 'assignedSalesRepId', 'vehicleId',
+            'vehicleTitle', 'vehiclePrice', 'vehicleImage', 'inquiryDate', 'status',
+            'userName', 'userPhone', 'userEmail', 'type', 'title', 'details', 'city',
+            'metadata', 'createdAt', 'updatedAt'
+          ]);
+      }
+
+      // Authenticated users may submit their own leads. Guests may only create
+      // small, shape-validated inquiries and cannot read or update them later.
+      allow create: if (
+        isSignedIn() && isOwner(incoming().customerId)
+      ) || isValidGuestLead(incoming());
+
+      allow update: if isAdmin() ||
+        isLeadShowroomOwner(resource.data) ||
+        (
+          isAssignedLeadSalesRep(resource.data) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        );
+
       allow delete: if isAdmin();
     }
 
@@ -322,11 +381,24 @@ service cloud.firestore {
                (!('inquiryMessage' in data) || (data.inquiryMessage is string && data.inquiryMessage.size() <= 4000));
       }
 
-      // Bookings hold customer contact details, so reads and mutations are restricted to
-      // admins and the customer who owns the record.
-      allow get, list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      function isAssignedWorkshopOwner(data) {
+        return isSignedIn() &&
+               ('assignedWorkshopId' in data) &&
+               data.assignedWorkshopId is string &&
+               exists(/databases/$(database)/documents/dealers/$(data.assignedWorkshopId)) &&
+               get(/databases/$(database)/documents/dealers/$(data.assignedWorkshopId)).data.ownerUid == request.auth.uid;
+      }
+
+      // Customer contact details are only readable by the customer, admins, and
+      // the owner of the specifically assigned workshop.
+      allow get, list: if isAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid) ||
+        isAssignedWorkshopOwner(resource.data);
       allow create: if isValidBooking(incoming());
-      allow update: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+      allow update: if isAdmin() ||
+        (isSignedIn() && existing().userId == request.auth.uid) ||
+        (isAssignedWorkshopOwner(existing()) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'timelineLogs']));
       allow delete: if isAdmin();
     }
 
